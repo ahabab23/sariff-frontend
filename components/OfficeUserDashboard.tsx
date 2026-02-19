@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   LayoutDashboard,
   Users,
@@ -34,11 +35,21 @@ import { ExchangeSection } from "./office/ExchangeSection";
 import { OfficeSettings } from "./office/OfficeSettings";
 import { CashAtHand } from "./office/CashAtHand";
 import { ExpensesAccount } from "./office/ExpensesAccount";
-import { projectId, publicAnonKey } from "../utils/supabase/info";
+import {
+  getDashboardStats,
+  getRecentTransactions,
+  getCurrentExchangeRate,
+  DashboardStatsDto,
+  TransactionDto,
+  getTransactionTypeLabel,
+  getCurrencyLabel,
+} from "@/lib/api";
+import { useAuth } from "@/providers/AuthProvider";
 
 interface OfficeUserDashboardProps {
   userName: string;
   onLogout: () => void;
+  activeTab?: string;
 }
 
 interface DashboardStats {
@@ -77,8 +88,9 @@ interface Transaction {
 export function OfficeUserDashboard({
   userName,
   onLogout,
+  activeTab: initialTab = "dashboard",
 }: OfficeUserDashboardProps) {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // NEW: for mobile drawer
   const [showTransactionForm, setShowTransactionForm] = useState(false);
@@ -92,23 +104,21 @@ export function OfficeUserDashboard({
   );
   const [exchangeRate, setExchangeRate] = useState(137.5);
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const { user } = useAuth();
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-32ed8237/dashboard/stats`,
-        {
-          headers: {
-            Authorization: `Bearer ${publicAnonKey}`,
-          },
-        }
-      );
 
-      const result = await response.json();
-      if (result.success) {
-        setStats(result.stats);
-        setRecentTransactions(result.recentTransactions || []);
+      // Fetch dashboard stats from .NET backend
+      const statsResult = await getDashboardStats();
+      console.log(statsResult);
+
+      if (statsResult.success && statsResult.data) {
+        setStats(statsResult.data);
       } else {
         // Set default stats if API fails
         setStats({
@@ -131,6 +141,35 @@ export function OfficeUserDashboard({
           totalTransactions: 0,
           todayTransactions: 0,
         });
+      }
+
+      // Fetch recent transactions
+      const transactionsResult = await getRecentTransactions();
+      if (transactionsResult.success && transactionsResult.data) {
+        // Map backend transaction format to component format
+        const mappedTransactions = transactionsResult.data.map(
+          (t: TransactionDto) => ({
+            id: t.code,
+            type: getTransactionTypeLabel(t.transactionType),
+            amount: t.amount,
+            currency: getCurrencyLabel(t.currency),
+            description: t.description,
+            date: t.createdAt,
+            createdAt: t.createdAt,
+            primaryAccountName: t.sourceAccountName || "N/A",
+            secondaryName: t.destAccountName || "N/A",
+          })
+        );
+        setRecentTransactions(mappedTransactions);
+      }
+
+      // Fetch current exchange rate
+      const rateResult = await getCurrentExchangeRate();
+      if (rateResult.success && rateResult.data) {
+        // Use average of buy and sell rate
+        const avgRate =
+          (rateResult.data.buyRate + rateResult.data.sellRate) / 2;
+        setExchangeRate(avgRate);
       }
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
@@ -171,7 +210,7 @@ export function OfficeUserDashboard({
   const handleTransactionSuccess = () => {
     fetchDashboardData();
   };
-
+  // console.log(user);
   // Get time-based greeting
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -202,19 +241,65 @@ export function OfficeUserDashboard({
   };
 
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "clients", label: "Clients", icon: Users },
-    { id: "cash-at-hand", label: "Cash at Hand", icon: Wallet },
-    { id: "banks", label: "Bank Accounts", icon: Building2 },
-    { id: "mpesa", label: "M-Pesa", icon: Smartphone },
-    { id: "expenses", label: "Expenses", icon: Receipt },
-    { id: "exchange", label: "Exchange", icon: Repeat },
-    { id: "reconciliation", label: "Reconciliation", icon: FileText },
-    { id: "invoices", label: "Invoices", icon: FileText },
-    { id: "reports", label: "Reports", icon: BarChart3 },
-    { id: "settings", label: "Settings", icon: Settings },
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      href: "/office/dashboard",
+    },
+    { id: "clients", label: "Clients", icon: Users, href: "/office/clients" },
+    {
+      id: "cash-at-hand",
+      label: "Cash at Hand",
+      icon: Wallet,
+      href: "/office/cash",
+    },
+    {
+      id: "banks",
+      label: "Bank Accounts",
+      icon: Building2,
+      href: "/office/banks",
+    },
+    { id: "mpesa", label: "M-Pesa", icon: Smartphone, href: "/office/mpesa" },
+    {
+      id: "expenses",
+      label: "Expenses",
+      icon: Receipt,
+      href: "/office/expenses",
+    },
+    {
+      id: "exchange",
+      label: "Exchange",
+      icon: Repeat,
+      href: "/office/exchange",
+    },
+    {
+      id: "reconciliation",
+      label: "Reconciliation",
+      icon: FileText,
+      href: "/office/reconciliation",
+    },
+    {
+      id: "invoices",
+      label: "Invoices",
+      icon: FileText,
+      href: "/office/invoices",
+    },
+    {
+      id: "reports",
+      label: "Reports",
+      icon: BarChart3,
+      href: "/office/reports",
+    },
+    {
+      id: "settings",
+      label: "Settings",
+      icon: Settings,
+      href: "/office/settings",
+    },
   ];
-
+  console.log(recentTransactions);
+  console.log(user);
   const renderContent = () => {
     switch (activeTab) {
       case "clients":
@@ -323,8 +408,8 @@ export function OfficeUserDashboard({
               <div className="mb-1">
                 <div className="text-2xl lg:text-3xl font-bold text-white">
                   {(stats.cash?.kes || 0).toLocaleString("en-US", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
                   })}
                 </div>
                 <div className="text-emerald-100 text-sm font-medium">
@@ -389,8 +474,8 @@ export function OfficeUserDashboard({
               <div className="mb-1">
                 <div className="text-2xl lg:text-3xl font-bold text-white">
                   {(stats.mpesa?.total || 0).toLocaleString("en-US", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
                   })}
                 </div>
                 <div className="text-green-100 text-sm font-medium">
@@ -470,8 +555,8 @@ export function OfficeUserDashboard({
             </div>
             <div className="text-3xl lg:text-4xl font-bold text-cyan-600 mb-2">
               {(stats.banks?.kes || 0).toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
               })}
             </div>
             <div className="text-sm text-slate-600 font-medium">
@@ -550,13 +635,14 @@ export function OfficeUserDashboard({
                   <div className="flex items-center gap-2 mb-2">
                     <ArrowUpCircle className="w-5 h-5 text-emerald-600" />
                     <span className="text-xs font-bold text-emerald-700 uppercase">
-                      Credits In
+                      Debits In
                     </span>
                   </div>
                   <div className="text-xl lg:text-2xl font-bold text-emerald-700">
-                    {(
-                      stats.daily?.byCurrency?.kes?.credits || 0
-                    ).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    {(stats.daily?.byCurrency?.kes?.debits || 0).toLocaleString(
+                      "en-US",
+                      { minimumFractionDigits: 0 }
+                    )}
                   </div>
                 </div>
 
@@ -564,14 +650,13 @@ export function OfficeUserDashboard({
                   <div className="flex items-center gap-2 mb-2">
                     <ArrowDownCircle className="w-5 h-5 text-red-600" />
                     <span className="text-xs font-bold text-red-700 uppercase">
-                      Debits Out
+                      Credits Out
                     </span>
                   </div>
                   <div className="text-xl lg:text-2xl font-bold text-red-700">
-                    {(stats.daily?.byCurrency?.kes?.debits || 0).toLocaleString(
-                      "en-US",
-                      { minimumFractionDigits: 2 }
-                    )}
+                    {(
+                      stats.daily?.byCurrency?.kes?.credits || 0
+                    ).toLocaleString("en-US", { minimumFractionDigits: 0 })}
                   </div>
                 </div>
               </div>
@@ -597,7 +682,7 @@ export function OfficeUserDashboard({
                     {(stats.daily?.byCurrency?.kes?.net || 0) >= 0 ? "+" : ""}
                     {(stats.daily?.byCurrency?.kes?.net || 0).toLocaleString(
                       "en-US",
-                      { minimumFractionDigits: 2 }
+                      { minimumFractionDigits: 0 }
                     )}
                   </div>
                 </div>
@@ -618,13 +703,14 @@ export function OfficeUserDashboard({
                   <div className="flex items-center gap-2 mb-2">
                     <ArrowUpCircle className="w-5 h-5 text-blue-600" />
                     <span className="text-xs font-bold text-blue-700 uppercase">
-                      Credits In
+                      Debits In
                     </span>
                   </div>
                   <div className="text-xl lg:text-2xl font-bold text-blue-700">
-                    {(
-                      stats.daily?.byCurrency?.usd?.credits || 0
-                    ).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    {(stats.daily?.byCurrency?.usd?.debits || 0).toLocaleString(
+                      "en-US",
+                      { minimumFractionDigits: 2 }
+                    )}
                   </div>
                 </div>
 
@@ -632,14 +718,13 @@ export function OfficeUserDashboard({
                   <div className="flex items-center gap-2 mb-2">
                     <ArrowDownCircle className="w-5 h-5 text-orange-600" />
                     <span className="text-xs font-bold text-orange-700 uppercase">
-                      Debits Out
+                      Credits Out
                     </span>
                   </div>
                   <div className="text-xl lg:text-2xl font-bold text-orange-700">
-                    {(stats.daily?.byCurrency?.usd?.debits || 0).toLocaleString(
-                      "en-US",
-                      { minimumFractionDigits: 2 }
-                    )}
+                    {(
+                      stats.daily?.byCurrency?.usd?.credits || 0
+                    ).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </div>
                 </div>
               </div>
@@ -787,10 +872,17 @@ export function OfficeUserDashboard({
                     ID
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Description
+                  </th>
+
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Account Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Type
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Description
+                    Payment Method
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Amount
@@ -804,7 +896,7 @@ export function OfficeUserDashboard({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-100">
-                {recentTransactions.slice(0, 5).map((txn) => (
+                {recentTransactions?.slice(0, 10).map((txn) => (
                   <tr
                     key={txn.id}
                     className="hover:bg-slate-50 transition-colors"
@@ -812,15 +904,21 @@ export function OfficeUserDashboard({
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-slate-900">
                       {txn.id}
                     </td>
+                    <td className="px-6 py-4 text-sm text-slate-900 font-medium max-w-xs truncate">
+                      {txn.description}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-900 font-medium max-w-xs truncate">
+                      {txn.primaryAccountName}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold uppercase ${
-                          txn.type === "credit"
+                          txn.type === "Debit (Money In)"
                             ? "bg-emerald-100 text-emerald-700"
                             : "bg-red-100 text-red-700"
                         }`}
                       >
-                        {txn.type === "credit" ? (
+                        {txn.type === "Debit (Money In)" ? (
                           <ArrowUpCircle className="w-3 h-3" />
                         ) : (
                           <ArrowDownCircle className="w-3 h-3" />
@@ -829,7 +927,7 @@ export function OfficeUserDashboard({
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-900 font-medium max-w-xs truncate">
-                      {txn.description}
+                      {txn.secondaryName}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-bold text-slate-900">
@@ -876,12 +974,16 @@ export function OfficeUserDashboard({
         <div className="relative p-6 border-b border-slate-700/50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center font-bold text-lg shadow-lg">
-              S
+              {userName[0]}
             </div>
             {sidebarOpen && (
               <div>
-                <h1 className="font-bold text-xl">Sarif</h1>
-                <p className="text-xs text-slate-400">Money Exchange</p>
+                <h1 className="font-bold text-xl">
+                  {userName.trim().split(" ")[0]}
+                </h1>
+                <p className="text-xs text-slate-400">
+                  {userName.trim().split(" ").slice(1).join(" ")}
+                </p>
               </div>
             )}
           </div>
@@ -894,7 +996,9 @@ export function OfficeUserDashboard({
               <p className="text-xs text-cyan-400 font-medium mb-1">
                 {getGreeting()}
               </p>
-              <div className="font-bold text-lg text-white">{userName}</div>
+              <div className="font-bold text-lg text-white">
+                {user?.ownerName}
+              </div>
             </div>
           ) : (
             <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center font-bold text-sm mx-auto">
@@ -912,9 +1016,9 @@ export function OfficeUserDashboard({
           style={{ maxHeight: "calc(100vh - 340px)" }}
         >
           {menuItems.map((item) => (
-            <button
+            <Link
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              href={item.href}
               className={`w-full flex items-center gap-3 px-6 py-3 transition-all ${
                 activeTab === item.id
                   ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg border-l-4 border-cyan-400"
@@ -925,7 +1029,7 @@ export function OfficeUserDashboard({
               {sidebarOpen && (
                 <span className="text-sm font-medium">{item.label}</span>
               )}
-            </button>
+            </Link>
           ))}
         </nav>
 
@@ -1043,8 +1147,9 @@ export function OfficeUserDashboard({
               {/* Mobile Navigation */}
               <nav className="relative p-4 space-y-2">
                 {menuItems.map((item) => (
-                  <button
+                  <Link
                     key={item.id}
+                    href={item.href}
                     onClick={() => {
                       setActiveTab(item.id);
                       setMobileMenuOpen(false);
@@ -1057,7 +1162,7 @@ export function OfficeUserDashboard({
                   >
                     <item.icon className="w-5 h-5 relative z-10" />
                     <span className="relative z-10">{item.label}</span>
-                  </button>
+                  </Link>
                 ))}
               </nav>
 

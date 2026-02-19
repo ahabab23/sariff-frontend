@@ -28,6 +28,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { UserRole } from "../App";
+import { useAuth } from "@/providers/AuthProvider";
 
 interface LoginScreenProps {
   onLogin: (role: UserRole, name: string) => void;
@@ -54,56 +55,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const isSuperAdminPreview = userId.toUpperCase().startsWith("SA");
   const isOfficeUserPreview = userId.toUpperCase().startsWith("OU");
   const isClientPreview = userId.toUpperCase().startsWith("CL");
-
-  // Mock database of users
-  const users = {
-    SA001: {
-      role: "super-admin" as UserRole,
-      name: "Sarah Anderson",
-      phone: "+254712345678",
-      password: "admin123",
-      lastLogin: "2026-01-18 14:32",
-      device: "MacBook Pro",
-      loginCount: 1847,
-    },
-    OU001: {
-      role: "office-user" as UserRole,
-      name: "John Kamau",
-      phone: "+254723456789",
-      password: "office123",
-      lastLogin: "2026-01-19 08:15",
-      device: "Windows PC",
-      loginCount: 523,
-    },
-    OU002: {
-      role: "office-user" as UserRole,
-      name: "Mary Wanjiku",
-      phone: "+254734567890",
-      password: "office456",
-      lastLogin: "2026-01-19 09:42",
-      device: "iPad",
-      loginCount: 312,
-    },
-    CL001: {
-      role: "client" as UserRole,
-      name: "David Ochieng",
-      phone: "+254745678901",
-      password: "client123",
-      lastLogin: "2026-01-19 10:05",
-      device: "iPhone",
-      loginCount: 89,
-    },
-    CL002: {
-      role: "client" as UserRole,
-      name: "Grace Akinyi",
-      phone: "+254756789012",
-      password: "client456",
-      lastLogin: "2026-01-18 16:20",
-      device: "Android",
-      loginCount: 134,
-    },
-  };
-
+  const { user } = useAuth();
   // Calculate password strength
   useEffect(() => {
     if (!password) {

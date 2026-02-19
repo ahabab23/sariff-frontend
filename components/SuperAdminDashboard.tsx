@@ -1,482 +1,752 @@
-import { useState } from "react";
-import {
-  LayoutDashboard,
-  Store,
-  Settings,
-  ScrollText,
-  UsersRound,
-  CircleDollarSign,
-  Activity,
-  Menu,
-  Search,
-  RefreshCw,
-  BellRing,
-  LogOut,
-  ShieldCheck,
-  Plus,
-  BarChart3,
-  CheckCircle2,
-  AlertCircle,
-  Download,
-  TrendingUp,
-  Zap,
-  Globe,
-  DollarSign,
-  Users,
-  CreditCard,
-  FileText,
-  Database,
-  Key,
-  Shield,
-  Lock,
-  Server,
-  HardDrive,
-  Wifi,
-  AlertTriangle,
-  ArrowUpRight,
-  ArrowDownRight,
-  Clock,
-  Eye,
-  Filter,
-  Calendar,
-  TrendingDown,
-  Target,
-  Layers,
-  Briefcase,
-  PieChart,
-  LineChart,
-} from "lucide-react";
+
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { StatCard } from "./StatCard";
-import { OfficeManagement } from "./admin/OfficeManagement";
-import { SystemSettings } from "./admin/SystemSettings";
-import { AuditLogs } from "./admin/AuditLogs";
-import { BackgroundPattern } from "./BackgroundPattern";
+import {
+  LayoutDashboard,
+  Building2,
+  Shield,
+  DollarSign,
+  BarChart3,
+  ScrollText,
+  Server,
+  Settings,
+  Menu,
+  X,
+  Search,
+  Bell,
+  LogOut,
+  RefreshCw,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Ban,
+  CheckCircle2,
+  Key,
+  Lock,
+  Unlock,
+  AlertTriangle,
+  AlertCircle,
+  Users,
+  UserCheck,
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  Zap,
+  Database,
+  HardDrive,
+  Cpu,
+  Clock,
+  Calendar,
+  Filter,
+  Download,
+  Plus,
+  Trash2,
+  Edit,
+  Copy,
+  Check,
+  Globe,
+  Mail,
+  Phone,
+  CreditCard,
+  Receipt,
+  Wallet,
+  ArrowUpRight,
+  ArrowDownRight,
+  MoreHorizontal,
+  Info,
+  ExternalLink,
+  Play,
+  Pause,
+  Circle,
+  Star,
+  Crown,
+  Fingerprint,
+  ShieldCheck,
+  ShieldAlert,
+  WifiOff,
+  CloudOff,
+  History,
+} from "lucide-react";
 
-interface SuperAdminDashboardProps {
-  userName: string;
-  onLogout: () => void;
+import * as api from "@/lib/superadmin-api";
+import type {
+  SuperAdminDashboard as DashboardData,
+  CompanyStats,
+  CompanyDetail,
+  SystemHealth,
+  SecurityOverview,
+  SecurityAlert,
+  IPWhitelist,
+  FinancialOverview,
+  PaymentHistory,
+  AnalyticsOverview,
+  AuditLog,
+  LoginHistory,
+  SystemLog,
+  PagedResult,
+} from "@/lib/superadmin-api";
+import { SubscriptionPlan, SubscriptionStatus } from "@/lib/superadmin-api";
+
+// ==================== TYPES ====================
+
+type TabId =
+  | "overview"
+  | "companies"
+  | "security"
+  | "financial"
+  | "analytics"
+  | "audit"
+  | "system";
+
+interface ModalState {
+  companyDetails: boolean;
+  resetPassword: boolean;
+  suspendCompany: boolean;
+  updateSubscription: boolean;
+  blockIP: boolean;
+  addWhitelist: boolean;
+  recordPayment: boolean;
+  resolveAlert: boolean;
+  createCompany: boolean;
 }
 
-export function SuperAdminDashboard({
-  userName,
-  onLogout,
-}: SuperAdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [timeRange, setTimeRange] = useState("7days");
-  const [selectedMetric, setSelectedMetric] = useState("all");
+// ==================== HELPERS ====================
 
-  const menuItems = [
-    {
-      id: "overview",
-      label: "Overview",
-      icon: LayoutDashboard,
-      gradient: "from-violet-500 to-purple-600",
-    },
-    {
-      id: "analytics",
-      label: "Analytics",
-      icon: BarChart3,
-      gradient: "from-blue-500 to-cyan-600",
-      badge: "NEW",
-    },
-    {
-      id: "offices",
-      label: "Offices",
-      icon: Store,
-      gradient: "from-emerald-500 to-teal-600",
-    },
-    {
-      id: "users",
-      label: "Users",
-      icon: UsersRound,
-      gradient: "from-orange-500 to-red-600",
-    },
-    {
-      id: "financial",
-      label: "Financial",
-      icon: DollarSign,
-      gradient: "from-amber-500 to-yellow-600",
-    },
-    {
-      id: "security",
-      label: "Security",
-      icon: Shield,
-      gradient: "from-red-500 to-pink-600",
-      badge: "!",
-    },
-    {
-      id: "settings",
-      label: "Settings",
-      icon: Settings,
-      gradient: "from-sky-500 to-blue-600",
-    },
-    {
-      id: "audit",
-      label: "Audit Logs",
-      icon: ScrollText,
-      gradient: "from-purple-500 to-fuchsia-600",
-    },
-  ];
+const formatCurrency = (amount: number, currency = "KES") =>
+  new Intl.NumberFormat("en-KE", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 0,
+  }).format(amount);
 
-  const stats = [
-    {
-      label: "Total Offices",
-      value: "12",
-      change: "+2",
-      trend: "up" as const,
-      icon: Store,
-      gradient: "from-violet-500 to-purple-600",
-      subtext: "Active locations",
-      percentage: "+16.7%",
-    },
-    {
-      label: "Active Users",
-      value: "248",
-      change: "+18%",
-      trend: "up" as const,
-      icon: UsersRound,
-      gradient: "from-blue-500 to-cyan-600",
-      subtext: "Logged in today",
-      percentage: "+7.2%",
-    },
-    {
-      label: "Monthly Volume",
-      value: "$2.4M",
-      change: "+12.5%",
-      trend: "up" as const,
-      icon: CircleDollarSign,
-      gradient: "from-emerald-500 to-teal-600",
-      subtext: "Total transactions",
-      percentage: "+12.5%",
-    },
-    {
-      label: "System Uptime",
-      value: "99.9%",
-      change: "Excellent",
-      trend: "up" as const,
-      icon: Activity,
-      gradient: "from-amber-500 to-orange-600",
-      subtext: "Last 30 days",
-      percentage: "99.9%",
-    },
-  ];
+const formatNumber = (num: number) =>
+  new Intl.NumberFormat("en-KE").format(num);
 
-  // Enhanced Analytics Data
-  const analyticsMetrics = [
-    {
-      label: "Revenue Growth",
-      value: "+24.5%",
-      amount: "$2.4M",
-      icon: TrendingUp,
-      color: "emerald",
-      change: "+$468K",
-      period: "vs last month",
-    },
-    {
-      label: "Transaction Success",
-      value: "98.7%",
-      amount: "12,489",
-      icon: CheckCircle2,
-      color: "blue",
-      change: "+2.1%",
-      period: "improved",
-    },
-    {
-      label: "Average Transaction",
-      value: "$192",
-      amount: "12,489 txns",
-      icon: DollarSign,
-      color: "violet",
-      change: "+$18",
-      period: "vs last month",
-    },
-    {
-      label: "New Clients",
-      value: "+89",
-      amount: "1,247 total",
-      icon: Users,
-      color: "orange",
-      change: "+12.3%",
-      period: "growth rate",
-    },
-  ];
+const formatDate = (date: string) =>
+  new Date(date).toLocaleDateString("en-KE", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 
-  // System Health Metrics
-  const systemHealth = [
-    {
-      metric: "API Response Time",
-      value: "42ms",
-      status: "excellent",
-      icon: Zap,
-      trend: "down",
-      change: "-8ms",
-    },
-    {
-      metric: "Database Performance",
-      value: "99.2%",
-      status: "good",
-      icon: Database,
-      trend: "stable",
-      change: "0%",
-    },
-    {
-      metric: "Server Load",
-      value: "34%",
-      status: "excellent",
-      icon: Server,
-      trend: "down",
-      change: "-12%",
-    },
-    {
-      metric: "Storage Used",
-      value: "67%",
-      status: "good",
-      icon: HardDrive,
-      trend: "up",
-      change: "+5%",
-    },
-    {
-      metric: "Active Connections",
-      value: "248",
-      status: "excellent",
-      icon: Wifi,
-      trend: "up",
-      change: "+18",
-    },
-    {
-      metric: "Error Rate",
-      value: "0.3%",
-      status: "excellent",
-      icon: AlertCircle,
-      trend: "down",
-      change: "-0.2%",
-    },
-  ];
+const formatDateTime = (date: string) =>
+  new Date(date).toLocaleString("en-KE", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
-  // Top performing offices with detailed metrics
-  const topOffices = [
-    {
-      name: "Nairobi Central",
-      volume: "$456K",
-      growth: "+15%",
-      transactions: 2847,
-      users: 89,
-      status: "excellent",
-      color: "violet",
-    },
-    {
-      name: "Mombasa Branch",
-      volume: "$342K",
-      growth: "+8%",
-      transactions: 2156,
-      users: 67,
-      status: "good",
-      color: "blue",
-    },
-    {
-      name: "Kisumu Office",
-      volume: "$289K",
-      growth: "+12%",
-      transactions: 1893,
-      users: 54,
-      status: "good",
-      color: "emerald",
-    },
-    {
-      name: "Eldoret Branch",
-      volume: "$234K",
-      growth: "+5%",
-      transactions: 1567,
-      users: 45,
-      status: "average",
-      color: "amber",
-    },
-  ];
+const timeAgo = (date: string) => {
+  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+  if (seconds < 60) return "just now";
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+  return formatDate(date);
+};
 
-  // Recent critical alerts
-  const criticalAlerts = [
-    {
-      type: "warning",
-      title: "High Transaction Volume",
-      message: "Nairobi Central processing 2.5x normal volume",
-      time: "5 min ago",
-      severity: "medium",
-    },
-    {
-      type: "info",
-      title: "System Update Available",
-      message: "Version 2.4.1 ready to install",
-      time: "1 hour ago",
-      severity: "low",
-    },
-  ];
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case "Active":
+      return "bg-emerald-100 text-emerald-700 border-emerald-200";
+    case "Trial":
+      return "bg-blue-100 text-blue-700 border-blue-200";
+    case "Expired":
+      return "bg-amber-100 text-amber-700 border-amber-200";
+    case "Suspended":
+    case "Cancelled":
+      return "bg-red-100 text-red-700 border-red-200";
+    default:
+      return "bg-slate-100 text-slate-700 border-slate-200";
+  }
+};
 
-  // User activity breakdown
-  const userActivity = [
-    { role: "Office Users", count: 156, percentage: 63, color: "blue" },
-    { role: "Clients", count: 89, percentage: 36, color: "violet" },
-    { role: "Super Admins", count: 3, percentage: 1, color: "purple" },
-  ];
+const getPlanColor = (plan: string) => {
+  switch (plan) {
+    case "Enterprise":
+      return "bg-purple-100 text-purple-700 border-purple-200";
+    case "Professional":
+      return "bg-blue-100 text-blue-700 border-blue-200";
+    case "Starter":
+      return "bg-emerald-100 text-emerald-700 border-emerald-200";
+    default:
+      return "bg-slate-100 text-slate-700 border-slate-200";
+  }
+};
 
-  const recentActivities = [
-    {
-      office: "Nairobi Central",
-      action: "New user registered",
-      time: "5 min ago",
-      user: "Sarah M.",
-      type: "success",
-      details: "Client account created",
-    },
-    {
-      office: "Mombasa Branch",
-      action: "Large transaction processed",
-      time: "12 min ago",
-      user: "John K.",
-      type: "info",
-      details: "$12,500 USD → KES",
-    },
-    {
-      office: "Kisumu Office",
-      action: "Settings updated",
-      time: "1 hour ago",
-      user: "Admin",
-      type: "warning",
-      details: "Exchange rates modified",
-    },
-    {
-      office: "Eldoret Branch",
-      action: "Daily reconciliation completed",
-      time: "2 hours ago",
-      user: "System",
-      type: "success",
-      details: "All transactions balanced",
-    },
-    {
-      office: "Nakuru Office",
-      action: "Security alert resolved",
-      time: "3 hours ago",
-      user: "Security Team",
-      type: "warning",
-      details: "Failed login attempts blocked",
-    },
-  ];
+const getSeverityColor = (severity: string) => {
+  switch (severity?.toLowerCase()) {
+    case "critical":
+      return "bg-red-100 text-red-700";
+    case "warning":
+      return "bg-amber-100 text-amber-700";
+    case "info":
+      return "bg-blue-100 text-blue-700";
+    default:
+      return "bg-slate-100 text-slate-700";
+  }
+};
 
-  const handleRefreshData = () => {
-    toast.success("Dashboard data refreshed!");
+const getLogLevelColor = (level: string) => {
+  switch (level?.toLowerCase()) {
+    case "error":
+    case "critical":
+      return "text-red-600 bg-red-50";
+    case "warning":
+      return "text-amber-600 bg-amber-50";
+    case "info":
+      return "text-blue-600 bg-blue-50";
+    default:
+      return "text-slate-600 bg-slate-50";
+  }
+};
+
+const getHealthColor = (status: string) => {
+  switch (status?.toLowerCase()) {
+    case "healthy":
+      return "text-emerald-500";
+    case "degraded":
+      return "text-amber-500";
+    case "down":
+      return "text-red-500";
+    default:
+      return "text-slate-500";
+  }
+};
+
+// ==================== TAB CONFIG ====================
+
+const TABS: { id: TabId; label: string; icon: any; color: string }[] = [
+  {
+    id: "overview",
+    label: "Overview",
+    icon: LayoutDashboard,
+    color: "from-violet-500 to-purple-600",
+  },
+  {
+    id: "companies",
+    label: "Companies",
+    icon: Building2,
+    color: "from-emerald-500 to-teal-600",
+  },
+  {
+    id: "security",
+    label: "Security",
+    icon: Shield,
+    color: "from-red-500 to-rose-600",
+  },
+  {
+    id: "financial",
+    label: "Financial",
+    icon: DollarSign,
+    color: "from-amber-500 to-orange-600",
+  },
+  {
+    id: "analytics",
+    label: "Analytics",
+    icon: BarChart3,
+    color: "from-blue-500 to-cyan-600",
+  },
+  {
+    id: "audit",
+    label: "Audit Logs",
+    icon: ScrollText,
+    color: "from-slate-500 to-slate-700",
+  },
+  {
+    id: "system",
+    label: "System",
+    icon: Server,
+    color: "from-indigo-500 to-purple-600",
+  },
+];
+
+// ==================== MAIN COMPONENT ====================
+
+export function SuperAdminDashboard() {
+  // Navigation
+  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Data state
+  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const [companies, setCompanies] = useState<PagedResult<CompanyStats> | null>(
+    null
+  );
+  const [selectedCompany, setSelectedCompany] = useState<CompanyDetail | null>(
+    null
+  );
+  const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
+  const [security, setSecurity] = useState<SecurityOverview | null>(null);
+  const [alerts, setAlerts] = useState<PagedResult<SecurityAlert> | null>(null);
+  const [whitelist, setWhitelist] = useState<IPWhitelist[]>([]);
+  const [financial, setFinancial] = useState<FinancialOverview | null>(null);
+  const [payments, setPayments] = useState<PagedResult<PaymentHistory> | null>(
+    null
+  );
+  const [analytics, setAnalytics] = useState<AnalyticsOverview | null>(null);
+  const [auditLogs, setAuditLogs] = useState<PagedResult<AuditLog> | null>(
+    null
+  );
+  const [loginHistory, setLoginHistory] =
+    useState<PagedResult<LoginHistory> | null>(null);
+  const [systemLogs, setSystemLogs] = useState<PagedResult<SystemLog> | null>(
+    null
+  );
+
+  // UI state
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Pagination
+  const [companiesPage, setCompaniesPage] = useState(1);
+  const [alertsPage, setAlertsPage] = useState(1);
+  const [paymentsPage, setPaymentsPage] = useState(1);
+  const [auditPage, setAuditPage] = useState(1);
+  const [loginPage, setLoginPage] = useState(1);
+  const [systemLogsPage, setSystemLogsPage] = useState(1);
+
+  // Filters
+  const [companyStatus, setCompanyStatus] = useState("all");
+  const [alertStatus, setAlertStatus] = useState("all");
+  const [logLevel, setLogLevel] = useState("all");
+  const [auditAction, setAuditAction] = useState("all");
+
+  // Modals
+  const [modals, setModals] = useState<ModalState>({
+    companyDetails: false,
+    resetPassword: false,
+    suspendCompany: false,
+    updateSubscription: false,
+    blockIP: false,
+    addWhitelist: false,
+    recordPayment: false,
+    resolveAlert: false,
+    createCompany: false,
+  });
+
+  // Form state
+  const [formData, setFormData] = useState<any>({});
+  const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(
+    null
+  );
+
+  // ==================== DATA FETCHING ====================
+
+  const fetchDashboard = useCallback(async () => {
+    const res = await api.getDashboard();
+    if (res.success) setDashboard(res.data);
+  }, []);
+
+  const fetchCompanies = useCallback(async () => {
+    const res = await api.getCompanies({
+      page: companiesPage,
+      pageSize: 10,
+      search: searchTerm,
+      status: companyStatus,
+    });
+    if (res.success) setCompanies(res.data);
+  }, [companiesPage, searchTerm, companyStatus]);
+
+  const fetchSystemHealth = useCallback(async () => {
+    const res = await api.getSystemHealth();
+    if (res.success) setSystemHealth(res.data);
+  }, []);
+
+  const fetchSecurity = useCallback(async () => {
+    const [secRes, alertRes, whiteRes] = await Promise.all([
+      api.getSecurityOverview(),
+      api.getSecurityAlerts({
+        page: alertsPage,
+        pageSize: 10,
+        resolved:
+          alertStatus === "resolved"
+            ? true
+            : alertStatus === "active"
+            ? false
+            : undefined,
+      }),
+      api.getIPWhitelist(),
+    ]);
+    if (secRes.success) setSecurity(secRes.data);
+    if (alertRes.success) setAlerts(alertRes.data);
+    if (whiteRes.success) setWhitelist(whiteRes.data);
+  }, [alertsPage, alertStatus]);
+
+  const fetchFinancial = useCallback(async () => {
+    const [finRes, payRes] = await Promise.all([
+      api.getFinancialOverview(),
+      api.getPayments({ page: paymentsPage, pageSize: 10 }),
+    ]);
+    if (finRes.success) setFinancial(finRes.data);
+    if (payRes.success) setPayments(payRes.data);
+  }, [paymentsPage]);
+
+  const fetchAnalytics = useCallback(async () => {
+    const res = await api.getAnalytics();
+    if (res.success) setAnalytics(res.data);
+  }, []);
+
+  const fetchAuditLogs = useCallback(async () => {
+    const [auditRes, loginRes] = await Promise.all([
+      api.getAuditLogs({
+        page: auditPage,
+        pageSize: 15,
+        action: auditAction !== "all" ? auditAction : undefined,
+      }),
+      api.getLoginHistory({ page: loginPage, pageSize: 10 }),
+    ]);
+    if (auditRes.success) setAuditLogs(auditRes.data);
+    if (loginRes.success) setLoginHistory(loginRes.data);
+  }, [auditPage, loginPage, auditAction]);
+
+  const fetchSystemLogs = useCallback(async () => {
+    const res = await api.getSystemLogs({
+      page: systemLogsPage,
+      pageSize: 20,
+      level: logLevel,
+    });
+    if (res.success) setSystemLogs(res.data);
+  }, [systemLogsPage, logLevel]);
+
+  const refreshAll = async () => {
+    setRefreshing(true);
+    await Promise.all([
+      fetchDashboard(),
+      activeTab === "companies" && fetchCompanies(),
+      activeTab === "security" && fetchSecurity(),
+      activeTab === "financial" && fetchFinancial(),
+      activeTab === "analytics" && fetchAnalytics(),
+      activeTab === "audit" && fetchAuditLogs(),
+      activeTab === "system" &&
+        Promise.all([fetchSystemHealth(), fetchSystemLogs()]),
+    ]);
+    setRefreshing(false);
+    toast.success("Data refreshed");
   };
 
-  const handleViewActivity = (activity: (typeof recentActivities)[0]) => {
-    toast.info(`${activity.action} - ${activity.details}`);
+  // Initial load
+  useEffect(() => {
+    setLoading(true);
+    fetchDashboard().finally(() => setLoading(false));
+  }, [fetchDashboard]);
+
+  // Tab-specific data
+  useEffect(() => {
+    switch (activeTab) {
+      case "companies":
+        fetchCompanies();
+        break;
+      case "security":
+        fetchSecurity();
+        break;
+      case "financial":
+        fetchFinancial();
+        break;
+      case "analytics":
+        fetchAnalytics();
+        break;
+      case "audit":
+        fetchAuditLogs();
+        break;
+      case "system":
+        fetchSystemHealth();
+        fetchSystemLogs();
+        break;
+    }
+  }, [
+    activeTab,
+    fetchCompanies,
+    fetchSecurity,
+    fetchFinancial,
+    fetchAnalytics,
+    fetchAuditLogs,
+    fetchSystemHealth,
+    fetchSystemLogs,
+  ]);
+
+  // ==================== ACTIONS ====================
+
+  const openModal = (modal: keyof ModalState, data?: any) => {
+    setFormData(data || {});
+    setModals((prev) => ({ ...prev, [modal]: true }));
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "excellent":
-        return "emerald";
-      case "good":
-        return "blue";
-      case "average":
-        return "amber";
-      case "warning":
-        return "orange";
-      default:
-        return "slate";
+  const closeModal = (modal: keyof ModalState) => {
+    setModals((prev) => ({ ...prev, [modal]: false }));
+    setFormData({});
+  };
+
+  const viewCompanyDetails = async (id: string) => {
+    const res = await api.getCompanyDetails(id);
+    if (res.success) {
+      setSelectedCompany(res.data);
+      setSelectedCompanyId(id);
+      openModal("companyDetails");
+    } else {
+      toast.error("Failed to load company details");
     }
   };
 
-  const getTrendIcon = (trend: string) => {
-    if (trend === "up") return <ArrowUpRight className="w-4 h-4" />;
-    if (trend === "down") return <ArrowDownRight className="w-4 h-4" />;
-    return <div className="w-4 h-4" />;
+  const handleSuspendCompany = async () => {
+    if (!selectedCompanyId || !formData.reason) {
+      toast.error("Please provide a reason");
+      return;
+    }
+    const res = await api.suspendCompany(selectedCompanyId, formData.reason);
+    if (res.success) {
+      toast.success("Company suspended");
+      closeModal("suspendCompany");
+      closeModal("companyDetails");
+      fetchCompanies();
+      fetchDashboard();
+    } else {
+      toast.error(res.message);
+    }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-violet-50/30 to-purple-50/20 relative">
-      {/* Animated Background Pattern */}
-      <BackgroundPattern />
+  const handleActivateCompany = async (id: string) => {
+    const res = await api.activateCompany(id);
+    if (res.success) {
+      toast.success("Company activated");
+      fetchCompanies();
+      fetchDashboard();
+      if (modals.companyDetails) {
+        viewCompanyDetails(id);
+      }
+    } else {
+      toast.error(res.message);
+    }
+  };
 
-      {/* Top Navigation */}
-      <header className="sticky top-0 z-50 glass border-b border-white/20 shadow-lg backdrop-blur-xl">
-        <div className="flex items-center justify-between h-16 px-4 lg:px-6">
-          {/* Left: Logo & Menu */}
+  const handleResetPassword = async () => {
+    if (!selectedCompanyId) return;
+    if (!formData.password || formData.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    const res = await api.resetPassword(selectedCompanyId, formData.password);
+    if (res.success) {
+      toast.success("Password reset successfully");
+      closeModal("resetPassword");
+    } else {
+      toast.error(res.message);
+    }
+  };
+
+  const handleUpdateSubscription = async () => {
+    if (!selectedCompanyId) return;
+    const res = await api.updateSubscription(selectedCompanyId, {
+      plan: formData.plan,
+      monthlyFee: parseFloat(formData.monthlyFee) || 0,
+      expiresAt: formData.expiresAt,
+    });
+    if (res.success) {
+      toast.success("Subscription updated");
+      closeModal("updateSubscription");
+      fetchCompanies();
+      if (modals.companyDetails) viewCompanyDetails(selectedCompanyId);
+    } else {
+      toast.error(res.message);
+    }
+  };
+
+  const handleResolveAlert = async () => {
+    if (!selectedAlertId) return;
+    const res = await api.resolveAlert(selectedAlertId, formData.notes);
+    if (res.success) {
+      toast.success("Alert resolved");
+      closeModal("resolveAlert");
+      fetchSecurity();
+    } else {
+      toast.error(res.message);
+    }
+  };
+
+  const handleBlockIP = async () => {
+    if (!formData.ipAddress || !formData.reason) {
+      toast.error("IP address and reason required");
+      return;
+    }
+    const res = await api.blockIP({
+      ipAddress: formData.ipAddress,
+      reason: formData.reason,
+      blockUntil: formData.blockUntil,
+    });
+    if (res.success) {
+      toast.success("IP blocked");
+      closeModal("blockIP");
+      fetchSecurity();
+    } else {
+      toast.error(res.message);
+    }
+  };
+
+  const handleUnblockIP = async (id: string) => {
+    const res = await api.unblockIP(id);
+    if (res.success) {
+      toast.success("IP unblocked");
+      fetchSecurity();
+    } else {
+      toast.error(res.message);
+    }
+  };
+
+  const handleAddWhitelist = async () => {
+    if (!formData.ipAddress) {
+      toast.error("IP address required");
+      return;
+    }
+    const res = await api.addIPToWhitelist({
+      ipAddress: formData.ipAddress,
+      description: formData.description,
+    });
+    if (res.success) {
+      toast.success("IP added to whitelist");
+      closeModal("addWhitelist");
+      fetchSecurity();
+    } else {
+      toast.error(res.message);
+    }
+  };
+
+  const handleRemoveWhitelist = async (id: string) => {
+    const res = await api.removeIPFromWhitelist(id);
+    if (res.success) {
+      toast.success("IP removed from whitelist");
+      fetchSecurity();
+    } else {
+      toast.error(res.message);
+    }
+  };
+
+  const handleRecordPayment = async () => {
+    if (!formData.companyId || !formData.amount) {
+      toast.error("Company and amount required");
+      return;
+    }
+    const res = await api.recordPayment({
+      companyId: formData.companyId,
+      amount: parseFloat(formData.amount),
+      currency: formData.currency || "KES",
+      paymentMethod: formData.paymentMethod || "M-Pesa",
+      reference: formData.reference,
+      notes: formData.notes,
+    });
+    if (res.success) {
+      toast.success("Payment recorded");
+      closeModal("recordPayment");
+      fetchFinancial();
+      fetchDashboard();
+    } else {
+      toast.error(res.message);
+    }
+  };
+
+  const handleCreateCompany = async () => {
+    if (
+      !formData.name ||
+      !formData.ownerName ||
+      !formData.whatsAppNumber ||
+      !formData.password
+    ) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+    if (formData.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    const res = await api.createCompany({
+      name: formData.name,
+      ownerName: formData.ownerName,
+      whatsAppNumber: formData.whatsAppNumber,
+      email: formData.email,
+      password: formData.password,
+    });
+    if (res.success) {
+      toast.success("Company created successfully");
+      closeModal("createCompany");
+      fetchCompanies();
+      fetchDashboard();
+    } else {
+      toast.error(res.message);
+    }
+  };
+
+  const handleExportAuditLogs = async () => {
+    const blob = await api.exportAuditLogs();
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `audit-logs-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Audit logs exported");
+    } else {
+      toast.error("Failed to export");
+    }
+  };
+  // ==================== RENDER ====================
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-xl border-b border-white/10">
+        <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 hover:bg-violet-100/50 rounded-xl transition-colors"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 hover:bg-white/10 rounded-lg transition-colors lg:hidden"
             >
-              <Menu className="w-5 h-5 text-slate-700" />
+              <Menu className="w-5 h-5 text-white" />
             </button>
-
             <div className="flex items-center gap-3">
-              <motion.div
-                className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/30"
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                transition={{ type: "spring", stiffness: 400, damping: 10 }}
-              >
-                <div className="w-5 h-5 rounded-lg bg-white/90" />
-              </motion.div>
+              <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center">
+                <Crown className="w-5 h-5 text-white" />
+              </div>
               <div>
-                <span className="font-bold text-lg bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-                  Sarif
-                </span>
-                <p className="text-xs text-slate-500 hidden lg:block">
-                  Super Admin Panel
-                </p>
+                <h1 className="text-lg font-bold text-white">SARIFF Admin</h1>
+                <p className="text-xs text-slate-400">Super Administrator</p>
               </div>
             </div>
           </div>
 
-          {/* Center: Search */}
-          <div className="hidden md:flex flex-1 max-w-md mx-8">
-            <div className="relative w-full group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-violet-500 transition-colors" />
-              <input
-                type="text"
-                placeholder="Search offices, users, transactions..."
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border-2 border-slate-200 text-sm focus:outline-none focus:border-violet-500 focus:bg-white transition-all"
+          <div className="flex items-center gap-3">
+            <button
+              onClick={refreshAll}
+              disabled={refreshing}
+              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <RefreshCw
+                className={`w-5 h-5 text-white ${
+                  refreshing ? "animate-spin" : ""
+                }`}
               />
-            </div>
-          </div>
-
-          {/* Right: Actions & User */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleRefreshData}
-              className="p-2 hover:bg-violet-50 transition-colors group"
-              title="Refresh Data"
-            >
-              <RefreshCw className="w-5 h-5 text-slate-600 group-hover:text-violet-600 group-hover:rotate-180 transition-all duration-500" />
             </button>
-
-            <button
-              onClick={() => toast.info("Opening notifications...")}
-              className="p-2 hover:bg-violet-50 transition-colors relative"
-            >
-              <BellRing className="w-5 h-5 text-slate-600" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+            <button className="p-2 hover:bg-white/10 rounded-lg transition-colors relative">
+              <Bell className="w-5 h-5 text-white" />
+              {dashboard?.securityAlertsActive ? (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
+                  {dashboard.securityAlertsActive}
+                </span>
+              ) : null}
             </button>
-
-            <div className="hidden sm:flex items-center gap-3 pl-3 ml-2 border-l border-slate-200">
-              <div className="text-right">
-                <p className="text-sm font-semibold text-slate-900">
-                  {userName}
-                </p>
-                <p className="text-xs text-violet-600">Super Admin</p>
-              </div>
-              <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-violet-500/30">
-                {userName.charAt(0).toUpperCase()}
-              </div>
-            </div>
-
-            <button
-              onClick={onLogout}
-              className="p-2 hover:bg-red-50 transition-colors text-slate-700 hover:text-red-600 ml-2"
-              title="Logout"
-            >
-              <LogOut className="w-5 h-5" />
+            <button className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+              <LogOut className="w-5 h-5 text-white" />
             </button>
           </div>
         </div>
@@ -484,749 +754,2263 @@ export function SuperAdminDashboard({
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className="hidden lg:block w-64 border-r border-slate-200 bg-white min-h-[calc(100vh-4rem)]">
-          <nav className="p-4 space-y-1">
-            {menuItems.map((item) => (
+        <aside
+          className={`${
+            sidebarOpen ? "w-64" : "w-20"
+          } transition-all duration-300 bg-slate-900/50 backdrop-blur-xl border-r border-white/10 min-h-[calc(100vh-73px)] sticky top-[73px]`}
+        >
+          <nav className="p-4 space-y-2">
+            {TABS.map((tab) => (
               <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3.5 font-medium transition-all relative ${
-                  activeTab === item.id
-                    ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/30"
-                    : "text-slate-700 hover:bg-violet-50 hover:text-violet-700"
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  activeTab === tab.id
+                    ? `bg-gradient-to-r ${tab.color} text-white shadow-lg`
+                    : "text-slate-400 hover:text-white hover:bg-white/5"
                 }`}
               >
-                <item.icon className="w-5 h-5" />
-                <span>{item.label}</span>
-                {item.badge && (
-                  <span
-                    className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      activeTab === item.id
-                        ? "bg-white/20 text-white"
-                        : item.badge === "!"
-                        ? "bg-red-100 text-red-600"
-                        : "bg-violet-100 text-violet-600"
-                    }`}
-                  >
-                    {item.badge}
-                  </span>
+                <tab.icon className="w-5 h-5 flex-shrink-0" />
+                {sidebarOpen && (
+                  <span className="font-medium">{tab.label}</span>
                 )}
               </button>
             ))}
           </nav>
-
-          {/* Sidebar Footer */}
-          <div className="absolute bottom-6 left-4 right-4">
-            <div className="bg-gradient-to-br from-violet-50 to-purple-50 border-2 border-violet-200 p-4">
-              <ShieldCheck className="w-8 h-8 text-violet-600 mb-2" />
-              <p className="text-sm font-semibold text-violet-900 mb-1">
-                System Secure
-              </p>
-              <p className="text-xs text-violet-700">All systems operational</p>
-            </div>
-          </div>
         </aside>
 
-        {/* Mobile Sidebar */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <>
+        {/* Main Content */}
+        <main className="flex-1 p-6">
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <RefreshCw className="w-8 h-8 text-violet-500 animate-spin" />
+            </div>
+          ) : (
+            <AnimatePresence mode="wait">
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden"
-                onClick={() => setMobileMenuOpen(false)}
-              />
-              <motion.aside
-                initial={{ x: -280 }}
-                animate={{ x: 0 }}
-                exit={{ x: -280 }}
-                transition={{ type: "spring", damping: 25 }}
-                className="fixed left-0 top-16 bottom-0 w-64 bg-white border-r border-slate-200 z-50 lg:hidden shadow-2xl"
+                key={activeTab}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2 }}
               >
-                <nav className="p-4 space-y-1">
-                  {menuItems.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        setActiveTab(item.id);
-                        setMobileMenuOpen(false);
-                      }}
-                      className={`w-full flex items-center gap-3 px-4 py-3.5 font-medium transition-all ${
-                        activeTab === item.id
-                          ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg"
-                          : "text-slate-700 hover:bg-violet-50 hover:text-violet-700"
-                      }`}
-                    >
-                      <item.icon className="w-5 h-5" />
-                      <span>{item.label}</span>
-                      {item.badge && (
-                        <span
-                          className={`ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                            activeTab === item.id
-                              ? "bg-white/20 text-white"
-                              : "bg-violet-100 text-violet-600"
+                {/* OVERVIEW TAB */}
+                {activeTab === "overview" && dashboard && (
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-bold text-white">
+                      Dashboard Overview
+                    </h2>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <StatCard
+                        title="Total Companies"
+                        value={dashboard.totalCompanies}
+                        subValue={`${dashboard.activeCompanies} active`}
+                        icon={Building2}
+                        trend={dashboard.companiesGrowth}
+                        color="violet"
+                      />
+                      <StatCard
+                        title="Total Users"
+                        value={dashboard.totalUsers}
+                        subValue={`${dashboard.activeUsersToday} active today`}
+                        icon={Users}
+                        trend={dashboard.usersGrowth}
+                        color="blue"
+                      />
+                      <StatCard
+                        title="Monthly Revenue"
+                        value={formatCurrency(
+                          dashboard.monthlyRecurringRevenue
+                        )}
+                        subValue={`${formatCurrency(
+                          dashboard.totalRevenue
+                        )} total`}
+                        icon={DollarSign}
+                        trend={dashboard.revenueGrowth}
+                        color="emerald"
+                      />
+                      <StatCard
+                        title="Monthly Volume"
+                        value={formatCurrency(
+                          dashboard.monthlyTransactionsVolume
+                        )}
+                        subValue={`${formatNumber(
+                          dashboard.monthlyTransactionsCount
+                        )} transactions`}
+                        icon={Activity}
+                        trend={dashboard.volumeGrowth}
+                        color="amber"
+                      />
+                    </div>
+
+                    {/* System Status & Quick Stats */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                        <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                          <Server className="w-5 h-5" /> System Status
+                        </h3>
+                        <div className="flex items-center gap-3 mb-4">
+                          <div
+                            className={`w-4 h-4 rounded-full ${
+                              dashboard.systemStatus === "Healthy"
+                                ? "bg-emerald-500"
+                                : dashboard.systemStatus === "Degraded"
+                                ? "bg-amber-500"
+                                : "bg-red-500"
+                            } animate-pulse`}
+                          />
+                          <span className="text-white text-lg font-medium">
+                            {dashboard.systemStatus}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-slate-400">Errors (24h)</p>
+                            <p className="text-white font-semibold">
+                              {dashboard.errorsLast24h}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-slate-400">Security Alerts</p>
+                            <p className="text-white font-semibold">
+                              {dashboard.securityAlertsActive}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                        <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                          <Building2 className="w-5 h-5" /> Company Status
+                        </h3>
+                        <div className="space-y-3">
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Active</span>
+                            <span className="text-emerald-400 font-semibold">
+                              {dashboard.activeCompanies}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Trial</span>
+                            <span className="text-blue-400 font-semibold">
+                              {dashboard.trialCompanies}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Expired</span>
+                            <span className="text-amber-400 font-semibold">
+                              {dashboard.expiredCompanies}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-400">Suspended</span>
+                            <span className="text-red-400 font-semibold">
+                              {dashboard.suspendedCompanies}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                        <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                          <TrendingUp className="w-5 h-5" /> Top by Volume
+                        </h3>
+                        <div className="space-y-3">
+                          {dashboard.topCompaniesByVolume
+                            .slice(0, 4)
+                            .map((company, idx) => (
+                              <div
+                                key={company.id}
+                                className="flex items-center gap-3"
+                              >
+                                <span className="w-6 h-6 rounded-full bg-violet-500/20 text-violet-400 text-xs flex items-center justify-center font-bold">
+                                  {idx + 1}
+                                </span>
+                                <span className="text-white text-sm flex-1 truncate">
+                                  {company.name}
+                                </span>
+                                <span className="text-slate-400 text-sm">
+                                  {formatCurrency(company.value)}
+                                </span>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Recent Signups & Expiring */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                        <h3 className="text-white font-semibold mb-4">
+                          Recent Signups
+                        </h3>
+                        <div className="space-y-3">
+                          {dashboard.recentSignups
+                            .slice(0, 5)
+                            .map((company) => (
+                              <div
+                                key={company.id}
+                                className="flex items-center justify-between p-3 bg-white/5 rounded-xl"
+                              >
+                                <div>
+                                  <p className="text-white font-medium">
+                                    {company.name}
+                                  </p>
+                                  <p className="text-slate-400 text-sm">
+                                    {company.code}
+                                  </p>
+                                </div>
+                                <span className="text-slate-400 text-sm">
+                                  {timeAgo(company.createdAt)}
+                                </span>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+
+                      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                        <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                          <AlertTriangle className="w-5 h-5 text-amber-500" />{" "}
+                          Expiring Subscriptions
+                        </h3>
+                        <div className="space-y-3">
+                          {dashboard.expiringSubscriptions.length > 0 ? (
+                            dashboard.expiringSubscriptions
+                              .slice(0, 5)
+                              .map((company) => (
+                                <div
+                                  key={company.id}
+                                  className="flex items-center justify-between p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl"
+                                >
+                                  <div>
+                                    <p className="text-white font-medium">
+                                      {company.name}
+                                    </p>
+                                    <p className="text-amber-400 text-sm">
+                                      Expires:{" "}
+                                      {company.subscriptionExpiresAt
+                                        ? formatDate(
+                                            company.subscriptionExpiresAt
+                                          )
+                                        : "N/A"}
+                                    </p>
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedCompanyId(company.id);
+                                      openModal("updateSubscription", {
+                                        plan: company.subscriptionPlan,
+                                        monthlyFee: company.monthlyFee,
+                                      });
+                                    }}
+                                    className="px-3 py-1 bg-amber-500 text-white text-sm rounded-lg hover:bg-amber-600"
+                                  >
+                                    Renew
+                                  </button>
+                                </div>
+                              ))
+                          ) : (
+                            <p className="text-slate-400 text-center py-4">
+                              No expiring subscriptions
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Recent Errors */}
+                    {dashboard.recentErrors.length > 0 && (
+                      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                        <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                          <AlertCircle className="w-5 h-5 text-red-500" />{" "}
+                          Recent Errors
+                        </h3>
+                        <div className="space-y-2">
+                          {dashboard.recentErrors.slice(0, 5).map((log) => (
+                            <div
+                              key={log.id}
+                              className="flex items-start gap-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl"
+                            >
+                              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white text-sm truncate">
+                                  {log.message}
+                                </p>
+                                <p className="text-slate-400 text-xs">
+                                  {log.source} • {timeAgo(log.createdAt)}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* COMPANIES TAB */}
+                {activeTab === "companies" && (
+                  <div className="space-y-6">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <h2 className="text-2xl font-bold text-white">
+                        Companies Management
+                      </h2>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => openModal("createCompany")}
+                          className="px-4 py-2 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 flex items-center gap-2 font-medium"
+                        >
+                          <Plus className="w-4 h-4" /> Create Company
+                        </button>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                          <input
+                            type="text"
+                            placeholder="Search companies..."
+                            value={searchTerm}
+                            onChange={(e) => {
+                              setSearchTerm(e.target.value);
+                              setCompaniesPage(1);
+                            }}
+                            className="pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-violet-500 w-64"
+                          />
+                        </div>
+                        <select
+                          value={companyStatus}
+                          onChange={(e) => {
+                            setCompanyStatus(e.target.value);
+                            setCompaniesPage(1);
+                          }}
+                          className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-violet-500"
+                        >
+                          <option value="all">All Status</option>
+                          <option value="active">Active</option>
+                          <option value="trial">Trial</option>
+                          <option value="expired">Expired</option>
+                          <option value="suspended">Suspended</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Companies Table */}
+                    <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-white/10">
+                              <th className="text-left px-6 py-4 text-slate-400 font-medium text-sm">
+                                Company
+                              </th>
+                              <th className="text-left px-6 py-4 text-slate-400 font-medium text-sm">
+                                Plan
+                              </th>
+                              <th className="text-left px-6 py-4 text-slate-400 font-medium text-sm">
+                                Status
+                              </th>
+                              <th className="text-left px-6 py-4 text-slate-400 font-medium text-sm">
+                                Users
+                              </th>
+                              <th className="text-left px-6 py-4 text-slate-400 font-medium text-sm">
+                                Volume
+                              </th>
+                              <th className="text-left px-6 py-4 text-slate-400 font-medium text-sm">
+                                Revenue
+                              </th>
+                              <th className="text-center px-6 py-4 text-slate-400 font-medium text-sm">
+                                Actions
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {companies?.items.map((company) => (
+                              <tr
+                                key={company.id}
+                                className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                              >
+                                <td className="px-6 py-4">
+                                  <div>
+                                    <p className="text-white font-medium">
+                                      {company.name}
+                                    </p>
+                                    <p className="text-slate-400 text-sm">
+                                      {company.code} • {company.ownerName}
+                                    </p>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span
+                                    className={`px-2 py-1 rounded-full text-xs font-medium border ${getPlanColor(
+                                      company.subscriptionPlan
+                                    )}`}
+                                  >
+                                    {company.subscriptionPlan}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span
+                                    className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                                      company.subscriptionStatus
+                                    )}`}
+                                  >
+                                    {company.subscriptionStatus}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <p className="text-white">
+                                    {company.totalUsers}
+                                  </p>
+                                  <p className="text-slate-400 text-sm">
+                                    {company.totalClients} clients
+                                  </p>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <p className="text-white">
+                                    {formatCurrency(company.monthlyVolume)}
+                                  </p>
+                                  <p className="text-slate-400 text-sm">
+                                    {company.monthlyTransactions} txns
+                                  </p>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <p className="text-white">
+                                    {formatCurrency(company.monthlyFee)}/mo
+                                  </p>
+                                  <p className="text-slate-400 text-sm">
+                                    {formatCurrency(company.totalPaid)} paid
+                                  </p>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="flex items-center justify-center gap-1">
+                                    <button
+                                      onClick={() =>
+                                        viewCompanyDetails(company.id)
+                                      }
+                                      className="p-2 hover:bg-violet-500/20 rounded-lg transition-colors"
+                                      title="View Details"
+                                    >
+                                      <Eye className="w-4 h-4 text-violet-400" />
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setSelectedCompanyId(company.id);
+                                        openModal("resetPassword");
+                                      }}
+                                      className="p-2 hover:bg-blue-500/20 rounded-lg transition-colors"
+                                      title="Reset Password"
+                                    >
+                                      <Key className="w-4 h-4 text-blue-400" />
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setSelectedCompanyId(company.id);
+                                        openModal("updateSubscription", {
+                                          plan: company.subscriptionPlan,
+                                          monthlyFee: company.monthlyFee,
+                                        });
+                                      }}
+                                      className="p-2 hover:bg-amber-500/20 rounded-lg transition-colors"
+                                      title="Update Subscription"
+                                    >
+                                      <CreditCard className="w-4 h-4 text-amber-400" />
+                                    </button>
+                                    {company.isActive ? (
+                                      <button
+                                        onClick={() => {
+                                          setSelectedCompanyId(company.id);
+                                          openModal("suspendCompany");
+                                        }}
+                                        className="p-2 hover:bg-red-500/20 rounded-lg transition-colors"
+                                        title="Suspend"
+                                      >
+                                        <Ban className="w-4 h-4 text-red-400" />
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() =>
+                                          handleActivateCompany(company.id)
+                                        }
+                                        className="p-2 hover:bg-emerald-500/20 rounded-lg transition-colors"
+                                        title="Activate"
+                                      >
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Pagination */}
+                      {companies && companies.totalCount > 10 && (
+                        <div className="px-6 py-4 border-t border-white/10 flex items-center justify-between">
+                          <p className="text-slate-400 text-sm">
+                            Showing {(companiesPage - 1) * 10 + 1} to{" "}
+                            {Math.min(companiesPage * 10, companies.totalCount)}{" "}
+                            of {companies.totalCount}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() =>
+                                setCompaniesPage((p) => Math.max(1, p - 1))
+                              }
+                              disabled={companiesPage === 1}
+                              className="p-2 hover:bg-white/10 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <ChevronLeft className="w-5 h-5 text-white" />
+                            </button>
+                            <span className="text-white px-4">
+                              {companiesPage}
+                            </span>
+                            <button
+                              onClick={() => setCompaniesPage((p) => p + 1)}
+                              disabled={
+                                companiesPage * 10 >= companies.totalCount
+                              }
+                              className="p-2 hover:bg-white/10 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <ChevronRight className="w-5 h-5 text-white" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {/* SECURITY TAB */}
+                {activeTab === "security" && security && (
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-bold text-white">
+                      Security Center
+                    </h2>
+
+                    {/* Security Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="p-2 bg-red-500/20 rounded-lg">
+                            <ShieldAlert className="w-5 h-5 text-red-400" />
+                          </div>
+                          <span className="text-slate-400">
+                            Failed Logins (24h)
+                          </span>
+                        </div>
+                        <p className="text-3xl font-bold text-white">
+                          {security.failedLoginsLast24h}
+                        </p>
+                      </div>
+                      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="p-2 bg-amber-500/20 rounded-lg">
+                            <Lock className="w-5 h-5 text-amber-400" />
+                          </div>
+                          <span className="text-slate-400">
+                            Locked Accounts
+                          </span>
+                        </div>
+                        <p className="text-3xl font-bold text-white">
+                          {security.lockedAccounts}
+                        </p>
+                      </div>
+                      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="p-2 bg-purple-500/20 rounded-lg">
+                            <Ban className="w-5 h-5 text-purple-400" />
+                          </div>
+                          <span className="text-slate-400">Blocked IPs</span>
+                        </div>
+                        <p className="text-3xl font-bold text-white">
+                          {security.blockedIPs}
+                        </p>
+                      </div>
+                      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="p-2 bg-blue-500/20 rounded-lg">
+                            <AlertTriangle className="w-5 h-5 text-blue-400" />
+                          </div>
+                          <span className="text-slate-400">Active Alerts</span>
+                        </div>
+                        <p className="text-3xl font-bold text-white">
+                          {security.activeAlerts}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Security Alerts */}
+                      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-white font-semibold">
+                            Security Alerts
+                          </h3>
+                          <select
+                            value={alertStatus}
+                            onChange={(e) => {
+                              setAlertStatus(e.target.value);
+                              setAlertsPage(1);
+                            }}
+                            className="px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-white text-sm"
+                          >
+                            <option value="all">All</option>
+                            <option value="active">Active</option>
+                            <option value="resolved">Resolved</option>
+                          </select>
+                        </div>
+                        <div className="space-y-3 max-h-96 overflow-y-auto">
+                          {alerts?.items.map((alert) => (
+                            <div
+                              key={alert.id}
+                              className={`p-4 rounded-xl border ${
+                                alert.isResolved
+                                  ? "bg-white/5 border-white/10"
+                                  : "bg-red-500/10 border-red-500/20"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span
+                                      className={`px-2 py-0.5 rounded text-xs font-medium ${getSeverityColor(
+                                        alert.severity
+                                      )}`}
+                                    >
+                                      {alert.severity}
+                                    </span>
+                                    <span className="text-slate-400 text-xs">
+                                      {alert.alertType}
+                                    </span>
+                                  </div>
+                                  <p className="text-white text-sm">
+                                    {alert.message}
+                                  </p>
+                                  <p className="text-slate-400 text-xs mt-1">
+                                    {alert.ipAddress &&
+                                      `IP: ${alert.ipAddress} • `}
+                                    {timeAgo(alert.createdAt)}
+                                  </p>
+                                </div>
+                                {!alert.isResolved && (
+                                  <button
+                                    onClick={() => {
+                                      setSelectedAlertId(alert.id);
+                                      openModal("resolveAlert");
+                                    }}
+                                    className="px-3 py-1 bg-emerald-500 text-white text-sm rounded-lg hover:bg-emerald-600"
+                                  >
+                                    Resolve
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          {(!alerts || alerts.items.length === 0) && (
+                            <p className="text-slate-400 text-center py-8">
+                              No alerts found
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* IP Management */}
+                      <div className="space-y-6">
+                        {/* Block IP */}
+                        <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-white font-semibold">
+                              Block IP Address
+                            </h3>
+                            <button
+                              onClick={() => openModal("blockIP")}
+                              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center gap-2"
+                            >
+                              <Plus className="w-4 h-4" /> Block IP
+                            </button>
+                          </div>
+                          <p className="text-slate-400 text-sm">
+                            Block malicious IP addresses from accessing the
+                            platform.
+                          </p>
+                        </div>
+
+                        {/* IP Whitelist */}
+                        <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-white font-semibold">
+                              IP Whitelist
+                            </h3>
+                            <button
+                              onClick={() => openModal("addWhitelist")}
+                              className="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 flex items-center gap-2"
+                            >
+                              <Plus className="w-4 h-4" /> Add IP
+                            </button>
+                          </div>
+                          <div className="space-y-2 max-h-48 overflow-y-auto">
+                            {whitelist.map((ip) => (
+                              <div
+                                key={ip.id}
+                                className="flex items-center justify-between p-3 bg-white/5 rounded-lg"
+                              >
+                                <div>
+                                  <p className="text-white font-mono text-sm">
+                                    {ip.ipAddress}
+                                  </p>
+                                  <p className="text-slate-400 text-xs">
+                                    {ip.description || "No description"}
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={() => handleRemoveWhitelist(ip.id)}
+                                  className="p-2 hover:bg-red-500/20 rounded-lg"
+                                >
+                                  <Trash2 className="w-4 h-4 text-red-400" />
+                                </button>
+                              </div>
+                            ))}
+                            {whitelist.length === 0 && (
+                              <p className="text-slate-400 text-center py-4">
+                                No whitelisted IPs
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Recent Failed Logins */}
+                    <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                      <h3 className="text-white font-semibold mb-4">
+                        Recent Failed Logins
+                      </h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-white/10">
+                              <th className="text-left px-4 py-3 text-slate-400 text-sm font-medium">
+                                Time
+                              </th>
+                              <th className="text-left px-4 py-3 text-slate-400 text-sm font-medium">
+                                User
+                              </th>
+                              <th className="text-left px-4 py-3 text-slate-400 text-sm font-medium">
+                                IP Address
+                              </th>
+                              <th className="text-left px-4 py-3 text-slate-400 text-sm font-medium">
+                                Reason
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {security.recentFailedLogins
+                              .slice(0, 10)
+                              .map((login) => (
+                                <tr
+                                  key={login.id}
+                                  className="border-b border-white/5"
+                                >
+                                  <td className="px-4 py-3 text-white text-sm">
+                                    {timeAgo(login.loginAt)}
+                                  </td>
+                                  <td className="px-4 py-3 text-white text-sm">
+                                    {login.userName ||
+                                      login.companyName ||
+                                      "Unknown"}
+                                  </td>
+                                  <td className="px-4 py-3 text-slate-400 text-sm font-mono">
+                                    {login.ipAddress}
+                                  </td>
+                                  <td className="px-4 py-3 text-red-400 text-sm">
+                                    {login.failureReason ||
+                                      "Invalid credentials"}
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* FINANCIAL TAB */}
+                {activeTab === "financial" && financial && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-2xl font-bold text-white">
+                        Financial Overview
+                      </h2>
+                      <button
+                        onClick={() => openModal("recordPayment")}
+                        className="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" /> Record Payment
+                      </button>
+                    </div>
+
+                    {/* Revenue Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="bg-gradient-to-br from-emerald-500/20 to-teal-500/20 backdrop-blur-xl rounded-2xl border border-emerald-500/20 p-6">
+                        <p className="text-emerald-300 text-sm mb-1">
+                          Monthly Revenue
+                        </p>
+                        <p className="text-3xl font-bold text-white">
+                          {formatCurrency(financial.monthlyRevenue)}
+                        </p>
+                        <p className="text-emerald-300 text-sm mt-2 flex items-center gap-1">
+                          {financial.revenueGrowth >= 0 ? (
+                            <TrendingUp className="w-4 h-4" />
+                          ) : (
+                            <TrendingDown className="w-4 h-4" />
+                          )}
+                          {financial.revenueGrowth.toFixed(1)}% vs last month
+                        </p>
+                      </div>
+                      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                        <p className="text-slate-400 text-sm mb-1">
+                          Yearly Revenue
+                        </p>
+                        <p className="text-3xl font-bold text-white">
+                          {formatCurrency(financial.yearlyRevenue)}
+                        </p>
+                      </div>
+                      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                        <p className="text-slate-400 text-sm mb-1">
+                          Total Revenue
+                        </p>
+                        <p className="text-3xl font-bold text-white">
+                          {formatCurrency(financial.totalRevenue)}
+                        </p>
+                      </div>
+                      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                        <p className="text-slate-400 text-sm mb-1">
+                          Pending Payments
+                        </p>
+                        <p className="text-3xl font-bold text-amber-400">
+                          {formatCurrency(financial.pendingPayments)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Revenue by Plan */}
+                      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                        <h3 className="text-white font-semibold mb-4">
+                          Revenue by Plan
+                        </h3>
+                        <div className="space-y-4">
+                          {financial.revenueByPlan.map((plan) => (
+                            <div key={plan.plan}>
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-white">{plan.plan}</span>
+                                <span className="text-slate-400">
+                                  {formatCurrency(plan.revenue)} (
+                                  {plan.companyCount} companies)
+                                </span>
+                              </div>
+                              <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full"
+                                  style={{ width: `${plan.percentage}%` }}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Transaction Stats */}
+                      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                        <h3 className="text-white font-semibold mb-4">
+                          Transaction Volume
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <p className="text-slate-400 text-sm">
+                              Total Volume
+                            </p>
+                            <p className="text-2xl font-bold text-white">
+                              {formatCurrency(
+                                financial.totalTransactionsVolume
+                              )}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-slate-400 text-sm">
+                              Monthly Volume
+                            </p>
+                            <p className="text-2xl font-bold text-white">
+                              {formatCurrency(
+                                financial.monthlyTransactionsVolume
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-slate-400 text-sm mb-2">
+                            Avg Transaction Size
+                          </p>
+                          <p className="text-xl font-bold text-white">
+                            {formatCurrency(financial.avgTransactionSize)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Payment History */}
+                    <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                      <h3 className="text-white font-semibold mb-4">
+                        Recent Payments
+                      </h3>
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-white/10">
+                              <th className="text-left px-4 py-3 text-slate-400 text-sm font-medium">
+                                Date
+                              </th>
+                              <th className="text-left px-4 py-3 text-slate-400 text-sm font-medium">
+                                Company
+                              </th>
+                              <th className="text-left px-4 py-3 text-slate-400 text-sm font-medium">
+                                Amount
+                              </th>
+                              <th className="text-left px-4 py-3 text-slate-400 text-sm font-medium">
+                                Method
+                              </th>
+                              <th className="text-left px-4 py-3 text-slate-400 text-sm font-medium">
+                                Reference
+                              </th>
+                              <th className="text-left px-4 py-3 text-slate-400 text-sm font-medium">
+                                Status
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {payments?.items.map((payment) => (
+                              <tr
+                                key={payment.id}
+                                className="border-b border-white/5"
+                              >
+                                <td className="px-4 py-3 text-white text-sm">
+                                  {payment.paidAt
+                                    ? formatDate(payment.paidAt)
+                                    : "Pending"}
+                                </td>
+                                <td className="px-4 py-3 text-white text-sm">
+                                  {payment.companyName}
+                                </td>
+                                <td className="px-4 py-3 text-emerald-400 text-sm font-medium">
+                                  {formatCurrency(
+                                    payment.amount,
+                                    payment.currency
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-slate-400 text-sm">
+                                  {payment.paymentMethod}
+                                </td>
+                                <td className="px-4 py-3 text-slate-400 text-sm font-mono">
+                                  {payment.reference || "-"}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span
+                                    className={`px-2 py-1 rounded text-xs font-medium ${
+                                      payment.status === "Completed"
+                                        ? "bg-emerald-500/20 text-emerald-400"
+                                        : "bg-amber-500/20 text-amber-400"
+                                    }`}
+                                  >
+                                    {payment.status}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ANALYTICS TAB */}
+                {activeTab === "analytics" && analytics && (
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-bold text-white">
+                      Analytics & Insights
+                    </h2>
+
+                    {/* User Activity Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                        <p className="text-slate-400 text-sm mb-1">
+                          Daily Active Users
+                        </p>
+                        <p className="text-3xl font-bold text-white">
+                          {formatNumber(analytics.dailyActiveUsers)}
+                        </p>
+                      </div>
+                      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                        <p className="text-slate-400 text-sm mb-1">
+                          Weekly Active Users
+                        </p>
+                        <p className="text-3xl font-bold text-white">
+                          {formatNumber(analytics.weeklyActiveUsers)}
+                        </p>
+                      </div>
+                      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                        <p className="text-slate-400 text-sm mb-1">
+                          Monthly Active Users
+                        </p>
+                        <p className="text-3xl font-bold text-white">
+                          {formatNumber(analytics.monthlyActiveUsers)}
+                        </p>
+                      </div>
+                      <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                        <p className="text-slate-400 text-sm mb-1">
+                          Avg Session Duration
+                        </p>
+                        <p className="text-3xl font-bold text-white">
+                          {Math.floor(analytics.avgSessionDurationSeconds / 60)}
+                          m
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Feature Usage */}
+                    <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                      <h3 className="text-white font-semibold mb-4">
+                        Feature Usage
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {analytics.featureUsage.map((feature) => (
+                          <div
+                            key={feature.feature}
+                            className="p-4 bg-white/5 rounded-xl"
+                          >
+                            <p className="text-white font-medium">
+                              {feature.feature}
+                            </p>
+                            <p className="text-2xl font-bold text-violet-400">
+                              {formatNumber(feature.totalUses)}
+                            </p>
+                            <p className="text-slate-400 text-sm">
+                              {feature.uniqueUsers} unique users
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {/* AUDIT TAB */}
+                {activeTab === "audit" && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-2xl font-bold text-white">
+                        Audit Logs
+                      </h2>
+                      <button
+                        onClick={handleExportAuditLogs}
+                        className="px-4 py-2 bg-violet-500 text-white rounded-lg hover:bg-violet-600 flex items-center gap-2"
+                      >
+                        <Download className="w-4 h-4" /> Export CSV
+                      </button>
+                    </div>
+
+                    {/* Filters */}
+                    <div className="flex items-center gap-3">
+                      <select
+                        value={auditAction}
+                        onChange={(e) => {
+                          setAuditAction(e.target.value);
+                          setAuditPage(1);
+                        }}
+                        className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-white"
+                      >
+                        <option value="all">All Actions</option>
+                        <option value="Create">Create</option>
+                        <option value="Update">Update</option>
+                        <option value="Delete">Delete</option>
+                        <option value="Login">Login</option>
+                      </select>
+                    </div>
+
+                    {/* Audit Logs Table */}
+                    <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-white/10">
+                              <th className="text-left px-4 py-3 text-slate-400 text-sm font-medium">
+                                Timestamp
+                              </th>
+                              <th className="text-left px-4 py-3 text-slate-400 text-sm font-medium">
+                                User
+                              </th>
+                              <th className="text-left px-4 py-3 text-slate-400 text-sm font-medium">
+                                Company
+                              </th>
+                              <th className="text-left px-4 py-3 text-slate-400 text-sm font-medium">
+                                Action
+                              </th>
+                              <th className="text-left px-4 py-3 text-slate-400 text-sm font-medium">
+                                Entity
+                              </th>
+                              <th className="text-left px-4 py-3 text-slate-400 text-sm font-medium">
+                                Details
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {auditLogs?.items.map((log) => (
+                              <tr
+                                key={log.id}
+                                className="border-b border-white/5 hover:bg-white/5"
+                              >
+                                <td className="px-4 py-3 text-white text-sm">
+                                  {formatDateTime(log.createdAt)}
+                                </td>
+                                <td className="px-4 py-3 text-white text-sm">
+                                  {log.userName || "System"}
+                                </td>
+                                <td className="px-4 py-3 text-slate-400 text-sm">
+                                  {log.companyName || "-"}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span
+                                    className={`px-2 py-1 rounded text-xs font-medium ${
+                                      log.action === "Create"
+                                        ? "bg-emerald-500/20 text-emerald-400"
+                                        : log.action === "Update"
+                                        ? "bg-blue-500/20 text-blue-400"
+                                        : log.action === "Delete"
+                                        ? "bg-red-500/20 text-red-400"
+                                        : "bg-slate-500/20 text-slate-400"
+                                    }`}
+                                  >
+                                    {log.action}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-slate-400 text-sm">
+                                  {log.entityType}
+                                </td>
+                                <td className="px-4 py-3 text-slate-400 text-sm max-w-xs truncate">
+                                  {log.newValues || "-"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Pagination */}
+                      {auditLogs && auditLogs.totalCount > 15 && (
+                        <div className="px-6 py-4 border-t border-white/10 flex items-center justify-between">
+                          <p className="text-slate-400 text-sm">
+                            Page {auditPage} of{" "}
+                            {Math.ceil(auditLogs.totalCount / 15)}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() =>
+                                setAuditPage((p) => Math.max(1, p - 1))
+                              }
+                              disabled={auditPage === 1}
+                              className="p-2 hover:bg-white/10 rounded-lg disabled:opacity-50"
+                            >
+                              <ChevronLeft className="w-5 h-5 text-white" />
+                            </button>
+                            <button
+                              onClick={() => setAuditPage((p) => p + 1)}
+                              disabled={auditPage * 15 >= auditLogs.totalCount}
+                              className="p-2 hover:bg-white/10 rounded-lg disabled:opacity-50"
+                            >
+                              <ChevronRight className="w-5 h-5 text-white" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Login History */}
+                    <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                      <h3 className="text-white font-semibold mb-4">
+                        Login History
+                      </h3>
+                      <div className="space-y-2">
+                        {loginHistory?.items.slice(0, 10).map((login) => (
+                          <div
+                            key={login.id}
+                            className={`flex items-center justify-between p-3 rounded-lg ${
+                              login.isSuccessful
+                                ? "bg-white/5"
+                                : "bg-red-500/10"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              {login.isSuccessful ? (
+                                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                              ) : (
+                                <XCircle className="w-5 h-5 text-red-400" />
+                              )}
+                              <div>
+                                <p className="text-white text-sm">
+                                  {login.userName ||
+                                    login.companyName ||
+                                    "Unknown"}
+                                </p>
+                                <p className="text-slate-400 text-xs">
+                                  {login.userRole} • {login.ipAddress}
+                                </p>
+                              </div>
+                            </div>
+                            <span className="text-slate-400 text-sm">
+                              {timeAgo(login.loginAt)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* SYSTEM TAB */}
+                {activeTab === "system" && systemHealth && (
+                  <div className="space-y-6">
+                    <h2 className="text-2xl font-bold text-white">
+                      System Health
+                    </h2>
+
+                    {/* Health Status */}
+                    <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                      <div className="flex items-center gap-4 mb-6">
+                        <div
+                          className={`w-16 h-16 rounded-2xl flex items-center justify-center ${
+                            systemHealth.overallStatus === "Healthy"
+                              ? "bg-emerald-500/20"
+                              : systemHealth.overallStatus === "Degraded"
+                              ? "bg-amber-500/20"
+                              : "bg-red-500/20"
                           }`}
                         >
-                          {item.badge}
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </nav>
-              </motion.aside>
-            </>
-          )}
-        </AnimatePresence>
+                          {systemHealth.overallStatus === "Healthy" ? (
+                            <ShieldCheck
+                              className={`w-8 h-8 ${getHealthColor(
+                                systemHealth.overallStatus
+                              )}`}
+                            />
+                          ) : (
+                            <AlertTriangle
+                              className={`w-8 h-8 ${getHealthColor(
+                                systemHealth.overallStatus
+                              )}`}
+                            />
+                          )}
+                        </div>
+                        <div>
+                          <h3
+                            className={`text-2xl font-bold ${getHealthColor(
+                              systemHealth.overallStatus
+                            )}`}
+                          >
+                            {systemHealth.overallStatus}
+                          </h3>
+                          <p className="text-slate-400">
+                            Last checked: {timeAgo(systemHealth.lastCheckedAt)}
+                          </p>
+                        </div>
+                      </div>
 
-        {/* Main Content */}
-        <main className="flex-1 p-4 lg:p-8 max-w-7xl mx-auto w-full">
-          {activeTab === "overview" && (
-            <div className="space-y-8">
-              {/* Header with Time Range Selector */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* API */}
+                        <div className="p-4 bg-white/5 rounded-xl">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Zap className="w-5 h-5 text-blue-400" />
+                            <span className="text-white font-medium">API</span>
+                            <span
+                              className={`ml-auto px-2 py-0.5 rounded text-xs ${getHealthColor(
+                                systemHealth.apiStatus
+                              )} bg-current/20`}
+                            >
+                              {systemHealth.apiStatus}
+                            </span>
+                          </div>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">
+                                Response Time
+                              </span>
+                              <span className="text-white">
+                                {systemHealth.apiResponseTimeMs}ms
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">
+                                Requests/min
+                              </span>
+                              <span className="text-white">
+                                {systemHealth.apiRequestsPerMinute}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">Error Rate</span>
+                              <span
+                                className={
+                                  systemHealth.apiErrorRate > 1
+                                    ? "text-red-400"
+                                    : "text-white"
+                                }
+                              >
+                                {systemHealth.apiErrorRate.toFixed(2)}%
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Database */}
+                        <div className="p-4 bg-white/5 rounded-xl">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Database className="w-5 h-5 text-violet-400" />
+                            <span className="text-white font-medium">
+                              Database
+                            </span>
+                            <span
+                              className={`ml-auto px-2 py-0.5 rounded text-xs ${getHealthColor(
+                                systemHealth.databaseStatus
+                              )} bg-current/20`}
+                            >
+                              {systemHealth.databaseStatus}
+                            </span>
+                          </div>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">Latency</span>
+                              <span className="text-white">
+                                {systemHealth.databaseLatencyMs}ms
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">
+                                Connections
+                              </span>
+                              <span className="text-white">
+                                {systemHealth.databaseConnections}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Server */}
+                        <div className="p-4 bg-white/5 rounded-xl">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Server className="w-5 h-5 text-emerald-400" />
+                            <span className="text-white font-medium">
+                              Server
+                            </span>
+                          </div>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">CPU</span>
+                              <span
+                                className={
+                                  systemHealth.serverCpuUsage > 80
+                                    ? "text-red-400"
+                                    : "text-white"
+                                }
+                              >
+                                {systemHealth.serverCpuUsage}%
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">Memory</span>
+                              <span
+                                className={
+                                  systemHealth.serverMemoryUsage > 80
+                                    ? "text-red-400"
+                                    : "text-white"
+                                }
+                              >
+                                {systemHealth.serverMemoryUsage}%
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-400">Disk</span>
+                              <span
+                                className={
+                                  systemHealth.serverDiskUsage > 80
+                                    ? "text-amber-400"
+                                    : "text-white"
+                                }
+                              >
+                                {systemHealth.serverDiskUsage}%
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* System Logs */}
+                    <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-white font-semibold">
+                          System Logs
+                        </h3>
+                        <select
+                          value={logLevel}
+                          onChange={(e) => {
+                            setLogLevel(e.target.value);
+                            setSystemLogsPage(1);
+                          }}
+                          className="px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-white text-sm"
+                        >
+                          <option value="all">All Levels</option>
+                          <option value="Error">Error</option>
+                          <option value="Warning">Warning</option>
+                          <option value="Info">Info</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {systemLogs?.items && systemLogs.items.length > 0 ? (
+                          systemLogs.items.map((log) => (
+                            <div
+                              key={log.id}
+                              className={`p-3 rounded-lg ${getLogLevelColor(
+                                log.level
+                              )}`}
+                            >
+                              <div className="flex items-start gap-3">
+                                <span
+                                  className={`px-2 py-0.5 rounded text-xs font-medium uppercase ${
+                                    log.level === "Error"
+                                      ? "bg-red-500 text-white"
+                                      : log.level === "Warning"
+                                      ? "bg-amber-500 text-white"
+                                      : "bg-blue-500 text-white"
+                                  }`}
+                                >
+                                  {log.level}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm text-slate-900 dark:text-white">
+                                    {log.message}
+                                  </p>
+                                  <p className="text-xs text-slate-500 mt-1">
+                                    {log.source} • {timeAgo(log.createdAt)}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-slate-400 text-center py-8">
+                            No system logs found
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          )}
+        </main>
+      </div>
+
+      {/* ==================== MODALS ==================== */}
+
+      {/* Company Details Modal */}
+      <AnimatePresence>
+        {modals.companyDetails && selectedCompany && (
+          <Modal
+            onClose={() => closeModal("companyDetails")}
+            title={selectedCompany.name}
+            size="lg"
+          >
+            <div className="space-y-6">
+              {/* Header Info */}
+              <div className="flex items-start justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-                    Dashboard Overview
-                  </h1>
-                  <p className="text-slate-600 mt-1">
-                    Welcome back, {userName} •{" "}
-                    {new Date().toLocaleDateString("en-US", {
-                      weekday: "long",
-                      month: "long",
-                      day: "numeric",
-                    })}
+                  <p className="text-slate-500">
+                    {selectedCompany.code} • {selectedCompany.ownerName}
+                  </p>
+                  <p className="text-slate-500">
+                    {selectedCompany.email} • {selectedCompany.whatsAppNumber}
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <select
-                    value={timeRange}
-                    onChange={(e) => {
-                      setTimeRange(e.target.value);
-                      toast.success(
-                        `Viewing ${
-                          e.target.value === "7days"
-                            ? "Last 7 Days"
-                            : e.target.value === "30days"
-                            ? "Last 30 Days"
-                            : "Last 90 Days"
-                        }`
-                      );
-                    }}
-                    className="px-4 py-2.5 bg-white border-2 border-slate-200 text-slate-700 font-medium focus:outline-none focus:border-violet-500 transition-all"
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
+                      selectedCompany.subscriptionStatus
+                    )}`}
                   >
-                    <option value="7days">Last 7 Days</option>
-                    <option value="30days">Last 30 Days</option>
-                    <option value="90days">Last 90 Days</option>
-                  </select>
+                    {selectedCompany.subscriptionStatus}
+                  </span>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium border ${getPlanColor(
+                      selectedCompany.subscriptionPlan
+                    )}`}
+                  >
+                    {selectedCompany.subscriptionPlan}
+                  </span>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-4 gap-4">
+                <div className="p-4 bg-slate-100 rounded-xl text-center">
+                  <p className="text-2xl font-bold">
+                    {selectedCompany.totalUsers}
+                  </p>
+                  <p className="text-sm text-slate-500">Users</p>
+                </div>
+                <div className="p-4 bg-slate-100 rounded-xl text-center">
+                  <p className="text-2xl font-bold">
+                    {selectedCompany.totalClients}
+                  </p>
+                  <p className="text-sm text-slate-500">Clients</p>
+                </div>
+                <div className="p-4 bg-slate-100 rounded-xl text-center">
+                  <p className="text-2xl font-bold">
+                    {formatCurrency(selectedCompany.monthlyVolume)}
+                  </p>
+                  <p className="text-sm text-slate-500">Monthly Volume</p>
+                </div>
+                <div className="p-4 bg-slate-100 rounded-xl text-center">
+                  <p className="text-2xl font-bold">
+                    {formatCurrency(selectedCompany.totalPaid)}
+                  </p>
+                  <p className="text-sm text-slate-500">Total Paid</p>
+                </div>
+              </div>
+
+              {/* Balances */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-slate-50 rounded-xl">
+                  <h4 className="font-medium mb-2">Cash Balances</h4>
+                  <p>
+                    KES: {formatCurrency(selectedCompany.totalCashBalanceKES)}
+                  </p>
+                  <p>
+                    USD:{" "}
+                    {formatCurrency(selectedCompany.totalCashBalanceUSD, "USD")}
+                  </p>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-xl">
+                  <h4 className="font-medium mb-2">Bank & M-Pesa</h4>
+                  <p>
+                    Bank KES:{" "}
+                    {formatCurrency(selectedCompany.totalBankBalanceKES)}
+                  </p>
+                  <p>
+                    M-Pesa: {formatCurrency(selectedCompany.totalMpesaBalance)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-4 border-t">
+                <button
+                  onClick={() => {
+                    closeModal("companyDetails");
+                    openModal("resetPassword");
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                >
+                  <Key className="w-4 h-4" /> Reset Password
+                </button>
+                <button
+                  onClick={() => {
+                    closeModal("companyDetails");
+                    openModal("updateSubscription", {
+                      plan: selectedCompany.subscriptionPlan,
+                      monthlyFee: selectedCompany.monthlyFee,
+                    });
+                  }}
+                  className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 flex items-center gap-2"
+                >
+                  <CreditCard className="w-4 h-4" /> Update Subscription
+                </button>
+                {selectedCompany.isActive ? (
                   <button
                     onClick={() => {
-                      setActiveTab("offices");
-                      toast.success("Opening office management...");
+                      closeModal("companyDetails");
+                      openModal("suspendCompany");
                     }}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:shadow-lg hover:shadow-violet-500/50 transition-all font-medium"
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2"
                   >
-                    <Plus className="w-5 h-5" />
-                    <span>Add Office</span>
+                    <Ban className="w-4 h-4" /> Suspend
                   </button>
-                </div>
-              </div>
-
-              {/* Main Stats Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {stats.map((stat, index) => (
-                  <StatCard key={index} {...stat} />
-                ))}
-              </div>
-
-              {/* Analytics Metrics */}
-              <div className="bg-white border-2 border-slate-200 p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">
-                      Performance Analytics
-                    </h3>
-                    <p className="text-sm text-slate-600">
-                      Key business metrics and trends
-                    </p>
-                  </div>
+                ) : (
                   <button
-                    onClick={() => setActiveTab("analytics")}
-                    className="text-sm font-medium text-violet-600 hover:text-violet-700 hover:underline flex items-center gap-1"
+                    onClick={() => handleActivateCompany(selectedCompany.id)}
+                    className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2"
                   >
-                    View Detailed Analytics <ArrowUpRight className="w-4 h-4" />
+                    <CheckCircle2 className="w-4 h-4" /> Activate
                   </button>
-                </div>
+                )}
+              </div>
+            </div>
+          </Modal>
+        )}
+      </AnimatePresence>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {analyticsMetrics.map((metric, idx) => (
-                    <motion.div
-                      key={idx}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.1 }}
-                      className={`p-5 border-2 transition-all group cursor-pointer ${
-                        metric.color === "emerald"
-                          ? "bg-gradient-to-br from-emerald-50 to-white border-emerald-200 hover:border-emerald-400"
-                          : metric.color === "blue"
-                          ? "bg-gradient-to-br from-blue-50 to-white border-blue-200 hover:border-blue-400"
-                          : metric.color === "violet"
-                          ? "bg-gradient-to-br from-violet-50 to-white border-violet-200 hover:border-violet-400"
-                          : "bg-gradient-to-br from-orange-50 to-white border-orange-200 hover:border-orange-400"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div
-                          className={`w-10 h-10 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform ${
-                            metric.color === "emerald"
-                              ? "bg-emerald-500 shadow-emerald-500/30"
-                              : metric.color === "blue"
-                              ? "bg-blue-500 shadow-blue-500/30"
-                              : metric.color === "violet"
-                              ? "bg-violet-500 shadow-violet-500/30"
-                              : "bg-orange-500 shadow-orange-500/30"
-                          }`}
-                        >
-                          <metric.icon className="w-5 h-5 text-white" />
-                        </div>
-                        <div
-                          className={`text-xs font-bold px-2 py-1 ${
-                            metric.color === "emerald"
-                              ? "bg-emerald-100 text-emerald-700"
-                              : metric.color === "blue"
-                              ? "bg-blue-100 text-blue-700"
-                              : metric.color === "violet"
-                              ? "bg-violet-100 text-violet-700"
-                              : "bg-orange-100 text-orange-700"
-                          }`}
-                        >
-                          {metric.value}
-                        </div>
-                      </div>
-                      <p className="text-sm font-semibold text-slate-700 mb-1">
-                        {metric.label}
-                      </p>
-                      <p
-                        className={`text-2xl font-bold mb-2 ${
-                          metric.color === "emerald"
-                            ? "text-emerald-600"
-                            : metric.color === "blue"
-                            ? "text-blue-600"
-                            : metric.color === "violet"
-                            ? "text-violet-600"
-                            : "text-orange-600"
-                        }`}
-                      >
-                        {metric.amount}
-                      </p>
-                      <div className="flex items-center gap-2 text-xs">
-                        <span
-                          className={`font-semibold ${
-                            metric.color === "emerald"
-                              ? "text-emerald-600"
-                              : metric.color === "blue"
-                              ? "text-blue-600"
-                              : metric.color === "violet"
-                              ? "text-violet-600"
-                              : "text-orange-600"
-                          }`}
-                        >
-                          {metric.change}
-                        </span>
-                        <span className="text-slate-500">{metric.period}</span>
-                      </div>
-                    </motion.div>
+      {/* Reset Password Modal */}
+      <AnimatePresence>
+        {modals.resetPassword && (
+          <Modal
+            onClose={() => closeModal("resetPassword")}
+            title="Reset Password"
+          >
+            <div className="space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="flex gap-2">
+                  <AlertTriangle className="w-5 h-5 text-amber-600" />
+                  <p className="text-sm text-amber-800">
+                    This will reset the Office User's password. They will need
+                    the new password to log in.
+                  </p>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  value={formData.password || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter new password"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  value={formData.confirmPassword || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      confirmPassword: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Confirm password"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => closeModal("resetPassword")}
+                  className="flex-1 px-4 py-2 bg-slate-200 rounded-lg hover:bg-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleResetPassword}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Reset Password
+                </button>
+              </div>
+            </div>
+          </Modal>
+        )}
+      </AnimatePresence>
+
+      {/* Suspend Company Modal */}
+      <AnimatePresence>
+        {modals.suspendCompany && (
+          <Modal
+            onClose={() => closeModal("suspendCompany")}
+            title="Suspend Company"
+          >
+            <div className="space-y-4">
+              <p className="text-slate-600">
+                Are you sure you want to suspend this company? They will lose
+                access immediately.
+              </p>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Reason for suspension
+                </label>
+                <textarea
+                  value={formData.reason || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, reason: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  rows={3}
+                  placeholder="Enter reason..."
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => closeModal("suspendCompany")}
+                  className="flex-1 px-4 py-2 bg-slate-200 rounded-lg hover:bg-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSuspendCompany}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                >
+                  Suspend Company
+                </button>
+              </div>
+            </div>
+          </Modal>
+        )}
+      </AnimatePresence>
+
+      {/* Update Subscription Modal */}
+      <AnimatePresence>
+        {modals.updateSubscription && (
+          <Modal
+            onClose={() => closeModal("updateSubscription")}
+            title="Update Subscription"
+          >
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Plan</label>
+                <select
+                  value={formData.plan || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, plan: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                >
+                  <option value="Free">Free</option>
+                  <option value="Starter">Starter</option>
+                  <option value="Professional">Professional</option>
+                  <option value="Enterprise">Enterprise</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Monthly Fee (KES)
+                </label>
+                <input
+                  type="number"
+                  value={formData.monthlyFee || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, monthlyFee: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Expires At
+                </label>
+                <input
+                  type="date"
+                  value={formData.expiresAt || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, expiresAt: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => closeModal("updateSubscription")}
+                  className="flex-1 px-4 py-2 bg-slate-200 rounded-lg hover:bg-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUpdateSubscription}
+                  className="flex-1 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
+                >
+                  Update Subscription
+                </button>
+              </div>
+            </div>
+          </Modal>
+        )}
+      </AnimatePresence>
+
+      {/* Block IP Modal */}
+      <AnimatePresence>
+        {modals.blockIP && (
+          <Modal onClose={() => closeModal("blockIP")} title="Block IP Address">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  IP Address
+                </label>
+                <input
+                  type="text"
+                  value={formData.ipAddress || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, ipAddress: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="e.g., 192.168.1.1"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Reason</label>
+                <textarea
+                  value={formData.reason || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, reason: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  rows={2}
+                  placeholder="Reason for blocking..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Block Until (optional)
+                </label>
+                <input
+                  type="datetime-local"
+                  value={formData.blockUntil || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, blockUntil: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Leave empty for permanent block
+                </p>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => closeModal("blockIP")}
+                  className="flex-1 px-4 py-2 bg-slate-200 rounded-lg hover:bg-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleBlockIP}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                >
+                  Block IP
+                </button>
+              </div>
+            </div>
+          </Modal>
+        )}
+      </AnimatePresence>
+
+      {/* Add Whitelist Modal */}
+      <AnimatePresence>
+        {modals.addWhitelist && (
+          <Modal
+            onClose={() => closeModal("addWhitelist")}
+            title="Add IP to Whitelist"
+          >
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  IP Address
+                </label>
+                <input
+                  type="text"
+                  value={formData.ipAddress || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, ipAddress: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="e.g., 192.168.1.1"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Description (optional)
+                </label>
+                <input
+                  type="text"
+                  value={formData.description || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="e.g., Office IP"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => closeModal("addWhitelist")}
+                  className="flex-1 px-4 py-2 bg-slate-200 rounded-lg hover:bg-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddWhitelist}
+                  className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                >
+                  Add to Whitelist
+                </button>
+              </div>
+            </div>
+          </Modal>
+        )}
+      </AnimatePresence>
+
+      {/* Record Payment Modal */}
+      <AnimatePresence>
+        {modals.recordPayment && (
+          <Modal
+            onClose={() => closeModal("recordPayment")}
+            title="Record Payment"
+          >
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Company
+                </label>
+                <select
+                  value={formData.companyId || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, companyId: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="">Select company...</option>
+                  {dashboard?.companies.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
                   ))}
-                </div>
+                </select>
               </div>
-
-              {/* Critical Alerts */}
-              {criticalAlerts.length > 0 && (
-                <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <AlertTriangle className="w-6 h-6 text-amber-600" />
-                    <div>
-                      <h3 className="text-lg font-bold text-amber-900">
-                        Critical Alerts
-                      </h3>
-                      <p className="text-sm text-amber-700">
-                        Requires attention
-                      </p>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    {criticalAlerts.map((alert, idx) => (
-                      <div
-                        key={idx}
-                        className="bg-white border-2 border-amber-200 p-4 flex items-start gap-4"
-                      >
-                        <div
-                          className={`w-10 h-10 flex items-center justify-center ${
-                            alert.severity === "high"
-                              ? "bg-red-100 text-red-600"
-                              : alert.severity === "medium"
-                              ? "bg-amber-100 text-amber-600"
-                              : "bg-blue-100 text-blue-600"
-                          }`}
-                        >
-                          <AlertCircle className="w-5 h-5" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
-                              <p className="font-semibold text-slate-900">
-                                {alert.title}
-                              </p>
-                              <p className="text-sm text-slate-600">
-                                {alert.message}
-                              </p>
-                            </div>
-                            <span className="text-xs text-slate-500 whitespace-nowrap">
-                              {alert.time}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Amount
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.amount || ""}
+                    onChange={(e) =>
+                      setFormData({ ...formData, amount: e.target.value })
+                    }
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="0"
+                  />
                 </div>
-              )}
-
-              {/* Two Column Layout */}
-              <div className="grid lg:grid-cols-3 gap-6">
-                {/* Activity Feed */}
-                <div className="lg:col-span-2 bg-white border-2 border-slate-200 p-6 hover:border-violet-200 transition-all">
-                  <div className="flex items-center justify-between mb-6">
-                    <div>
-                      <h3 className="text-lg font-bold text-slate-900">
-                        Recent Activity
-                      </h3>
-                      <p className="text-sm text-slate-600">
-                        Real-time platform events
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setActiveTab("audit")}
-                      className="text-sm font-medium text-violet-600 hover:text-violet-700 hover:underline"
-                    >
-                      View All →
-                    </button>
-                  </div>
-
-                  <div className="space-y-3">
-                    {recentActivities.map((activity, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleViewActivity(activity)}
-                        className="w-full flex items-start gap-4 p-4 hover:bg-violet-50 transition-all border-2 border-transparent hover:border-violet-200 text-left"
-                      >
-                        <div
-                          className={`w-10 h-10 flex items-center justify-center flex-shrink-0 ${
-                            activity.type === "success"
-                              ? "bg-emerald-100 text-emerald-600"
-                              : activity.type === "warning"
-                              ? "bg-amber-100 text-amber-600"
-                              : "bg-blue-100 text-blue-600"
-                          }`}
-                        >
-                          {activity.type === "success" ? (
-                            <CheckCircle2 className="w-5 h-5" />
-                          ) : activity.type === "warning" ? (
-                            <AlertCircle className="w-5 h-5" />
-                          ) : (
-                            <Activity className="w-5 h-5" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
-                              <p className="font-semibold text-slate-900">
-                                {activity.office}
-                              </p>
-                              <p className="text-sm text-slate-600">
-                                {activity.action}
-                              </p>
-                              <p className="text-xs text-slate-500 mt-1">
-                                by {activity.user} • {activity.details}
-                              </p>
-                            </div>
-                            <span className="text-xs text-slate-500 whitespace-nowrap">
-                              {activity.time}
-                            </span>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={() => toast.success("Exporting activity log...")}
-                    className="w-full mt-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 border-2 border-slate-200 hover:border-violet-300 transition-all flex items-center justify-center gap-2"
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Currency
+                  </label>
+                  <select
+                    value={formData.currency || "KES"}
+                    onChange={(e) =>
+                      setFormData({ ...formData, currency: e.target.value })
+                    }
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   >
-                    <Download className="w-4 h-4" />
-                    Export Activity Log
-                  </button>
-                </div>
-
-                {/* Top Performers with Enhanced Details */}
-                <div className="bg-white border-2 border-slate-200 p-6 hover:border-violet-200 transition-all">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-bold text-slate-900">
-                      Top Performers
-                    </h3>
-                    <TrendingUp className="w-5 h-5 text-emerald-500" />
-                  </div>
-
-                  <div className="space-y-4">
-                    {topOffices.map((office, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => {
-                          setActiveTab("offices");
-                          toast.success(`Viewing ${office.name}`);
-                        }}
-                        className="w-full p-4 bg-gradient-to-br from-slate-50 to-violet-50 border-2 border-violet-100 hover:border-violet-300 transition-all text-left group"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-semibold text-slate-900 text-sm group-hover:text-violet-700 transition-colors">
-                            {office.name}
-                          </span>
-                          <span
-                            className={`text-xs font-bold px-2 py-1 ${
-                              office.color === "violet"
-                                ? "bg-violet-100 text-violet-700"
-                                : office.color === "blue"
-                                ? "bg-blue-100 text-blue-700"
-                                : office.color === "emerald"
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-amber-100 text-amber-700"
-                            }`}
-                          >
-                            {office.growth}
-                          </span>
-                        </div>
-                        <p className="text-2xl font-bold text-violet-700 mb-2">
-                          {office.volume}
-                        </p>
-                        <div className="flex items-center gap-4 text-xs text-slate-600 mb-3">
-                          <span className="flex items-center gap-1">
-                            <Activity className="w-3 h-3" />
-                            {office.transactions} txns
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Users className="w-3 h-3" />
-                            {office.users} users
-                          </span>
-                        </div>
-                        <div className="w-full bg-slate-200 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full transition-all duration-1000 ${
-                              office.color === "violet"
-                                ? "bg-gradient-to-r from-violet-500 to-violet-600"
-                                : office.color === "blue"
-                                ? "bg-gradient-to-r from-blue-500 to-blue-600"
-                                : office.color === "emerald"
-                                ? "bg-gradient-to-r from-emerald-500 to-emerald-600"
-                                : "bg-gradient-to-r from-amber-500 to-amber-600"
-                            }`}
-                            style={{ width: `${90 - idx * 15}%` }}
-                          />
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-
-                  <button
-                    onClick={() => setActiveTab("offices")}
-                    className="w-full mt-4 py-3 text-sm font-medium text-violet-600 hover:bg-violet-50 border-2 border-violet-200 hover:border-violet-400 transition-all"
-                  >
-                    View All Offices →
-                  </button>
+                    <option value="KES">KES</option>
+                    <option value="USD">USD</option>
+                  </select>
                 </div>
               </div>
-
-              {/* System Health Dashboard */}
-              <div className="bg-white border-2 border-slate-200 p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">
-                      System Health
-                    </h3>
-                    <p className="text-sm text-slate-600">
-                      Real-time infrastructure monitoring
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setActiveTab("security")}
-                    className="text-sm font-medium text-violet-600 hover:text-violet-700 hover:underline flex items-center gap-1"
-                  >
-                    View Security Dashboard <ArrowUpRight className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {systemHealth.map((item, idx) => (
-                    <motion.div
-                      key={idx}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: idx * 0.05 }}
-                      className={`p-4 border-2 ${
-                        item.status === "excellent"
-                          ? "border-emerald-200 bg-gradient-to-br from-emerald-50 to-white"
-                          : item.status === "good"
-                          ? "border-blue-200 bg-gradient-to-br from-blue-50 to-white"
-                          : "border-amber-200 bg-gradient-to-br from-amber-50 to-white"
-                      } hover:border-violet-300 transition-all group cursor-pointer`}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <item.icon
-                          className={`w-5 h-5 ${
-                            item.status === "excellent"
-                              ? "text-emerald-600"
-                              : item.status === "good"
-                              ? "text-blue-600"
-                              : "text-amber-600"
-                          }`}
-                        />
-                        <div className="flex items-center gap-1 text-xs font-semibold">
-                          {getTrendIcon(item.trend)}
-                          <span
-                            className={
-                              item.trend === "down" &&
-                              item.metric.includes("Error")
-                                ? "text-emerald-600"
-                                : item.trend === "up" &&
-                                  item.metric.includes("Error")
-                                ? "text-red-600"
-                                : item.trend === "up"
-                                ? "text-emerald-600"
-                                : item.trend === "down"
-                                ? "text-blue-600"
-                                : "text-slate-600"
-                            }
-                          >
-                            {item.change}
-                          </span>
-                        </div>
-                      </div>
-                      <p className="text-sm font-semibold text-slate-700 mb-1">
-                        {item.metric}
-                      </p>
-                      <p
-                        className={`text-2xl font-bold ${
-                          item.status === "excellent"
-                            ? "text-emerald-600"
-                            : item.status === "good"
-                            ? "text-blue-600"
-                            : "text-amber-600"
-                        }`}
-                      >
-                        {item.value}
-                      </p>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-
-              {/* User Activity Breakdown */}
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="bg-white border-2 border-slate-200 p-6">
-                  <h3 className="text-lg font-bold text-slate-900 mb-6">
-                    User Distribution
-                  </h3>
-                  <div className="space-y-4">
-                    {userActivity.map((item, idx) => (
-                      <div key={idx}>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-semibold text-slate-700">
-                            {item.role}
-                          </span>
-                          <span className="text-sm font-bold text-slate-900">
-                            {item.count}
-                          </span>
-                        </div>
-                        <div className="w-full bg-slate-200 rounded-full h-3">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${item.percentage}%` }}
-                            transition={{ duration: 1, delay: idx * 0.2 }}
-                            className={`h-3 rounded-full ${
-                              item.color === "blue"
-                                ? "bg-gradient-to-r from-blue-500 to-blue-600"
-                                : item.color === "violet"
-                                ? "bg-gradient-to-r from-violet-500 to-violet-600"
-                                : "bg-gradient-to-r from-purple-500 to-purple-600"
-                            }`}
-                          />
-                        </div>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {item.percentage}% of total users
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Quick Actions */}
-                <div className="bg-gradient-to-br from-violet-50 to-purple-50 border-2 border-violet-200 p-6">
-                  <h3 className="text-lg font-bold text-violet-900 mb-6">
-                    Quick Actions
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => setActiveTab("offices")}
-                      className="p-4 bg-white border-2 border-violet-200 hover:border-violet-400 transition-all text-left group"
-                    >
-                      <Store className="w-6 h-6 text-violet-600 mb-2 group-hover:scale-110 transition-transform" />
-                      <p className="text-sm font-semibold text-slate-900">
-                        Manage Offices
-                      </p>
-                    </button>
-                    <button
-                      onClick={() => setActiveTab("users")}
-                      className="p-4 bg-white border-2 border-violet-200 hover:border-violet-400 transition-all text-left group"
-                    >
-                      <Users className="w-6 h-6 text-violet-600 mb-2 group-hover:scale-110 transition-transform" />
-                      <p className="text-sm font-semibold text-slate-900">
-                        User Management
-                      </p>
-                    </button>
-                    <button
-                      onClick={() => setActiveTab("financial")}
-                      className="p-4 bg-white border-2 border-violet-200 hover:border-violet-400 transition-all text-left group"
-                    >
-                      <DollarSign className="w-6 h-6 text-violet-600 mb-2 group-hover:scale-110 transition-transform" />
-                      <p className="text-sm font-semibold text-slate-900">
-                        Financial Reports
-                      </p>
-                    </button>
-                    <button
-                      onClick={() => setActiveTab("security")}
-                      className="p-4 bg-white border-2 border-violet-200 hover:border-violet-400 transition-all text-left group"
-                    >
-                      <Shield className="w-6 h-6 text-violet-600 mb-2 group-hover:scale-110 transition-transform" />
-                      <p className="text-sm font-semibold text-slate-900">
-                        Security Center
-                      </p>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Analytics Tab */}
-          {activeTab === "analytics" && (
-            <div className="space-y-6">
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-                  Advanced Analytics
-                </h1>
-                <p className="text-slate-600 mt-1">
-                  Comprehensive platform insights and reporting
-                </p>
+                <label className="block text-sm font-medium mb-2">
+                  Payment Method
+                </label>
+                <select
+                  value={formData.paymentMethod || "M-Pesa"}
+                  onChange={(e) =>
+                    setFormData({ ...formData, paymentMethod: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="M-Pesa">M-Pesa</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Card">Card</option>
+                </select>
               </div>
-              <div className="bg-white border-2 border-slate-200 p-12 text-center">
-                <BarChart3 className="w-16 h-16 text-violet-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-slate-900 mb-2">
-                  Advanced Analytics Dashboard
-                </h3>
-                <p className="text-slate-600 mb-4">
-                  Interactive charts, reports, and business intelligence
-                </p>
-                <p className="text-sm text-slate-500">
-                  Coming soon: Real-time charts, custom reports, and export
-                  functionality
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Users Tab */}
-          {activeTab === "users" && (
-            <div className="space-y-6">
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-                  User Management
-                </h1>
-                <p className="text-slate-600 mt-1">
-                  Manage user accounts, roles, and permissions
-                </p>
+                <label className="block text-sm font-medium mb-2">
+                  Reference (optional)
+                </label>
+                <input
+                  type="text"
+                  value={formData.reference || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, reference: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="Transaction reference"
+                />
               </div>
-              <div className="bg-white border-2 border-slate-200 p-12 text-center">
-                <Users className="w-16 h-16 text-violet-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-slate-900 mb-2">
-                  User Management System
-                </h3>
-                <p className="text-slate-600 mb-4">
-                  Create, edit, and manage user accounts across all offices
-                </p>
-                <p className="text-sm text-slate-500">
-                  Features: Role management, permissions, bulk operations
-                </p>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => closeModal("recordPayment")}
+                  className="flex-1 px-4 py-2 bg-slate-200 rounded-lg hover:bg-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRecordPayment}
+                  className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                >
+                  Record Payment
+                </button>
               </div>
             </div>
-          )}
+          </Modal>
+        )}
+      </AnimatePresence>
 
-          {/* Financial Tab */}
-          {activeTab === "financial" && (
-            <div className="space-y-6">
+      {/* Resolve Alert Modal */}
+      <AnimatePresence>
+        {modals.resolveAlert && (
+          <Modal
+            onClose={() => closeModal("resolveAlert")}
+            title="Resolve Alert"
+          >
+            <div className="space-y-4">
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-                  Financial Reports
-                </h1>
-                <p className="text-slate-600 mt-1">
-                  Comprehensive financial analytics and reporting
-                </p>
+                <label className="block text-sm font-medium mb-2">
+                  Resolution Notes (optional)
+                </label>
+                <textarea
+                  value={formData.notes || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, notes: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  rows={3}
+                  placeholder="Add notes about how this was resolved..."
+                />
               </div>
-              <div className="bg-white border-2 border-slate-200 p-12 text-center">
-                <DollarSign className="w-16 h-16 text-violet-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-slate-900 mb-2">
-                  Financial Management
-                </h3>
-                <p className="text-slate-600 mb-4">
-                  Revenue reports, transaction analytics, and financial insights
-                </p>
-                <p className="text-sm text-slate-500">
-                  Track revenue, expenses, and profitability across all offices
-                </p>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => closeModal("resolveAlert")}
+                  className="flex-1 px-4 py-2 bg-slate-200 rounded-lg hover:bg-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleResolveAlert}
+                  className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                >
+                  Resolve Alert
+                </button>
               </div>
             </div>
-          )}
+          </Modal>
+        )}
+      </AnimatePresence>
 
-          {/* Security Tab */}
-          {activeTab === "security" && (
-            <div className="space-y-6">
+      {/* Create Company Modal */}
+      <AnimatePresence>
+        {modals.createCompany && (
+          <Modal
+            onClose={() => closeModal("createCompany")}
+            title="Create New Company"
+          >
+            <div className="space-y-4">
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
-                  Security Center
-                </h1>
-                <p className="text-slate-600 mt-1">
-                  Platform security, monitoring, and compliance
-                </p>
+                <label className="block text-sm font-medium mb-2">
+                  Company Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.name || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="Enter company name"
+                />
               </div>
-              <div className="bg-white border-2 border-slate-200 p-12 text-center">
-                <Shield className="w-16 h-16 text-violet-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-slate-900 mb-2">
-                  Security Dashboard
-                </h3>
-                <p className="text-slate-600 mb-4">
-                  Monitor threats, manage access, and ensure compliance
-                </p>
-                <p className="text-sm text-slate-500">
-                  Features: Threat detection, access logs, security policies
-                </p>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Owner Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.ownerName || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, ownerName: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="Enter owner name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  WhatsApp Number *
+                </label>
+                <input
+                  type="text"
+                  value={formData.whatsAppNumber || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, whatsAppNumber: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="e.g., +254712345678"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Email (Optional)
+                </label>
+                <input
+                  type="email"
+                  value={formData.email || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="company@email.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Password *
+                </label>
+                <input
+                  type="password"
+                  value={formData.password || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="Minimum 6 characters"
+                />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => closeModal("createCompany")}
+                  className="flex-1 px-4 py-2 bg-slate-200 rounded-lg hover:bg-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateCompany}
+                  className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                >
+                  Create Company
+                </button>
               </div>
             </div>
-          )}
-
-          {activeTab === "offices" && <OfficeManagement />}
-          {activeTab === "settings" && <SystemSettings />}
-          {activeTab === "audit" && <AuditLogs />}
-        </main>
-      </div>
+          </Modal>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+
+// ==================== SUB-COMPONENTS ====================
+
+function StatCard({
+  title,
+  value,
+  subValue,
+  icon: Icon,
+  trend,
+  color,
+}: {
+  title: string;
+  value: string | number;
+  subValue?: string;
+  icon: any;
+  trend?: number;
+  color: string;
+}) {
+  const colors = {
+    violet: "from-violet-500/20 to-purple-500/20 border-violet-500/20",
+    blue: "from-blue-500/20 to-cyan-500/20 border-blue-500/20",
+    emerald: "from-emerald-500/20 to-teal-500/20 border-emerald-500/20",
+    amber: "from-amber-500/20 to-orange-500/20 border-amber-500/20",
+  };
+
+  return (
+    <div
+      className={`bg-gradient-to-br ${
+        colors[color as keyof typeof colors]
+      } backdrop-blur-xl rounded-2xl border p-6`}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className={`p-2 rounded-lg bg-${color}-500/20`}>
+          <Icon className={`w-5 h-5 text-${color}-400`} />
+        </div>
+        {trend !== undefined && (
+          <div
+            className={`flex items-center gap-1 text-sm ${
+              trend >= 0 ? "text-emerald-400" : "text-red-400"
+            }`}
+          >
+            {trend >= 0 ? (
+              <TrendingUp className="w-4 h-4" />
+            ) : (
+              <TrendingDown className="w-4 h-4" />
+            )}
+            {Math.abs(trend).toFixed(1)}%
+          </div>
+        )}
+      </div>
+      <p className="text-3xl font-bold text-white">{value}</p>
+      {subValue && <p className="text-slate-400 text-sm mt-1">{subValue}</p>}
+      <p className="text-slate-400 text-sm mt-2">{title}</p>
+    </div>
+  );
+}
+
+function Modal({
+  onClose,
+  title,
+  size = "md",
+  children,
+}: {
+  onClose: () => void;
+  title: string;
+  size?: "sm" | "md" | "lg";
+  children: React.ReactNode;
+}) {
+  const sizeClasses = {
+    sm: "max-w-sm",
+    md: "max-w-md",
+    lg: "max-w-2xl",
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        onClick={(e) => e.stopPropagation()}
+        className={`bg-white rounded-2xl shadow-2xl w-full ${sizeClasses[size]} overflow-hidden`}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b">
+          <h2 className="text-lg font-semibold">{title}</h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-slate-100 rounded-lg"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-6">{children}</div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// Missing icon import
+const XCircle = AlertCircle;
