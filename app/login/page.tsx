@@ -77,7 +77,7 @@ export default function LoginPage() {
     const errors: typeof validationErrors = {};
 
     if (userId && userId.length > 0) {
-      const userIdPattern = /^(SA|CO|CL|OU)[-]?\d{4}[-]?\d{0,3}$/i;
+      const userIdPattern = /^(SA|CO|CL|OU)[-]?\d{4}[-]?\d{0,4}$/i;
       if (!userIdPattern.test(userId) && userId.length > 3) {
         errors.userId = "Format: SA-2026-001, CO-2026-001, or CL-2026-001";
       }

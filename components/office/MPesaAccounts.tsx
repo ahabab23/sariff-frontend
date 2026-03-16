@@ -2708,6 +2708,7 @@ import {
   MpesaAgentDto,
   CreateMpesaAgentDto,
   getAccountTypeLabel,
+  apiRequest,
 } from "@/lib/api";
 
 // Updated Transaction interface to match backend StatementLineDto
@@ -3193,12 +3194,42 @@ export function MPesaAccounts() {
     setShowDeleteTransaction(true);
   };
 
-  const confirmDeleteTransaction = () => {
-    toast.success(
-      `Transaction ${selectedTransaction?.reference} deleted successfully!`
-    );
-    setShowDeleteTransaction(false);
-    setSelectedTransaction(null);
+  const confirmDeleteTransaction = async () => {
+    if (!selectedTransaction) return;
+
+    setIsSubmitting(true);
+    try {
+      const result = await apiRequest<boolean>(
+        `/api/transaction/${selectedTransaction.id}`,
+        {
+          method: "DELETE",
+          body: JSON.stringify({ reason: "User requested deletion" }),
+        }
+      );
+
+      if (result.success) {
+        toast.success(
+          `Transaction ${
+            selectedTransaction.reference || selectedTransaction.code
+          } deleted successfully!`
+        );
+        setShowDeleteTransaction(false);
+        setSelectedTransaction(null);
+        // Refresh the agent statement
+        if (selectedAgent) {
+          await fetchAgentStatement(selectedAgent.id);
+        }
+        // Also refresh stats
+        fetchStats();
+      } else {
+        toast.error(result.message || "Failed to delete transaction");
+      }
+    } catch (error) {
+      console.error("Error deleting transaction:", error);
+      toast.error("Failed to delete transaction");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Loading state
@@ -3441,7 +3472,7 @@ export function MPesaAccounts() {
               placeholder="Search by agent name, phone, store number, or agent number..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:border-cyan-500 focus:bg-white focus:shadow-lg focus:shadow-cyan-500/10 transition-all duration-300 placeholder:text-slate-400"
+              className="w-full pl-12 pr-4 py-3.5 bg-slate-50 text-slate-400 border-2 border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:border-cyan-500 focus:bg-white focus:shadow-lg focus:shadow-cyan-500/10 transition-all duration-300 placeholder:text-slate-400"
             />
           </div>
           <div className="flex gap-2">
@@ -3619,16 +3650,21 @@ export function MPesaAccounts() {
               {Math.min(indexOfLastAgent, filteredAgents.length)} of{" "}
               {filteredAgents.length} agents
             </p>
+
             <div className="flex gap-2">
               <button
                 onClick={() =>
                   setAgentsCurrentPage((prev) => Math.max(prev - 1, 1))
                 }
                 disabled={agentsCurrentPage === 1}
-                className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-100
+                   !text-slate-400 hover:!text-slate-600
+                   disabled:opacity-50 disabled:cursor-not-allowed
+                   disabled:text-slate-300 text-sm font-medium"
               >
                 Previous
               </button>
+
               <button
                 onClick={() =>
                   setAgentsCurrentPage((prev) =>
@@ -3636,7 +3672,10 @@ export function MPesaAccounts() {
                   )
                 }
                 disabled={agentsCurrentPage === totalAgentPages}
-                className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-100
+                   !text-slate-400 hover:!text-slate-600
+                   disabled:opacity-50 disabled:cursor-not-allowed
+                   disabled:text-slate-300 text-sm font-medium"
               >
                 Next
               </button>
@@ -3802,7 +3841,7 @@ export function MPesaAccounts() {
                           placeholder="Search transactions..."
                           value={transactionSearch}
                           onChange={(e) => setTransactionSearch(e.target.value)}
-                          className="w-full pl-12 pr-4 py-3 bg-white border border-slate-300 text-sm font-medium focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+                          className="w-full pl-12 pr-4 py-3 text-slate-400 bg-white border border-slate-300 text-sm font-medium focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
                         />
                       </div>
                     </div>
@@ -3816,7 +3855,7 @@ export function MPesaAccounts() {
                               e.target.value as "all" | "credit" | "debit"
                             )
                           }
-                          className="w-full pl-12 pr-4 py-3 bg-white border border-slate-300 text-sm font-medium focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all appearance-none cursor-pointer"
+                          className="w-full pl-12 pr-4 py-3 text-slate-400 bg-white border border-slate-300 text-sm font-medium focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all appearance-none cursor-pointer"
                         >
                           <option value="all">All Types</option>
                           <option value="debit">Debit (Money In)</option>
@@ -4006,7 +4045,7 @@ export function MPesaAccounts() {
                           )
                         }
                         disabled={transactionsCurrentPage === 1}
-                        className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                        className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-100 text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
                       >
                         Previous
                       </button>
@@ -4019,7 +4058,7 @@ export function MPesaAccounts() {
                         disabled={
                           transactionsCurrentPage === totalTransactionPages
                         }
-                        className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                        className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-100 text-slate-400 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
                       >
                         Next
                       </button>
@@ -5183,15 +5222,20 @@ export function MPesaAccounts() {
                     setShowDeleteTransaction(false);
                     setSelectedTransaction(null);
                   }}
-                  className="flex-1 px-6 py-3 bg-white border-2 border-slate-300 hover:bg-slate-50 hover:border-slate-400 transition-all font-bold text-slate-700 shadow-sm hover:shadow"
+                  disabled={isSubmitting}
+                  className="flex-1 px-6 py-3 bg-white border-2 border-slate-300 hover:bg-slate-50 hover:border-slate-400 transition-all font-bold text-slate-700 shadow-sm hover:shadow disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmDeleteTransaction}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white font-bold shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40 transition-all hover:scale-105 active:scale-95"
+                  disabled={isSubmitting}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white font-bold shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Delete
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : null}
+                  {isSubmitting ? "Deleting..." : "Delete"}
                 </button>
               </div>
             </motion.div>
@@ -5211,244 +5255,281 @@ export function MPesaAccounts() {
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 className="bg-white shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden flex flex-col"
               >
-                {/* Header */}
-                <div
-                  className={`relative px-6 py-4 ${
-                    selectedTransaction.relatedAccount.action === "Credit"
-                      ? "bg-gradient-to-r from-red-600 via-rose-600 to-red-700"
-                      : "bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700"
-                  }`}
-                >
-                  <div className="relative flex items-start justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className="w-12 h-12 bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 shadow-lg">
-                        {selectedTransaction.relatedAccount.action ===
-                        "Credit" ? (
-                          <ArrowDownCircle className="w-6 h-6 text-white" />
-                        ) : (
-                          <ArrowUpCircle className="w-6 h-6 text-white" />
-                        )}
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-bold text-white mb-0.5">
-                          Related Account
-                        </h2>
-                        <p
-                          className={`text-xs font-medium ${
-                            selectedTransaction.relatedAccount.action ===
-                            "Credit"
-                              ? "text-red-100"
-                              : "text-emerald-100"
-                          }`}
-                        >
-                          Double-Entry Counterpart
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setShowRelatedAccount(false)}
-                      className="p-1.5 bg-white/10 hover:bg-white/20 transition-all backdrop-blur-sm"
-                    >
-                      <X className="w-4 h-4 text-white" />
-                    </button>
-                  </div>
-                </div>
+                {/* 
+                  Logic for display:
+                  - Client accounts (accountType === 3): Credit = positive (green), Debit = negative (red)
+                  - Other accounts (Bank, MPesa, Cash): Debit = positive (green), Credit = negative (red)
+                */}
+                {(() => {
+                  const isClientAccount =
+                    selectedTransaction.relatedAccount!.accountType === 3;
+                  const action = selectedTransaction.relatedAccount!.action;
 
-                {/* Content */}
-                <div className="px-6 py-5 overflow-y-auto flex-1">
-                  <div className="space-y-4">
-                    {/* Account Type Badge */}
-                    <div className="bg-slate-50 p-4 border-2 border-slate-200">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">
-                        Account Details
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 bg-blue-100 flex items-center justify-center">
-                          <User className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="text-lg font-bold text-slate-900">
-                            {getAccountTypeLabel(
-                              selectedTransaction.relatedAccount.accountType
-                            )}
-                          </p>
-                          <p className="text-xs text-slate-600">
-                            {selectedTransaction.relatedAccount.accountName}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                  // Determine if this is a positive action for the account
+                  const isPositive = isClientAccount
+                    ? action === "Credit" // For clients: Credit increases their balance
+                    : action === "Debit"; // For assets: Debit increases their balance
 
-                    {/* Account Details */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-slate-50 p-3 border border-slate-200">
-                        <p className="text-[10px] font-bold text-slate-500 uppercase mb-1.5">
-                          Account Code
-                        </p>
-                        <p className="text-sm font-bold text-slate-900 font-mono">
-                          {selectedTransaction.relatedAccount.accountCode}
-                        </p>
-                      </div>
-                      <div className="bg-slate-50 p-3 border border-slate-200">
-                        <p className="text-[10px] font-bold text-slate-500 uppercase mb-1.5">
-                          Transaction Ref
-                        </p>
-                        <p className="text-sm font-bold text-blue-600 font-mono">
-                          {selectedTransaction.reference}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* How Account Was Affected */}
-                    <div
-                      className={`p-4 text-white ${
-                        selectedTransaction.relatedAccount.action === "Credit"
-                          ? "bg-gradient-to-br from-red-600 to-rose-600"
-                          : "bg-gradient-to-br from-emerald-600 to-teal-600"
-                      }`}
-                    >
-                      <p className="text-xs opacity-90 mb-2">
-                        How This Account Was Affected
-                      </p>
-                      <div className="flex items-center gap-2 mb-4">
-                        {selectedTransaction.relatedAccount.action ===
-                        "Credit" ? (
-                          <ArrowDownCircle className="w-6 h-6" />
-                        ) : (
-                          <ArrowUpCircle className="w-6 h-6" />
-                        )}
-                        <p className="text-2xl font-bold uppercase">
-                          {selectedTransaction.relatedAccount.action}
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 pt-3 border-t border-white/20">
-                        <div>
-                          <p className="text-[10px] opacity-75 mb-1">Amount</p>
-                          <p className="text-xl font-bold">
-                            {selectedTransaction.relatedAccount.action ===
-                            "Credit"
-                              ? "-"
-                              : "+"}
-                            KES{" "}
-                            {selectedTransaction.relatedAccount.amount.toLocaleString()}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] opacity-75 mb-1">
-                            Balance After
-                          </p>
-                          <p className="text-xl font-bold">
-                            KES{" "}
-                            {selectedTransaction.relatedAccount.balanceAfter.toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Client Info if present */}
-                    {(selectedTransaction.relatedAccount.clientCode ||
-                      selectedTransaction.relatedAccount.clientPhone) && (
-                      <div className="bg-purple-50 border border-purple-200 p-3">
-                        <p className="text-[10px] font-bold text-purple-700 uppercase mb-2">
-                          Client Information
-                        </p>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          {selectedTransaction.relatedAccount.clientCode && (
+                  return (
+                    <>
+                      {/* Header */}
+                      <div
+                        className={`relative px-6 py-4 ${
+                          isPositive
+                            ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700"
+                            : "bg-gradient-to-r from-red-600 via-rose-600 to-red-700"
+                        }`}
+                      >
+                        <div className="relative flex items-start justify-between">
+                          <div className="flex items-start gap-3">
+                            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 shadow-lg">
+                              {isPositive ? (
+                                <ArrowUpCircle className="w-6 h-6 text-white" />
+                              ) : (
+                                <ArrowDownCircle className="w-6 h-6 text-white" />
+                              )}
+                            </div>
                             <div>
-                              <p className="text-slate-500">Client Code</p>
-                              <p className="font-bold text-slate-900 font-mono">
-                                {selectedTransaction.relatedAccount.clientCode}
+                              <h2 className="text-xl font-bold text-white mb-0.5">
+                                Related Account
+                              </h2>
+                              <p className="text-xs font-medium text-white/80">
+                                Double-Entry Counterpart
                               </p>
                             </div>
-                          )}
-                          {selectedTransaction.relatedAccount.clientPhone && (
-                            <div>
-                              <p className="text-slate-500">Client Phone</p>
-                              <p className="font-bold text-slate-900">
-                                {selectedTransaction.relatedAccount.clientPhone}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Transaction Flow */}
-                    <div className="bg-gradient-to-r from-slate-50 to-blue-50 p-4 border-2 border-slate-200">
-                      <p className="text-xs font-bold text-slate-700 uppercase mb-3">
-                        Transaction Flow
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <div className="text-center">
-                          <div className="w-12 h-12 bg-emerald-100 flex items-center justify-center mx-auto mb-2">
-                            <Phone className="w-6 h-6 text-emerald-600" />
                           </div>
-                          <p className="text-xs font-bold text-slate-900">
-                            M-Pesa Account
-                          </p>
-                          <p
-                            className={`text-xs font-bold mt-1 ${
-                              selectedTransaction.thisAccountAction === "Debit"
-                                ? "text-emerald-600"
-                                : "text-red-600"
-                            }`}
+                          <button
+                            onClick={() => setShowRelatedAccount(false)}
+                            className="p-1.5 bg-white/10 hover:bg-white/20 transition-all backdrop-blur-sm"
                           >
-                            {selectedTransaction.thisAccountAction}
-                          </p>
+                            <X className="w-4 h-4 text-white" />
+                          </button>
                         </div>
+                      </div>
 
-                        <div className="flex-1 mx-4">
-                          <div className="flex items-center">
-                            <div className="flex-1 h-0.5 bg-gradient-to-r from-blue-300 to-emerald-300"></div>
-                            <ArrowRight className="w-5 h-5 text-blue-600 mx-2" />
-                            <div className="flex-1 h-0.5 bg-gradient-to-r from-emerald-300 to-blue-300"></div>
+                      {/* Content */}
+                      <div className="px-6 py-5 overflow-y-auto flex-1">
+                        <div className="space-y-4">
+                          {/* Account Type Badge */}
+                          <div className="bg-slate-50 p-4 border-2 border-slate-200">
+                            <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">
+                              Account Details
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <div className="w-10 h-10 bg-blue-100 flex items-center justify-center">
+                                {isClientAccount ? (
+                                  <User className="w-5 h-5 text-blue-600" />
+                                ) : (
+                                  <Wallet className="w-5 h-5 text-blue-600" />
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-lg font-bold text-slate-900">
+                                  {getAccountTypeLabel(
+                                    selectedTransaction.relatedAccount!
+                                      .accountType
+                                  )}
+                                </p>
+                                <p className="text-xs text-slate-600">
+                                  {
+                                    selectedTransaction.relatedAccount!
+                                      .accountName
+                                  }
+                                </p>
+                              </div>
+                            </div>
                           </div>
-                          <p className="text-[10px] text-center text-slate-600 mt-1 font-semibold">
-                            KES {selectedTransaction.amount.toLocaleString()}
-                          </p>
-                        </div>
 
-                        <div className="text-center">
+                          {/* Account Details */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-slate-50 p-3 border border-slate-200">
+                              <p className="text-[10px] font-bold text-slate-500 uppercase mb-1.5">
+                                Account Code
+                              </p>
+                              <p className="text-sm font-bold text-slate-900 font-mono">
+                                {
+                                  selectedTransaction.relatedAccount!
+                                    .accountCode
+                                }
+                              </p>
+                            </div>
+                            <div className="bg-slate-50 p-3 border border-slate-200">
+                              <p className="text-[10px] font-bold text-slate-500 uppercase mb-1.5">
+                                Transaction Ref
+                              </p>
+                              <p className="text-sm font-bold text-blue-600 font-mono">
+                                {selectedTransaction.reference}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* How Account Was Affected */}
                           <div
-                            className={`w-12 h-12 flex items-center justify-center mx-auto mb-2 ${
-                              selectedTransaction.relatedAccount.action ===
-                              "Credit"
-                                ? "bg-red-100"
-                                : "bg-emerald-100"
+                            className={`p-4 text-white ${
+                              isPositive
+                                ? "bg-gradient-to-br from-emerald-600 to-teal-600"
+                                : "bg-gradient-to-br from-red-600 to-rose-600"
                             }`}
                           >
-                            <User className="w-6 h-6 text-blue-600" />
+                            <p className="text-xs opacity-90 mb-2">
+                              How This Account Was Affected
+                            </p>
+                            <div className="flex items-center gap-2 mb-4">
+                              {isPositive ? (
+                                <ArrowUpCircle className="w-6 h-6" />
+                              ) : (
+                                <ArrowDownCircle className="w-6 h-6" />
+                              )}
+                              <p className="text-2xl font-bold uppercase">
+                                {selectedTransaction.relatedAccount!.action}
+                              </p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 pt-3 border-t border-white/20">
+                              <div>
+                                <p className="text-[10px] opacity-75 mb-1">
+                                  Amount
+                                </p>
+                                <p className="text-xl font-bold">
+                                  {isPositive ? "+" : "-"}
+                                  KES{" "}
+                                  {selectedTransaction.relatedAccount!.amount.toLocaleString()}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] opacity-75 mb-1">
+                                  Balance After
+                                </p>
+                                <p className="text-xl font-bold">
+                                  KES{" "}
+                                  {selectedTransaction.relatedAccount!.balanceAfter.toLocaleString()}
+                                </p>
+                              </div>
+                            </div>
                           </div>
-                          <p className="text-xs font-bold text-slate-900">
-                            {getAccountTypeLabel(
-                              selectedTransaction.relatedAccount.accountType
-                            )}
-                          </p>
-                          <p
-                            className={`text-xs font-bold mt-1 ${
-                              selectedTransaction.relatedAccount.action ===
-                              "Credit"
-                                ? "text-red-600"
-                                : "text-emerald-600"
-                            }`}
-                          >
-                            {selectedTransaction.relatedAccount.action}
-                          </p>
+
+                          {/* Client Info if present */}
+                          {(selectedTransaction.relatedAccount!.clientCode ||
+                            selectedTransaction.relatedAccount!
+                              .clientPhone) && (
+                            <div className="bg-purple-50 border border-purple-200 p-3">
+                              <p className="text-[10px] font-bold text-purple-700 uppercase mb-2">
+                                Client Information
+                              </p>
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                {selectedTransaction.relatedAccount!
+                                  .clientCode && (
+                                  <div>
+                                    <p className="text-slate-500">
+                                      Client Code
+                                    </p>
+                                    <p className="font-bold text-slate-900 font-mono">
+                                      {
+                                        selectedTransaction.relatedAccount!
+                                          .clientCode
+                                      }
+                                    </p>
+                                  </div>
+                                )}
+                                {selectedTransaction.relatedAccount!
+                                  .clientPhone && (
+                                  <div>
+                                    <p className="text-slate-500">
+                                      Client Phone
+                                    </p>
+                                    <p className="font-bold text-slate-900">
+                                      {
+                                        selectedTransaction.relatedAccount!
+                                          .clientPhone
+                                      }
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Transaction Flow */}
+                          <div className="bg-gradient-to-r from-slate-50 to-blue-50 p-4 border-2 border-slate-200">
+                            <p className="text-xs font-bold text-slate-700 uppercase mb-3">
+                              Transaction Flow
+                            </p>
+                            <div className="flex items-center justify-between">
+                              <div className="text-center">
+                                <div className="w-12 h-12 bg-emerald-100 flex items-center justify-center mx-auto mb-2">
+                                  <Phone className="w-6 h-6 text-emerald-600" />
+                                </div>
+                                <p className="text-xs font-bold text-slate-900">
+                                  M-Pesa Account
+                                </p>
+                                <p
+                                  className={`text-xs font-bold mt-1 ${
+                                    selectedTransaction.thisAccountAction ===
+                                    "Debit"
+                                      ? "text-emerald-600"
+                                      : "text-red-600"
+                                  }`}
+                                >
+                                  {selectedTransaction.thisAccountAction}
+                                </p>
+                              </div>
+
+                              <div className="flex-1 mx-4">
+                                <div className="flex items-center">
+                                  <div className="flex-1 h-0.5 bg-gradient-to-r from-blue-300 to-emerald-300"></div>
+                                  <ArrowRight className="w-5 h-5 text-blue-600 mx-2" />
+                                  <div className="flex-1 h-0.5 bg-gradient-to-r from-emerald-300 to-blue-300"></div>
+                                </div>
+                                <p className="text-[10px] text-center text-slate-600 mt-1 font-semibold">
+                                  KES{" "}
+                                  {selectedTransaction.amount.toLocaleString()}
+                                </p>
+                              </div>
+
+                              <div className="text-center">
+                                <div
+                                  className={`w-12 h-12 flex items-center justify-center mx-auto mb-2 ${
+                                    isPositive ? "bg-emerald-100" : "bg-red-100"
+                                  }`}
+                                >
+                                  {isClientAccount ? (
+                                    <User className="w-6 h-6 text-blue-600" />
+                                  ) : (
+                                    <Wallet className="w-6 h-6 text-blue-600" />
+                                  )}
+                                </div>
+                                <p className="text-xs font-bold text-slate-900">
+                                  {getAccountTypeLabel(
+                                    selectedTransaction.relatedAccount!
+                                      .accountType
+                                  )}
+                                </p>
+                                <p
+                                  className={`text-xs font-bold mt-1 ${
+                                    isPositive
+                                      ? "text-emerald-600"
+                                      : "text-red-600"
+                                  }`}
+                                >
+                                  {selectedTransaction.relatedAccount!.action}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Footer */}
-                <div className="px-6 py-4 bg-gradient-to-r from-slate-50 to-blue-50 border-t-2 border-slate-200">
-                  <button
-                    onClick={() => setShowRelatedAccount(false)}
-                    className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 text-white font-bold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all hover:scale-105 active:scale-95"
-                  >
-                    Close
-                  </button>
-                </div>
+                      {/* Footer */}
+                      <div className="px-6 py-4 bg-gradient-to-r from-slate-50 to-blue-50 border-t-2 border-slate-200">
+                        <button
+                          onClick={() => setShowRelatedAccount(false)}
+                          className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 text-white font-bold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all hover:scale-105 active:scale-95"
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </>
+                  );
+                })()}
               </motion.div>
             </div>
           )}

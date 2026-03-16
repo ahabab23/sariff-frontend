@@ -80,6 +80,13 @@ interface ConvertClientDto {
   password: string;
 }
 
+// DTO for updating a transaction
+interface UpdateTransactionDto {
+  description?: string;
+  notes?: string;
+  reference?: string;
+}
+
 // Local transaction type for display (matches backend StatementLineDto)
 interface DisplayTransaction {
   id: string;
@@ -138,6 +145,13 @@ export function ClientManagement() {
   const [showDeleteTransaction, setShowDeleteTransaction] = useState(false);
   const [showRelatedAccount, setShowRelatedAccount] = useState(false);
 
+  // Transaction edit form state
+  const [editTransactionForm, setEditTransactionForm] = useState({
+    description: "",
+    notes: "",
+    reference: "",
+  });
+
   // Transaction filters
   const [transactionSearch, setTransactionSearch] = useState("");
   const [transactionFilter, setTransactionFilter] = useState<
@@ -170,7 +184,7 @@ export function ClientManagement() {
 
   // Transaction pagination
   const [transactionsCurrentPage, setTransactionsCurrentPage] = useState(1);
-  const [transactionsPerPage] = useState(2);
+  const [transactionsPerPage] = useState(30);
 
   // Form states
   const [formData, setFormData] = useState<Partial<CreateClientDto>>({
@@ -193,20 +207,22 @@ export function ClientManagement() {
   });
 
   const [convertPassword, setConvertPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
 
   // ==============================================
   // API Functions
   // ==============================================
-
   const fetchClients = useCallback(async () => {
     setIsLoading(true);
     try {
       const filter = activeTab === "all" ? undefined : activeTab;
+
+      // ✅ normalize search term (case-insensitive + remove extra spaces)
+      const normalizedSearch = searchTerm?.trim().toLowerCase() || undefined;
+
       const result = await getClients(
         currentPage,
         pageSize,
-        searchTerm || undefined,
+        normalizedSearch,
         filter
       );
 
@@ -224,7 +240,6 @@ export function ClientManagement() {
       setIsLoading(false);
     }
   }, [currentPage, pageSize, searchTerm, activeTab]);
-
   const fetchClientStats = useCallback(async () => {
     try {
       const result = await getClientStats();
@@ -382,7 +397,7 @@ export function ClientManagement() {
       const dto: UpdateClientDto = {
         fullName: editFormData.fullName || undefined,
         email: editFormData.email || undefined,
-        whatsAppNumber: editFormData.whatsAppNumber || undefined, // Add this line
+        whatsAppNumber: editFormData.whatsAppNumber || undefined,
         idPassport: editFormData.idPassport || undefined,
         isActive: editFormData.isActive,
       };
@@ -476,7 +491,7 @@ export function ClientManagement() {
     setEditFormData({
       fullName: client.fullName,
       email: client.email || "",
-      whatsAppNumber: client.whatsAppNumber || "", // Add this line
+      whatsAppNumber: client.whatsAppNumber || "",
       idPassport: client.idPassport || "",
       isActive: client.isActive,
     });
@@ -507,12 +522,61 @@ export function ClientManagement() {
 
   const handleEditTransaction = (transaction: DisplayTransaction) => {
     setSelectedTransaction(transaction);
+    // Initialize the edit form with current values
+    setEditTransactionForm({
+      description: transaction.description || "",
+      notes: transaction.notes || "",
+      reference: transaction.reference || "",
+    });
     setShowEditTransaction(true);
   };
 
   const handleDeleteTransaction = (transaction: DisplayTransaction) => {
     setSelectedTransaction(transaction);
     setShowDeleteTransaction(true);
+  };
+
+  // NEW: Actually update the transaction via API
+  const confirmUpdateTransaction = async () => {
+    if (!selectedTransaction) return;
+
+    setIsSubmitting(true);
+    try {
+      const dto: UpdateTransactionDto = {
+        description: editTransactionForm.description || undefined,
+        notes: editTransactionForm.notes || undefined,
+        reference: editTransactionForm.reference || undefined,
+      };
+
+      const result = await apiRequest<any>(
+        `/api/transaction/${selectedTransaction.id}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(dto),
+        }
+      );
+
+      if (result.success) {
+        toast.success(
+          `Transaction ${
+            selectedTransaction.reference || selectedTransaction.code
+          } updated successfully`
+        );
+        setShowEditTransaction(false);
+        setSelectedTransaction(null);
+        // Refresh transactions
+        if (selectedClient) {
+          await fetchClientStatement(selectedClient.id);
+        }
+      } else {
+        toast.error(result.message || "Failed to update transaction");
+      }
+    } catch (error) {
+      console.error("Error updating transaction:", error);
+      toast.error("Failed to update transaction");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const confirmDeleteTransaction = async () => {
@@ -991,45 +1055,6 @@ export function ClientManagement() {
           </div>
         </motion.div>
 
-        {/* Clients with Debit Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          whileHover={{ scale: 1.02 }}
-          className="bg-white border-2 border-slate-200 shadow-lg hover:shadow-xl hover:border-red-300 transition-all duration-300 cursor-pointer group"
-          onClick={() => setActiveTab("debit")}
-        >
-          <div className="p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="w-12 h-12 bg-red-100 flex items-center justify-center border-2 border-red-200 group-hover:bg-red-200 transition-colors">
-                <AlertCircle className="w-6 h-6 text-red-600" />
-              </div>
-              <div className="bg-red-100 px-3 py-1 border border-red-200">
-                <span className="text-[10px] font-bold text-red-700 uppercase tracking-wide">
-                  Debit
-                </span>
-              </div>
-            </div>
-            <p className="text-[10px] text-slate-500 mb-1 uppercase tracking-wider font-bold">
-              Clients With Debit
-            </p>
-            <p className="text-3xl font-bold text-red-600 tracking-tight mb-4">
-              {stats.clientsWithDebit}
-            </p>
-            <div className="pt-3 border-t-2 border-slate-100 space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] text-slate-500 font-semibold">
-                  Negative Balances
-                </span>
-                <span className="text-sm font-bold text-red-600">
-                  {stats.clientsWithDebit} clients
-                </span>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
         {/* Clients with Credit Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -1037,7 +1062,7 @@ export function ClientManagement() {
           transition={{ delay: 0.2 }}
           whileHover={{ scale: 1.02 }}
           className="bg-white border-2 border-slate-200 shadow-lg hover:shadow-xl hover:border-emerald-300 transition-all duration-300 cursor-pointer group"
-          onClick={() => setActiveTab("credit")}
+          onClick={() => setActiveTab("debit")}
         >
           <div className="p-6">
             <div className="flex items-start justify-between mb-4">
@@ -1054,7 +1079,7 @@ export function ClientManagement() {
               Clients With Credit
             </p>
             <p className="text-3xl font-bold text-emerald-600 tracking-tight mb-4">
-              {stats.clientsWithCredit}
+              {stats.clientsWithDebit}
             </p>
             <div className="pt-3 border-t-2 border-slate-100 space-y-1">
               <div className="flex items-center justify-between">
@@ -1062,6 +1087,45 @@ export function ClientManagement() {
                   Positive Balances
                 </span>
                 <span className="text-sm font-bold text-emerald-600">
+                  {stats.clientsWithDebit} clients
+                </span>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Clients with Debit Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          whileHover={{ scale: 1.02 }}
+          className="bg-white border-2 border-slate-200 shadow-lg hover:shadow-xl hover:border-red-300 transition-all duration-300 cursor-pointer group"
+          onClick={() => setActiveTab("credit")}
+        >
+          <div className="p-6">
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-12 h-12 bg-red-100 flex items-center justify-center border-2 border-red-200 group-hover:bg-red-200 transition-colors">
+                <AlertCircle className="w-6 h-6 text-red-600" />
+              </div>
+              <div className="bg-red-100 px-3 py-1 border border-red-200">
+                <span className="text-[10px] font-bold text-red-700 uppercase tracking-wide">
+                  Debit
+                </span>
+              </div>
+            </div>
+            <p className="text-[10px] text-slate-500 mb-1 uppercase tracking-wider font-bold">
+              Clients With Debit
+            </p>
+            <p className="text-3xl font-bold text-red-600 tracking-tight mb-4">
+              {stats.clientsWithCredit}
+            </p>
+            <div className="pt-3 border-t-2 border-slate-100 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-slate-500 font-semibold">
+                  Negative Balances
+                </span>
+                <span className="text-sm font-bold text-red-600">
                   {stats.clientsWithCredit} clients
                 </span>
               </div>
@@ -1095,15 +1159,17 @@ export function ClientManagement() {
           onClick={() => setActiveTab("debit")}
           className={`flex items-center gap-2 px-6 py-3 font-semibold transition-all duration-300 ${
             activeTab === "debit"
-              ? "bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg shadow-red-500/30"
-              : "bg-white text-slate-600 hover:bg-red-50 border-2 border-slate-200 hover:border-red-300"
+              ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/30"
+              : "bg-white text-slate-600 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-300"
           }`}
         >
-          <AlertCircle className="w-5 h-5" />
-          With Debit
+          <CheckCircle className="w-5 h-5" />
+          With Credit
           <span
             className={`px-2 py-0.5 text-xs font-bold ${
-              activeTab === "debit" ? "bg-white/20" : "bg-red-100 text-red-700"
+              activeTab === "debit"
+                ? "bg-white/20"
+                : "bg-emerald-100 text-emerald-700"
             }`}
           >
             {stats.clientsWithDebit}
@@ -1114,17 +1180,15 @@ export function ClientManagement() {
           onClick={() => setActiveTab("credit")}
           className={`flex items-center gap-2 px-6 py-3 font-semibold transition-all duration-300 ${
             activeTab === "credit"
-              ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/30"
-              : "bg-white text-slate-600 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-300"
+              ? "bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg shadow-red-500/30"
+              : "bg-white text-slate-600 hover:bg-red-50 border-2 border-slate-200 hover:border-red-300"
           }`}
         >
-          <CheckCircle className="w-5 h-5" />
-          With Credit
+          <AlertCircle className="w-5 h-5" />
+          With Debit
           <span
             className={`px-2 py-0.5 text-xs font-bold ${
-              activeTab === "credit"
-                ? "bg-white/20"
-                : "bg-emerald-100 text-emerald-700"
+              activeTab === "credit" ? "bg-white/20" : "bg-red-100 text-red-700"
             }`}
           >
             {stats.clientsWithCredit}
@@ -1141,7 +1205,7 @@ export function ClientManagement() {
               type="text"
               placeholder="Search by name, phone, code..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
               className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 border-slate-200 text-sm font-medium focus:outline-none text-slate-600
                focus:border-blue-500 focus:bg-white focus:shadow-lg focus:shadow-blue-500/10 transition-all duration-300 placeholder:text-slate-400"
             />
@@ -2131,7 +2195,17 @@ export function ClientManagement() {
                       </div>
                     </div>
                   </div>
-
+                  {/* Notes */}
+                  {selectedTransaction.notes && (
+                    <div className="bg-amber-50 p-2 sm:p-3 border border-amber-200 rounded-lg">
+                      <p className="text-[9px] sm:text-[10px] font-bold text-amber-700 uppercase">
+                        Notes
+                      </p>
+                      <p className="text-xs sm:text-sm text-slate-900">
+                        {selectedTransaction.notes}
+                      </p>
+                    </div>
+                  )}
                   {/* Transaction Type Badge */}
                   <div
                     className={`flex items-center justify-between p-3 border-2 ${
@@ -2220,7 +2294,7 @@ export function ClientManagement() {
       </AnimatePresence>
 
       {/* ============================================== */}
-      {/* EDIT TRANSACTION MODAL */}
+      {/* EDIT TRANSACTION MODAL - FIXED */}
       {/* ============================================== */}
       <AnimatePresence>
         {showEditTransaction && selectedTransaction && (
@@ -2266,7 +2340,7 @@ export function ClientManagement() {
                       </label>
                       <input
                         type="text"
-                        defaultValue={
+                        value={
                           selectedTransaction.code || selectedTransaction.id
                         }
                         disabled
@@ -2279,7 +2353,13 @@ export function ClientManagement() {
                       </label>
                       <input
                         type="text"
-                        defaultValue={selectedTransaction.reference}
+                        value={editTransactionForm.reference}
+                        onChange={(e) =>
+                          setEditTransactionForm({
+                            ...editTransactionForm,
+                            reference: e.target.value,
+                          })
+                        }
                         className="w-full px-4 py-3 bg-white border-2 border-slate-200 text-slate-900 font-mono text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
                       />
                     </div>
@@ -2291,7 +2371,13 @@ export function ClientManagement() {
                     </label>
                     <input
                       type="text"
-                      defaultValue={selectedTransaction.description}
+                      value={editTransactionForm.description}
+                      onChange={(e) =>
+                        setEditTransactionForm({
+                          ...editTransactionForm,
+                          description: e.target.value,
+                        })
+                      }
                       className="w-full px-4 py-3 bg-white border-2 border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
                     />
                   </div>
@@ -2299,52 +2385,77 @@ export function ClientManagement() {
                   <div className="grid grid-cols-3 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-2 uppercase">
-                        Type *
-                      </label>
-                      <select
-                        defaultValue={selectedTransaction.transactionType}
-                        className="w-full px-4 py-3 bg-white border-2 border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none cursor-pointer"
-                      >
-                        <option value={TransactionType.Credit}>Credit</option>
-                        <option value={TransactionType.Debit}>Debit</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-2 uppercase">
-                        Currency *
-                      </label>
-                      <select
-                        defaultValue={selectedTransaction.currency}
-                        className="w-full px-4 py-3 bg-white border-2 border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none cursor-pointer"
-                      >
-                        <option value={Currency.KES}>KES</option>
-                        <option value={Currency.USD}>USD</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-2 uppercase">
-                        Amount *
+                        Type
                       </label>
                       <input
-                        type="number"
-                        defaultValue={selectedTransaction.amount}
-                        className="w-full px-4 py-3 bg-white border-2 border-slate-200 text-slate-900 text-sm font-bold focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                        type="text"
+                        value={
+                          selectedTransaction.thisAccountAction ||
+                          (selectedTransaction.transactionType ===
+                          TransactionType.Credit
+                            ? "Credit"
+                            : "Debit")
+                        }
+                        disabled
+                        className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 text-slate-500 text-sm cursor-not-allowed"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-2 uppercase">
+                        Currency
+                      </label>
+                      <input
+                        type="text"
+                        value={
+                          selectedTransaction.currency === Currency.KES
+                            ? "KES"
+                            : "USD"
+                        }
+                        disabled
+                        className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 text-slate-500 text-sm cursor-not-allowed"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-2 uppercase">
+                        Amount
+                      </label>
+                      <input
+                        type="text"
+                        value={(
+                          selectedTransaction.amount ?? 0
+                        ).toLocaleString()}
+                        disabled
+                        className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 text-slate-500 text-sm font-bold cursor-not-allowed"
                       />
                     </div>
                   </div>
 
-                  {selectedTransaction.notes && (
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-2 uppercase">
-                        Notes
-                      </label>
-                      <textarea
-                        defaultValue={selectedTransaction.notes}
-                        rows={3}
-                        className="w-full px-4 py-3 bg-white border-2 border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all resize-none"
-                      />
-                    </div>
-                  )}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-2 uppercase">
+                      Notes
+                    </label>
+                    <textarea
+                      value={editTransactionForm.notes}
+                      onChange={(e) =>
+                        setEditTransactionForm({
+                          ...editTransactionForm,
+                          notes: e.target.value,
+                        })
+                      }
+                      rows={3}
+                      className="w-full px-4 py-3 bg-white border-2 border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all resize-none"
+                      placeholder="Add notes about this transaction..."
+                    />
+                  </div>
+
+                  {/* Info Box */}
+                  <div className="bg-amber-50 border border-amber-200 p-3">
+                    <p className="text-xs text-amber-700">
+                      <strong>Note:</strong> You can only edit the description,
+                      reference, and notes. Amount, currency, and type cannot be
+                      changed after creation.
+                    </p>
+                  </div>
                 </form>
               </div>
 
@@ -2358,15 +2469,15 @@ export function ClientManagement() {
                   Cancel
                 </button>
                 <button
-                  type="submit"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    toast.success("Transaction updated successfully!");
-                    setShowEditTransaction(false);
-                  }}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 text-white font-bold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all hover:scale-105 active:scale-95"
+                  type="button"
+                  onClick={confirmUpdateTransaction}
+                  disabled={isSubmitting}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 text-white font-bold shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Save Changes
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : null}
+                  {isSubmitting ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </motion.div>
@@ -2627,8 +2738,8 @@ export function ClientManagement() {
                           <p className="text-xl font-bold">
                             {selectedTransaction.relatedAccount.action ===
                             "Credit"
-                              ? "+"
-                              : "-"}
+                              ? "-"
+                              : "+"}
                             {selectedTransaction.relatedAccount.currency ===
                             Currency.USD
                               ? "$"
@@ -3201,7 +3312,6 @@ export function ClientManagement() {
               </div>
 
               {/* Form Content */}
-              {/* Form Content */}
               <form
                 onSubmit={handleUpdateClient}
                 className="px-6 py-5 overflow-y-auto flex-1"
@@ -3283,28 +3393,6 @@ export function ClientManagement() {
                       />
                     </div>
                   </div>
-
-                  {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-slate-400" />
-                        Status
-                      </label>
-                      <select
-                        value={editFormData.isActive ? "active" : "inactive"}
-                        onChange={(e) =>
-                          setEditFormData({
-                            ...editFormData,
-                            isActive: e.target.value === "active",
-                          })
-                        }
-                        className="w-full px-4 py-3.5 bg-white border-2 border-slate-200 text-slate-900 font-medium focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none cursor-pointer"
-                      >
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                      </select>
-                    </div>
-                  </div> */}
 
                   {/* Convert to Permanent (for Temporary clients) */}
                   {selectedClient.clientType === ClientType.Temporary && (
@@ -3392,7 +3480,6 @@ export function ClientManagement() {
             >
               {/* Header */}
               <div className="relative bg-gradient-to-r from-red-600 via-rose-600 to-red-700 px-6 py-5 overflow-hidden">
-                {/* Background Pattern */}
                 <div className="absolute inset-0 opacity-10">
                   <div
                     className="absolute inset-0"
@@ -3402,8 +3489,6 @@ export function ClientManagement() {
                     }}
                   ></div>
                 </div>
-
-                {/* Decorative Accents */}
                 <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
                 <div className="absolute -bottom-8 -left-8 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
 
@@ -3413,7 +3498,6 @@ export function ClientManagement() {
                       <div className="w-14 h-14 bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/30 shadow-lg">
                         <Trash2 className="w-7 h-7 text-white" />
                       </div>
-                      {/* Warning Pulse */}
                       <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center border-2 border-white">
                         <span className="text-[8px] font-bold text-amber-900">
                           !
@@ -3527,7 +3611,6 @@ export function ClientManagement() {
               {/* Warning Section */}
               <div className="px-6 py-4 bg-white">
                 <div className="relative overflow-hidden bg-gradient-to-br from-red-50 to-rose-50 border-2 border-red-200 p-4">
-                  {/* Warning Icon Background */}
                   <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-red-100 rounded-full opacity-50"></div>
 
                   <div className="relative z-10 flex items-start gap-3">

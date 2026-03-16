@@ -1,1681 +1,3 @@
-// import { useState, useEffect } from "react";
-// import { motion, AnimatePresence } from "framer-motion";
-// import {
-//   Settings,
-//   DollarSign,
-//   FileText,
-//   Bell,
-//   Shield,
-//   Save,
-//   User,
-//   Camera,
-//   Upload,
-//   Building2,
-//   Key,
-//   Lock,
-//   Eye,
-//   EyeOff,
-//   Search,
-//   X,
-//   CheckCircle,
-//   XCircle,
-//   Image as ImageIcon,
-//   Trash2,
-//   Edit,
-//   RefreshCw,
-// } from "lucide-react";
-// import { toast } from "sonner";
-// import { projectId, publicAnonKey } from "../../utils/supabase/info";
-
-// interface OfficeSettingsProps {
-//   userName: string;
-//   profileImage: string | null;
-//   onProfileImageChange: (imageUrl: string | null) => void;
-// }
-
-// export function OfficeSettings({
-//   userName,
-//   profileImage,
-//   onProfileImageChange,
-// }: OfficeSettingsProps) {
-//   // Company Settings
-//   const [companyName, setCompanyName] = useState("Sarif Money Exchange");
-//   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
-//   const [officeName, setOfficeName] = useState("Nairobi Central Office");
-//   const [officeEmail, setOfficeEmail] = useState("nairobi@sarifexchange.com");
-//   const [officePhone, setOfficePhone] = useState("+254 712 345 678");
-//   const [defaultCurrency, setDefaultCurrency] = useState("KES");
-//   const [autoReconcile, setAutoReconcile] = useState(true);
-//   const [emailNotifications, setEmailNotifications] = useState(true);
-
-//   // Client Password Management
-//   const [clients, setClients] = useState<any[]>([]);
-//   const [selectedClient, setSelectedClient] = useState<any | null>(null);
-//   const [showPasswordModal, setShowPasswordModal] = useState(false);
-//   const [newPassword, setNewPassword] = useState("");
-//   const [confirmPassword, setConfirmPassword] = useState("");
-//   const [showPassword, setShowPassword] = useState(false);
-//   const [searchTerm, setSearchTerm] = useState("");
-//   const [loading, setLoading] = useState(false);
-
-//   useEffect(() => {
-//     fetchClients();
-//   }, []);
-
-//   const fetchClients = async () => {
-//     try {
-//       setLoading(true);
-//       const response = await fetch(
-//         `https://${projectId}.supabase.co/functions/v1/make-server-32ed8237/accounts`,
-//         {
-//           headers: {
-//             Authorization: `Bearer ${publicAnonKey}`,
-//           },
-//         }
-//       );
-//       const result = await response.json();
-//       if (result.success) {
-//         const clientAccounts = result.accounts.filter(
-//           (acc: any) => acc.type === "Client"
-//         );
-//         setClients(clientAccounts);
-//       }
-//     } catch (error) {
-//       console.error("Error fetching clients:", error);
-//       toast.error("Failed to load clients");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleSaveSettings = () => {
-//     toast.success("Settings saved successfully!");
-//   };
-
-//   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-//     const file = event.target.files?.[0];
-//     if (file) {
-//       const reader = new FileReader();
-//       reader.onloadend = () => {
-//         const imageUrl = reader.result as string;
-//         onProfileImageChange(imageUrl);
-//         toast.success("Profile picture updated successfully!");
-//       };
-//       reader.readAsDataURL(file);
-//     }
-//   };
-
-//   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-//     const file = event.target.files?.[0];
-//     if (file) {
-//       // Check file size (max 5MB)
-//       if (file.size > 5 * 1024 * 1024) {
-//         toast.error("File size must be less than 5MB");
-//         return;
-//       }
-
-//       const reader = new FileReader();
-//       reader.onloadend = () => {
-//         const imageUrl = reader.result as string;
-//         setCompanyLogo(imageUrl);
-//         toast.success("Company logo uploaded successfully!");
-//       };
-//       reader.readAsDataURL(file);
-//     }
-//   };
-
-//   const handleRemoveImage = () => {
-//     onProfileImageChange(null);
-//     toast.success("Profile picture removed!");
-//   };
-
-//   const handleRemoveLogo = () => {
-//     setCompanyLogo(null);
-//     toast.success("Company logo removed!");
-//   };
-
-//   const handleSetPassword = (client: any) => {
-//     setSelectedClient(client);
-//     setNewPassword("");
-//     setConfirmPassword("");
-//     setShowPasswordModal(true);
-//   };
-
-//   const handlePasswordSubmit = () => {
-//     if (!newPassword || !confirmPassword) {
-//       toast.error("Please fill in all password fields");
-//       return;
-//     }
-
-//     if (newPassword.length < 6) {
-//       toast.error("Password must be at least 6 characters long");
-//       return;
-//     }
-
-//     if (newPassword !== confirmPassword) {
-//       toast.error("Passwords do not match");
-//       return;
-//     }
-
-//     // In production, this would make an API call to set the password
-//     toast.success(`Password set successfully for ${selectedClient?.name}`);
-//     setShowPasswordModal(false);
-//     setNewPassword("");
-//     setConfirmPassword("");
-//     setSelectedClient(null);
-//   };
-
-//   const generateRandomPassword = () => {
-//     const chars =
-//       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-//     let password = "";
-//     for (let i = 0; i < 12; i++) {
-//       password += chars.charAt(Math.floor(Math.random() * chars.length));
-//     }
-//     setNewPassword(password);
-//     setConfirmPassword(password);
-//     toast.success("Random password generated!");
-//   };
-
-//   const filteredClients = clients.filter(
-//     (client) =>
-//       client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       client.id.toLowerCase().includes(searchTerm.toLowerCase())
-//   );
-
-//   return (
-//     <motion.div
-//       initial={{ opacity: 0, y: 20 }}
-//       animate={{ opacity: 1, y: 0 }}
-//       className="space-y-6"
-//     >
-//       {/* Header */}
-//       <div>
-//         <h2 className="text-2xl font-bold text-slate-900">Office Settings</h2>
-//         <p className="text-sm text-slate-600 mt-1">
-//           Manage your office configuration, company branding, and client access
-//         </p>
-//       </div>
-
-//       {/* Company Branding Section */}
-//       <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 p-6 shadow-lg">
-//         <div className="flex items-center gap-3 mb-6">
-//           <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
-//             <Building2 className="w-5 h-5 text-white" />
-//           </div>
-//           <div>
-//             <h3 className="text-lg font-bold text-slate-900">
-//               Company Branding
-//             </h3>
-//             <p className="text-sm text-slate-600">
-//               Customize your company name and logo
-//             </p>
-//           </div>
-//         </div>
-
-//         <div className="space-y-6">
-//           {/* Company Name */}
-//           <div>
-//             <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-//               Company Name
-//             </label>
-//             <input
-//               type="text"
-//               value={companyName}
-//               onChange={(e) => setCompanyName(e.target.value)}
-//               placeholder="Enter your company name"
-//               className="w-full px-4 py-3 border-2 border-purple-200 focus:border-purple-500 outline-none bg-white"
-//             />
-//             <p className="text-xs text-slate-500 mt-1">
-//               This will appear on invoices, reports, and client communications
-//             </p>
-//           </div>
-
-//           {/* Company Logo */}
-//           <div>
-//             <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-//               Company Logo
-//             </label>
-
-//             {companyLogo ? (
-//               <div className="flex items-start gap-6">
-//                 <div className="relative group">
-//                   <img
-//                     src={companyLogo}
-//                     alt="Company Logo"
-//                     className="w-40 h-40 object-contain bg-white p-4 border-2 border-purple-200 shadow-lg"
-//                   />
-//                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-//                     <ImageIcon className="w-8 h-8 text-white" />
-//                   </div>
-//                 </div>
-
-//                 <div className="flex-1 space-y-3">
-//                   <div className="bg-white p-4 border-2 border-purple-200">
-//                     <p className="text-sm font-medium text-slate-900 mb-1">
-//                       Logo uploaded successfully!
-//                     </p>
-//                     <p className="text-xs text-slate-600">
-//                       This logo will appear on all your invoices and documents
-//                     </p>
-//                   </div>
-
-//                   <div className="flex gap-3">
-//                     <label className="cursor-pointer">
-//                       <input
-//                         type="file"
-//                         accept="image/*"
-//                         onChange={handleLogoUpload}
-//                         className="hidden"
-//                       />
-//                       <div className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold transition-all">
-//                         <Upload className="w-4 h-4" />
-//                         Replace Logo
-//                       </div>
-//                     </label>
-
-//                     <button
-//                       onClick={handleRemoveLogo}
-//                       className="flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-bold transition-all"
-//                     >
-//                       <Trash2 className="w-4 h-4" />
-//                       Remove
-//                     </button>
-//                   </div>
-//                 </div>
-//               </div>
-//             ) : (
-//               <div className="border-2 border-dashed border-purple-300 p-8 text-center bg-white">
-//                 <ImageIcon className="w-12 h-12 text-purple-400 mx-auto mb-4" />
-//                 <p className="text-slate-600 mb-4">No logo uploaded yet</p>
-//                 <label className="cursor-pointer">
-//                   <input
-//                     type="file"
-//                     accept="image/*"
-//                     onChange={handleLogoUpload}
-//                     className="hidden"
-//                   />
-//                   <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold hover:shadow-lg transition-all">
-//                     <Upload className="w-5 h-5" />
-//                     Upload Company Logo
-//                   </div>
-//                 </label>
-//                 <p className="text-xs text-slate-500 mt-3">
-//                   Recommended: PNG or JPG, transparent background, 400x400px
-//                   minimum. Max 5MB
-//                 </p>
-//               </div>
-//             )}
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Profile Picture Section */}
-//       <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 p-6 shadow-lg">
-//         <div className="flex items-center gap-3 mb-6">
-//           <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
-//             <User className="w-5 h-5 text-white" />
-//           </div>
-//           <div>
-//             <h3 className="text-lg font-bold text-slate-900">
-//               Profile Picture
-//             </h3>
-//             <p className="text-sm text-slate-600">
-//               Upload your personal profile photo
-//             </p>
-//           </div>
-//         </div>
-
-//         <div className="flex flex-col sm:flex-row items-center gap-6">
-//           {/* Avatar Preview */}
-//           <div className="relative group">
-//             {profileImage ? (
-//               <img
-//                 src={profileImage}
-//                 alt={userName}
-//                 className="w-32 h-32 object-cover shadow-xl ring-4 ring-blue-500/30"
-//               />
-//             ) : (
-//               <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-4xl font-bold shadow-xl">
-//                 {userName.charAt(0).toUpperCase()}
-//               </div>
-//             )}
-//             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-//               <Camera className="w-8 h-8 text-white" />
-//             </div>
-//           </div>
-
-//           {/* Upload Controls */}
-//           <div className="flex-1 space-y-4">
-//             <div>
-//               <p className="font-semibold text-slate-900 mb-1">{userName}</p>
-//               <p className="text-sm text-slate-600">Office Operator</p>
-//             </div>
-
-//             <div className="flex flex-wrap gap-3">
-//               <label className="cursor-pointer">
-//                 <input
-//                   type="file"
-//                   accept="image/*"
-//                   onChange={handleImageUpload}
-//                   className="hidden"
-//                 />
-//                 <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium transition-all shadow-lg hover:shadow-xl">
-//                   <Upload className="w-4 h-4" />
-//                   <span>Upload New Photo</span>
-//                 </div>
-//               </label>
-
-//               {profileImage && (
-//                 <button
-//                   onClick={handleRemoveImage}
-//                   className="flex items-center gap-2 px-4 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-medium transition-all"
-//                 >
-//                   Remove Photo
-//                 </button>
-//               )}
-//             </div>
-
-//             <p className="text-xs text-slate-500">
-//               Recommended: Square image, at least 400x400px. Max file size: 5MB
-//             </p>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Client Password Management */}
-//       <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 p-6 shadow-lg">
-//         <div className="flex items-center gap-3 mb-6">
-//           <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-teal-600 flex items-center justify-center">
-//             <Key className="w-5 h-5 text-white" />
-//           </div>
-//           <div>
-//             <h3 className="text-lg font-bold text-slate-900">
-//               Client Password Management
-//             </h3>
-//             <p className="text-sm text-slate-600">
-//               Set or reset passwords for client portal access
-//             </p>
-//           </div>
-//         </div>
-
-//         {/* Search */}
-//         <div className="mb-4">
-//           <div className="relative">
-//             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-//             <input
-//               type="text"
-//               value={searchTerm}
-//               onChange={(e) => setSearchTerm(e.target.value)}
-//               placeholder="Search clients by name or ID..."
-//               className="w-full pl-10 pr-4 py-3 border-2 border-emerald-200 focus:border-emerald-500 outline-none bg-white"
-//             />
-//           </div>
-//         </div>
-
-//         {/* Client List */}
-//         {loading ? (
-//           <div className="flex items-center justify-center py-12">
-//             <RefreshCw className="w-8 h-8 text-emerald-600 animate-spin" />
-//           </div>
-//         ) : filteredClients.length === 0 ? (
-//           <div className="text-center py-12 bg-white border-2 border-emerald-200">
-//             <User className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-//             <p className="text-slate-600">No clients found</p>
-//           </div>
-//         ) : (
-//           <div className="bg-white border-2 border-emerald-200 overflow-hidden">
-//             <div className="overflow-x-auto max-h-96">
-//               <table className="w-full">
-//                 <thead>
-//                   <tr className="bg-emerald-100 border-b-2 border-emerald-200">
-//                     <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-//                       Client ID
-//                     </th>
-//                     <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-//                       Name
-//                     </th>
-//                     <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-//                       Currency
-//                     </th>
-//                     <th className="px-6 py-3 text-right text-xs font-bold text-slate-700 uppercase tracking-wider">
-//                       Balance
-//                     </th>
-//                     <th className="px-6 py-3 text-center text-xs font-bold text-slate-700 uppercase tracking-wider">
-//                       Actions
-//                     </th>
-//                   </tr>
-//                 </thead>
-//                 <tbody className="divide-y divide-slate-100">
-//                   {filteredClients.map((client) => (
-//                     <tr
-//                       key={client.id}
-//                       className="hover:bg-emerald-50 transition-colors"
-//                     >
-//                       <td className="px-6 py-4 whitespace-nowrap">
-//                         <span className="text-sm font-mono text-slate-600">
-//                           {client.id}
-//                         </span>
-//                       </td>
-//                       <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
-//                         {client.name}
-//                       </td>
-//                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-//                         {client.currency}
-//                       </td>
-//                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-emerald-600">
-//                         {client.balance.toLocaleString("en-US", {
-//                           minimumFractionDigits: 2,
-//                         })}
-//                       </td>
-//                       <td className="px-6 py-4 whitespace-nowrap text-center">
-//                         <button
-//                           onClick={() => handleSetPassword(client)}
-//                           className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm font-bold hover:shadow-lg transition-all"
-//                         >
-//                           <Lock className="w-4 h-4" />
-//                           Set Password
-//                         </button>
-//                       </td>
-//                     </tr>
-//                   ))}
-//                 </tbody>
-//               </table>
-//             </div>
-//           </div>
-//         )}
-//       </div>
-
-//       {/* Office Information */}
-//       <div className="bg-white/80 backdrop-blur-xl border-2 border-slate-200 p-6 shadow-lg">
-//         <div className="flex items-center gap-3 mb-6">
-//           <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
-//             <Settings className="w-5 h-5 text-white" />
-//           </div>
-//           <div>
-//             <h3 className="text-lg font-bold text-slate-900">
-//               Office Information
-//             </h3>
-//             <p className="text-sm text-slate-600">
-//               Basic office details and contact information
-//             </p>
-//           </div>
-//         </div>
-
-//         <div className="space-y-4">
-//           <div>
-//             <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-//               Office Name
-//             </label>
-//             <input
-//               type="text"
-//               value={officeName}
-//               onChange={(e) => setOfficeName(e.target.value)}
-//               className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
-//             />
-//           </div>
-
-//           <div className="grid md:grid-cols-2 gap-4">
-//             <div>
-//               <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-//                 Email Address
-//               </label>
-//               <input
-//                 type="email"
-//                 value={officeEmail}
-//                 onChange={(e) => setOfficeEmail(e.target.value)}
-//                 className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
-//               />
-//             </div>
-
-//             <div>
-//               <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-//                 Phone Number
-//               </label>
-//               <input
-//                 type="tel"
-//                 value={officePhone}
-//                 onChange={(e) => setOfficePhone(e.target.value)}
-//                 className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
-//               />
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Currency Settings */}
-//       <div className="bg-white/80 backdrop-blur-xl border-2 border-slate-200 p-6 shadow-lg">
-//         <div className="flex items-center gap-3 mb-6">
-//           <div className="w-10 h-10 bg-gradient-to-br from-amber-600 to-orange-600 flex items-center justify-center">
-//             <DollarSign className="w-5 h-5 text-white" />
-//           </div>
-//           <div>
-//             <h3 className="text-lg font-bold text-slate-900">
-//               Currency Settings
-//             </h3>
-//             <p className="text-sm text-slate-600">
-//               Default currency and exchange preferences
-//             </p>
-//           </div>
-//         </div>
-
-//         <div className="space-y-4">
-//           <div>
-//             <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-//               Default Currency
-//             </label>
-//             <select
-//               value={defaultCurrency}
-//               onChange={(e) => setDefaultCurrency(e.target.value)}
-//               className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
-//             >
-//               <option value="KES">KES - Kenyan Shilling</option>
-//               <option value="USD">USD - US Dollar</option>
-//             </select>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* System Preferences */}
-//       <div className="bg-white/80 backdrop-blur-xl border-2 border-slate-200 p-6 shadow-lg">
-//         <div className="flex items-center gap-3 mb-6">
-//           <div className="w-10 h-10 bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center">
-//             <Shield className="w-5 h-5 text-white" />
-//           </div>
-//           <div>
-//             <h3 className="text-lg font-bold text-slate-900">
-//               System Preferences
-//             </h3>
-//             <p className="text-sm text-slate-600">
-//               Notification and automation settings
-//             </p>
-//           </div>
-//         </div>
-
-//         <div className="space-y-4">
-//           <div className="flex items-center justify-between p-4 bg-slate-50">
-//             <div>
-//               <p className="font-medium text-slate-900">Auto Reconciliation</p>
-//               <p className="text-sm text-slate-600">
-//                 Automatically reconcile accounts daily
-//               </p>
-//             </div>
-//             <label className="relative inline-flex items-center cursor-pointer">
-//               <input
-//                 type="checkbox"
-//                 className="sr-only peer"
-//                 checked={autoReconcile}
-//                 onChange={(e) => setAutoReconcile(e.target.checked)}
-//               />
-//               <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-//             </label>
-//           </div>
-
-//           <div className="flex items-center justify-between p-4 bg-slate-50">
-//             <div>
-//               <p className="font-medium text-slate-900">Email Notifications</p>
-//               <p className="text-sm text-slate-600">
-//                 Receive email alerts for important events
-//               </p>
-//             </div>
-//             <label className="relative inline-flex items-center cursor-pointer">
-//               <input
-//                 type="checkbox"
-//                 className="sr-only peer"
-//                 checked={emailNotifications}
-//                 onChange={(e) => setEmailNotifications(e.target.checked)}
-//               />
-//               <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-//             </label>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Save Button */}
-//       <div className="flex justify-end">
-//         <button
-//           onClick={handleSaveSettings}
-//           className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold hover:shadow-lg transition-all"
-//         >
-//           <Save className="w-5 h-5" />
-//           Save All Settings
-//         </button>
-//       </div>
-
-//       {/* Password Modal */}
-//       <AnimatePresence>
-//         {showPasswordModal && selectedClient && (
-//           <motion.div
-//             initial={{ opacity: 0 }}
-//             animate={{ opacity: 1 }}
-//             exit={{ opacity: 0 }}
-//             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-//             onClick={() => setShowPasswordModal(false)}
-//           >
-//             <motion.div
-//               initial={{ scale: 0.9, opacity: 0 }}
-//               animate={{ scale: 1, opacity: 1 }}
-//               exit={{ scale: 0.9, opacity: 0 }}
-//               onClick={(e) => e.stopPropagation()}
-//               className="bg-white shadow-2xl max-w-md w-full overflow-hidden"
-//             >
-//               <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 text-white">
-//                 <div className="flex items-center justify-between">
-//                   <div className="flex items-center gap-3">
-//                     <div className="w-12 h-12 bg-white/20 backdrop-blur-xl flex items-center justify-center">
-//                       <Lock className="w-6 h-6" />
-//                     </div>
-//                     <div>
-//                       <h3 className="text-xl font-bold">Set Client Password</h3>
-//                       <p className="text-sm text-emerald-100">
-//                         {selectedClient.name}
-//                       </p>
-//                     </div>
-//                   </div>
-//                   <button
-//                     onClick={() => setShowPasswordModal(false)}
-//                     className="p-2 hover:bg-white/20 transition-colors"
-//                   >
-//                     <X className="w-5 h-5" />
-//                   </button>
-//                 </div>
-//               </div>
-
-//               <div className="p-6 space-y-4">
-//                 <div className="bg-blue-50 border-2 border-blue-200 p-4">
-//                   <p className="text-sm text-slate-700">
-//                     <strong>Client ID:</strong> {selectedClient.id}
-//                   </p>
-//                   <p className="text-sm text-slate-700">
-//                     <strong>Currency:</strong> {selectedClient.currency}
-//                   </p>
-//                   <p className="text-sm text-slate-700">
-//                     <strong>Balance:</strong> {selectedClient.currency}{" "}
-//                     {selectedClient.balance.toLocaleString("en-US", {
-//                       minimumFractionDigits: 2,
-//                     })}
-//                   </p>
-//                 </div>
-
-//                 <div>
-//                   <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-//                     New Password
-//                   </label>
-//                   <div className="relative">
-//                     <input
-//                       type={showPassword ? "text" : "password"}
-//                       value={newPassword}
-//                       onChange={(e) => setNewPassword(e.target.value)}
-//                       placeholder="Enter new password"
-//                       className="w-full px-4 py-3 pr-10 border-2 border-slate-200 focus:border-emerald-500 outline-none bg-white"
-//                     />
-//                     <button
-//                       type="button"
-//                       onClick={() => setShowPassword(!showPassword)}
-//                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-//                     >
-//                       {showPassword ? (
-//                         <EyeOff className="w-5 h-5" />
-//                       ) : (
-//                         <Eye className="w-5 h-5" />
-//                       )}
-//                     </button>
-//                   </div>
-//                 </div>
-
-//                 <div>
-//                   <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-//                     Confirm Password
-//                   </label>
-//                   <input
-//                     type={showPassword ? "text" : "password"}
-//                     value={confirmPassword}
-//                     onChange={(e) => setConfirmPassword(e.target.value)}
-//                     placeholder="Confirm new password"
-//                     className="w-full px-4 py-3 border-2 border-slate-200 focus:border-emerald-500 outline-none bg-white"
-//                   />
-//                 </div>
-
-//                 <button
-//                   onClick={generateRandomPassword}
-//                   className="w-full px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-all flex items-center justify-center gap-2"
-//                 >
-//                   <RefreshCw className="w-4 h-4" />
-//                   Generate Random Password
-//                 </button>
-
-//                 <div className="bg-amber-50 border-2 border-amber-200 p-3">
-//                   <p className="text-xs text-amber-800">
-//                     <strong>⚠ Important:</strong> Make sure to share this
-//                     password securely with the client. They can change it after
-//                     their first login.
-//                   </p>
-//                 </div>
-
-//                 <div className="flex gap-3 pt-4">
-//                   <button
-//                     onClick={handlePasswordSubmit}
-//                     className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2"
-//                   >
-//                     <CheckCircle className="w-5 h-5" />
-//                     Set Password
-//                   </button>
-//                   <button
-//                     onClick={() => setShowPasswordModal(false)}
-//                     className="flex-1 px-6 py-3 bg-slate-200 text-slate-700 font-bold hover:bg-slate-300 transition-all"
-//                   >
-//                     Cancel
-//                   </button>
-//                 </div>
-//               </div>
-//             </motion.div>
-//           </motion.div>
-//         )}
-//       </AnimatePresence>
-//     </motion.div>
-//   );
-// }
-// import { useState, useEffect, useCallback } from "react";
-// import { motion, AnimatePresence } from "framer-motion";
-// import {
-//   Settings,
-//   DollarSign,
-//   FileText,
-//   Bell,
-//   Shield,
-//   Save,
-//   User,
-//   Camera,
-//   Upload,
-//   Building2,
-//   Key,
-//   Lock,
-//   Eye,
-//   EyeOff,
-//   Search,
-//   X,
-//   CheckCircle,
-//   XCircle,
-//   Image as ImageIcon,
-//   Trash2,
-//   Edit,
-//   RefreshCw,
-//   Loader2,
-// } from "lucide-react";
-// import { toast } from "sonner";
-// import { getClients, ClientDto } from "@/lib/api";
-
-// interface OfficeSettingsProps {
-//   userName: string;
-//   profileImage: string | null;
-//   onProfileImageChange: (imageUrl: string | null) => void;
-// }
-
-// interface CompanySettings {
-//   companyName: string;
-//   companyLogo: string | null;
-//   officeName: string;
-//   officeEmail: string;
-//   officePhone: string;
-//   defaultCurrency: string;
-//   autoReconcile: boolean;
-//   emailNotifications: boolean;
-// }
-
-// export function OfficeSettings({
-//   userName,
-//   profileImage,
-//   onProfileImageChange,
-// }: OfficeSettingsProps) {
-//   // Company Settings State
-//   const [settings, setSettings] = useState<CompanySettings>({
-//     companyName: "Sarif Money Exchange",
-//     companyLogo: null,
-//     officeName: "Nairobi Central Office",
-//     officeEmail: "nairobi@sarifexchange.com",
-//     officePhone: "+254 712 345 678",
-//     defaultCurrency: "KES",
-//     autoReconcile: true,
-//     emailNotifications: true,
-//   });
-
-//   // Client Password Management
-//   const [clients, setClients] = useState<ClientDto[]>([]);
-//   const [selectedClient, setSelectedClient] = useState<ClientDto | null>(null);
-//   const [showPasswordModal, setShowPasswordModal] = useState(false);
-//   const [newPassword, setNewPassword] = useState("");
-//   const [confirmPassword, setConfirmPassword] = useState("");
-//   const [showPassword, setShowPassword] = useState(false);
-//   const [searchTerm, setSearchTerm] = useState("");
-
-//   // Loading states
-//   const [loading, setLoading] = useState(false);
-//   const [isSaving, setIsSaving] = useState(false);
-//   const [isSettingPassword, setIsSettingPassword] = useState(false);
-
-//   // Fetch clients from API
-//   const fetchClients = useCallback(async () => {
-//     try {
-//       setLoading(true);
-//       const response = await getClients();
-
-//       if (response.success && response.data) {
-//         const clientData = Array.isArray(response.data) ? response.data : [];
-//         setClients(clientData);
-//       } else {
-//         setClients([]);
-//         if (response.error) {
-//           toast.error(response.error);
-//         }
-//       }
-//     } catch (error) {
-//       console.error("Error fetching clients:", error);
-//       toast.error("Failed to load clients");
-//       setClients([]);
-//     } finally {
-//       setLoading(false);
-//     }
-//   }, []);
-
-//   // Load settings from localStorage on mount (or could be API)
-//   const loadSettings = useCallback(() => {
-//     try {
-//       const savedSettings = localStorage.getItem("officeSettings");
-//       if (savedSettings) {
-//         const parsed = JSON.parse(savedSettings);
-//         setSettings((prev) => ({ ...prev, ...parsed }));
-//       }
-//     } catch (error) {
-//       console.error("Error loading settings:", error);
-//     }
-//   }, []);
-
-//   useEffect(() => {
-//     fetchClients();
-//     loadSettings();
-//   }, [fetchClients, loadSettings]);
-
-//   // Save settings
-//   const handleSaveSettings = async () => {
-//     setIsSaving(true);
-//     try {
-//       // Save to localStorage (in production, this would be an API call)
-//       localStorage.setItem("officeSettings", JSON.stringify(settings));
-
-//       // Simulate API call delay
-//       await new Promise((resolve) => setTimeout(resolve, 500));
-
-//       toast.success("Settings saved successfully!");
-//     } catch (error) {
-//       console.error("Error saving settings:", error);
-//       toast.error("Failed to save settings");
-//     } finally {
-//       setIsSaving(false);
-//     }
-//   };
-
-//   // Update individual setting
-//   const updateSetting = <K extends keyof CompanySettings>(
-//     key: K,
-//     value: CompanySettings[K]
-//   ) => {
-//     setSettings((prev) => ({ ...prev, [key]: value }));
-//   };
-
-//   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-//     const file = event.target.files?.[0];
-//     if (file) {
-//       // Check file size (max 5MB)
-//       if (file.size > 5 * 1024 * 1024) {
-//         toast.error("File size must be less than 5MB");
-//         return;
-//       }
-
-//       const reader = new FileReader();
-//       reader.onloadend = () => {
-//         const imageUrl = reader.result as string;
-//         onProfileImageChange(imageUrl);
-//         toast.success("Profile picture updated successfully!");
-//       };
-//       reader.readAsDataURL(file);
-//     }
-//   };
-
-//   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-//     const file = event.target.files?.[0];
-//     if (file) {
-//       // Check file size (max 5MB)
-//       if (file.size > 5 * 1024 * 1024) {
-//         toast.error("File size must be less than 5MB");
-//         return;
-//       }
-
-//       const reader = new FileReader();
-//       reader.onloadend = () => {
-//         const imageUrl = reader.result as string;
-//         updateSetting("companyLogo", imageUrl);
-//         toast.success("Company logo uploaded successfully!");
-//       };
-//       reader.readAsDataURL(file);
-//     }
-//   };
-
-//   const handleRemoveImage = () => {
-//     onProfileImageChange(null);
-//     toast.success("Profile picture removed!");
-//   };
-
-//   const handleRemoveLogo = () => {
-//     updateSetting("companyLogo", null);
-//     toast.success("Company logo removed!");
-//   };
-
-//   const handleSetPassword = (client: ClientDto) => {
-//     setSelectedClient(client);
-//     setNewPassword("");
-//     setConfirmPassword("");
-//     setShowPasswordModal(true);
-//   };
-
-//   const handlePasswordSubmit = async () => {
-//     if (!newPassword || !confirmPassword) {
-//       toast.error("Please fill in all password fields");
-//       return;
-//     }
-
-//     if (newPassword.length < 6) {
-//       toast.error("Password must be at least 6 characters long");
-//       return;
-//     }
-
-//     if (newPassword !== confirmPassword) {
-//       toast.error("Passwords do not match");
-//       return;
-//     }
-
-//     if (!selectedClient) return;
-
-//     setIsSettingPassword(true);
-//     try {
-//       // In production, this would be an API call like:
-//       // await setClientPassword(selectedClient.id, newPassword);
-
-//       // Simulate API call
-//       await new Promise((resolve) => setTimeout(resolve, 1000));
-
-//       toast.success(`Password set successfully for ${selectedClient.name}`);
-//       setShowPasswordModal(false);
-//       setNewPassword("");
-//       setConfirmPassword("");
-//       setSelectedClient(null);
-//     } catch (error) {
-//       console.error("Error setting password:", error);
-//       toast.error("Failed to set password");
-//     } finally {
-//       setIsSettingPassword(false);
-//     }
-//   };
-
-//   const generateRandomPassword = () => {
-//     const chars =
-//       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-//     let password = "";
-//     for (let i = 0; i < 12; i++) {
-//       password += chars.charAt(Math.floor(Math.random() * chars.length));
-//     }
-//     setNewPassword(password);
-//     setConfirmPassword(password);
-//     toast.success("Random password generated!");
-//   };
-
-//   // Filter clients based on search term
-//   const filteredClients = clients.filter((client) => {
-//     const searchLower = searchTerm.toLowerCase();
-//     return (
-//       client.name?.toLowerCase().includes(searchLower) ||
-//       client.id?.toLowerCase().includes(searchLower) ||
-//       client.code?.toLowerCase().includes(searchLower) ||
-//       client.whatsAppNumber?.toLowerCase().includes(searchLower)
-//     );
-//   });
-
-//   return (
-//     <motion.div
-//       initial={{ opacity: 0, y: 20 }}
-//       animate={{ opacity: 1, y: 0 }}
-//       className="space-y-6"
-//     >
-//       {/* Header */}
-//       <div>
-//         <h2 className="text-2xl font-bold text-slate-900">Office Settings</h2>
-//         <p className="text-sm text-slate-600 mt-1">
-//           Manage your office configuration, company branding, and client access
-//         </p>
-//       </div>
-
-//       {/* Company Branding Section */}
-//       <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 p-6 shadow-lg">
-//         <div className="flex items-center gap-3 mb-6">
-//           <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
-//             <Building2 className="w-5 h-5 text-white" />
-//           </div>
-//           <div>
-//             <h3 className="text-lg font-bold text-slate-900">
-//               Company Branding
-//             </h3>
-//             <p className="text-sm text-slate-600">
-//               Customize your company name and logo
-//             </p>
-//           </div>
-//         </div>
-
-//         <div className="space-y-6">
-//           {/* Company Name */}
-//           <div>
-//             <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-//               Company Name
-//             </label>
-//             <input
-//               type="text"
-//               value={settings.companyName}
-//               onChange={(e) => updateSetting("companyName", e.target.value)}
-//               placeholder="Enter your company name"
-//               className="w-full px-4 py-3 border-2 border-purple-200 focus:border-purple-500 outline-none bg-white"
-//             />
-//             <p className="text-xs text-slate-500 mt-1">
-//               This will appear on invoices, reports, and client communications
-//             </p>
-//           </div>
-
-//           {/* Company Logo */}
-//           <div>
-//             <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-//               Company Logo
-//             </label>
-
-//             {settings.companyLogo ? (
-//               <div className="flex items-start gap-6">
-//                 <div className="relative group">
-//                   <img
-//                     src={settings.companyLogo}
-//                     alt="Company Logo"
-//                     className="w-40 h-40 object-contain bg-white p-4 border-2 border-purple-200 shadow-lg"
-//                   />
-//                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-//                     <ImageIcon className="w-8 h-8 text-white" />
-//                   </div>
-//                 </div>
-
-//                 <div className="flex-1 space-y-3">
-//                   <div className="bg-white p-4 border-2 border-purple-200">
-//                     <p className="text-sm font-medium text-slate-900 mb-1">
-//                       Logo uploaded successfully!
-//                     </p>
-//                     <p className="text-xs text-slate-600">
-//                       This logo will appear on all your invoices and documents
-//                     </p>
-//                   </div>
-
-//                   <div className="flex gap-3">
-//                     <label className="cursor-pointer">
-//                       <input
-//                         type="file"
-//                         accept="image/*"
-//                         onChange={handleLogoUpload}
-//                         className="hidden"
-//                       />
-//                       <div className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold transition-all">
-//                         <Upload className="w-4 h-4" />
-//                         Replace Logo
-//                       </div>
-//                     </label>
-
-//                     <button
-//                       onClick={handleRemoveLogo}
-//                       className="flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-bold transition-all"
-//                     >
-//                       <Trash2 className="w-4 h-4" />
-//                       Remove
-//                     </button>
-//                   </div>
-//                 </div>
-//               </div>
-//             ) : (
-//               <div className="border-2 border-dashed border-purple-300 p-8 text-center bg-white">
-//                 <ImageIcon className="w-12 h-12 text-purple-400 mx-auto mb-4" />
-//                 <p className="text-slate-600 mb-4">No logo uploaded yet</p>
-//                 <label className="cursor-pointer">
-//                   <input
-//                     type="file"
-//                     accept="image/*"
-//                     onChange={handleLogoUpload}
-//                     className="hidden"
-//                   />
-//                   <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold hover:shadow-lg transition-all">
-//                     <Upload className="w-5 h-5" />
-//                     Upload Company Logo
-//                   </div>
-//                 </label>
-//                 <p className="text-xs text-slate-500 mt-3">
-//                   Recommended: PNG or JPG, transparent background, 400x400px
-//                   minimum. Max 5MB
-//                 </p>
-//               </div>
-//             )}
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Profile Picture Section */}
-//       <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 p-6 shadow-lg">
-//         <div className="flex items-center gap-3 mb-6">
-//           <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
-//             <User className="w-5 h-5 text-white" />
-//           </div>
-//           <div>
-//             <h3 className="text-lg font-bold text-slate-900">
-//               Profile Picture
-//             </h3>
-//             <p className="text-sm text-slate-600">
-//               Upload your personal profile photo
-//             </p>
-//           </div>
-//         </div>
-
-//         <div className="flex flex-col sm:flex-row items-center gap-6">
-//           {/* Avatar Preview */}
-//           <div className="relative group">
-//             {profileImage ? (
-//               <img
-//                 src={profileImage}
-//                 alt={userName}
-//                 className="w-32 h-32 object-cover shadow-xl ring-4 ring-blue-500/30"
-//               />
-//             ) : (
-//               <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-4xl font-bold shadow-xl">
-//                 {userName.charAt(0).toUpperCase()}
-//               </div>
-//             )}
-//             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-//               <Camera className="w-8 h-8 text-white" />
-//             </div>
-//           </div>
-
-//           {/* Upload Controls */}
-//           <div className="flex-1 space-y-4">
-//             <div>
-//               <p className="font-semibold text-slate-900 mb-1">{userName}</p>
-//               <p className="text-sm text-slate-600">Office Operator</p>
-//             </div>
-
-//             <div className="flex flex-wrap gap-3">
-//               <label className="cursor-pointer">
-//                 <input
-//                   type="file"
-//                   accept="image/*"
-//                   onChange={handleImageUpload}
-//                   className="hidden"
-//                 />
-//                 <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium transition-all shadow-lg hover:shadow-xl">
-//                   <Upload className="w-4 h-4" />
-//                   <span>Upload New Photo</span>
-//                 </div>
-//               </label>
-
-//               {profileImage && (
-//                 <button
-//                   onClick={handleRemoveImage}
-//                   className="flex items-center gap-2 px-4 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 font-medium transition-all"
-//                 >
-//                   Remove Photo
-//                 </button>
-//               )}
-//             </div>
-
-//             <p className="text-xs text-slate-500">
-//               Recommended: Square image, at least 400x400px. Max file size: 5MB
-//             </p>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Client Password Management */}
-//       <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 p-6 shadow-lg">
-//         <div className="flex items-center justify-between mb-6">
-//           <div className="flex items-center gap-3">
-//             <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-teal-600 flex items-center justify-center">
-//               <Key className="w-5 h-5 text-white" />
-//             </div>
-//             <div>
-//               <h3 className="text-lg font-bold text-slate-900">
-//                 Client Password Management
-//               </h3>
-//               <p className="text-sm text-slate-600">
-//                 Set or reset passwords for client portal access
-//               </p>
-//             </div>
-//           </div>
-//           <button
-//             onClick={fetchClients}
-//             disabled={loading}
-//             className="flex items-center gap-2 px-4 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-medium transition-all"
-//           >
-//             {loading ? (
-//               <Loader2 className="w-4 h-4 animate-spin" />
-//             ) : (
-//               <RefreshCw className="w-4 h-4" />
-//             )}
-//             Refresh
-//           </button>
-//         </div>
-
-//         {/* Search */}
-//         <div className="mb-4">
-//           <div className="relative">
-//             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-//             <input
-//               type="text"
-//               value={searchTerm}
-//               onChange={(e) => setSearchTerm(e.target.value)}
-//               placeholder="Search clients by name or ID..."
-//               className="w-full pl-10 pr-4 py-3 border-2 border-emerald-200 focus:border-emerald-500 outline-none bg-white"
-//             />
-//           </div>
-//         </div>
-
-//         {/* Client List */}
-//         {loading ? (
-//           <div className="flex items-center justify-center py-12">
-//             <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
-//           </div>
-//         ) : filteredClients.length === 0 ? (
-//           <div className="text-center py-12 bg-white border-2 border-emerald-200">
-//             <User className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-//             <p className="text-slate-600">No clients found</p>
-//           </div>
-//         ) : (
-//           <div className="bg-white border-2 border-emerald-200 overflow-hidden">
-//             <div className="overflow-x-auto max-h-96">
-//               <table className="w-full">
-//                 <thead>
-//                   <tr className="bg-emerald-100 border-b-2 border-emerald-200">
-//                     <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-//                       Client ID
-//                     </th>
-//                     <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-//                       Name
-//                     </th>
-//                     <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-//                       Phone
-//                     </th>
-//                     <th className="px-6 py-3 text-right text-xs font-bold text-slate-700 uppercase tracking-wider">
-//                       Balance KES
-//                     </th>
-//                     <th className="px-6 py-3 text-right text-xs font-bold text-slate-700 uppercase tracking-wider">
-//                       Balance USD
-//                     </th>
-//                     <th className="px-6 py-3 text-center text-xs font-bold text-slate-700 uppercase tracking-wider">
-//                       Actions
-//                     </th>
-//                   </tr>
-//                 </thead>
-//                 <tbody className="divide-y divide-slate-100">
-//                   {filteredClients.map((client) => (
-//                     <tr
-//                       key={client.id}
-//                       className="hover:bg-emerald-50 transition-colors"
-//                     >
-//                       <td className="px-6 py-4 whitespace-nowrap">
-//                         <span className="text-sm font-mono text-slate-600">
-//                           {client.code || client.id?.slice(0, 8).toUpperCase()}
-//                         </span>
-//                       </td>
-//                       <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
-//                         {client.name}
-//                       </td>
-//                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-//                         {client.whatsAppNumber || "-"}
-//                       </td>
-//                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-emerald-600">
-//                         {(client.balanceKES || 0).toLocaleString("en-US", {
-//                           minimumFractionDigits: 2,
-//                         })}
-//                       </td>
-//                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-blue-600">
-//                         {(client.balanceUSD || 0).toLocaleString("en-US", {
-//                           minimumFractionDigits: 2,
-//                         })}
-//                       </td>
-//                       <td className="px-6 py-4 whitespace-nowrap text-center">
-//                         <button
-//                           onClick={() => handleSetPassword(client)}
-//                           className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm font-bold hover:shadow-lg transition-all"
-//                         >
-//                           <Lock className="w-4 h-4" />
-//                           Set Password
-//                         </button>
-//                       </td>
-//                     </tr>
-//                   ))}
-//                 </tbody>
-//               </table>
-//             </div>
-//           </div>
-//         )}
-//       </div>
-
-//       {/* Office Information */}
-//       <div className="bg-white/80 backdrop-blur-xl border-2 border-slate-200 p-6 shadow-lg">
-//         <div className="flex items-center gap-3 mb-6">
-//           <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
-//             <Settings className="w-5 h-5 text-white" />
-//           </div>
-//           <div>
-//             <h3 className="text-lg font-bold text-slate-900">
-//               Office Information
-//             </h3>
-//             <p className="text-sm text-slate-600">
-//               Basic office details and contact information
-//             </p>
-//           </div>
-//         </div>
-
-//         <div className="space-y-4">
-//           <div>
-//             <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-//               Office Name
-//             </label>
-//             <input
-//               type="text"
-//               value={settings.officeName}
-//               onChange={(e) => updateSetting("officeName", e.target.value)}
-//               className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
-//             />
-//           </div>
-
-//           <div className="grid md:grid-cols-2 gap-4">
-//             <div>
-//               <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-//                 Email Address
-//               </label>
-//               <input
-//                 type="email"
-//                 value={settings.officeEmail}
-//                 onChange={(e) => updateSetting("officeEmail", e.target.value)}
-//                 className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
-//               />
-//             </div>
-
-//             <div>
-//               <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-//                 Phone Number
-//               </label>
-//               <input
-//                 type="tel"
-//                 value={settings.officePhone}
-//                 onChange={(e) => updateSetting("officePhone", e.target.value)}
-//                 className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
-//               />
-//             </div>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Currency Settings */}
-//       <div className="bg-white/80 backdrop-blur-xl border-2 border-slate-200 p-6 shadow-lg">
-//         <div className="flex items-center gap-3 mb-6">
-//           <div className="w-10 h-10 bg-gradient-to-br from-amber-600 to-orange-600 flex items-center justify-center">
-//             <DollarSign className="w-5 h-5 text-white" />
-//           </div>
-//           <div>
-//             <h3 className="text-lg font-bold text-slate-900">
-//               Currency Settings
-//             </h3>
-//             <p className="text-sm text-slate-600">
-//               Default currency and exchange preferences
-//             </p>
-//           </div>
-//         </div>
-
-//         <div className="space-y-4">
-//           <div>
-//             <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-//               Default Currency
-//             </label>
-//             <select
-//               value={settings.defaultCurrency}
-//               onChange={(e) => updateSetting("defaultCurrency", e.target.value)}
-//               className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
-//             >
-//               <option value="KES">KES - Kenyan Shilling</option>
-//               <option value="USD">USD - US Dollar</option>
-//             </select>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* System Preferences */}
-//       <div className="bg-white/80 backdrop-blur-xl border-2 border-slate-200 p-6 shadow-lg">
-//         <div className="flex items-center gap-3 mb-6">
-//           <div className="w-10 h-10 bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center">
-//             <Shield className="w-5 h-5 text-white" />
-//           </div>
-//           <div>
-//             <h3 className="text-lg font-bold text-slate-900">
-//               System Preferences
-//             </h3>
-//             <p className="text-sm text-slate-600">
-//               Notification and automation settings
-//             </p>
-//           </div>
-//         </div>
-
-//         <div className="space-y-4">
-//           <div className="flex items-center justify-between p-4 bg-slate-50">
-//             <div>
-//               <p className="font-medium text-slate-900">Auto Reconciliation</p>
-//               <p className="text-sm text-slate-600">
-//                 Automatically reconcile accounts daily
-//               </p>
-//             </div>
-//             <label className="relative inline-flex items-center cursor-pointer">
-//               <input
-//                 type="checkbox"
-//                 className="sr-only peer"
-//                 checked={settings.autoReconcile}
-//                 onChange={(e) =>
-//                   updateSetting("autoReconcile", e.target.checked)
-//                 }
-//               />
-//               <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-//             </label>
-//           </div>
-
-//           <div className="flex items-center justify-between p-4 bg-slate-50">
-//             <div>
-//               <p className="font-medium text-slate-900">Email Notifications</p>
-//               <p className="text-sm text-slate-600">
-//                 Receive email alerts for important events
-//               </p>
-//             </div>
-//             <label className="relative inline-flex items-center cursor-pointer">
-//               <input
-//                 type="checkbox"
-//                 className="sr-only peer"
-//                 checked={settings.emailNotifications}
-//                 onChange={(e) =>
-//                   updateSetting("emailNotifications", e.target.checked)
-//                 }
-//               />
-//               <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-//             </label>
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* Save Button */}
-//       <div className="flex justify-end">
-//         <button
-//           onClick={handleSaveSettings}
-//           disabled={isSaving}
-//           className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-//         >
-//           {isSaving ? (
-//             <Loader2 className="w-5 h-5 animate-spin" />
-//           ) : (
-//             <Save className="w-5 h-5" />
-//           )}
-//           {isSaving ? "Saving..." : "Save All Settings"}
-//         </button>
-//       </div>
-
-//       {/* Password Modal */}
-//       <AnimatePresence>
-//         {showPasswordModal && selectedClient && (
-//           <motion.div
-//             initial={{ opacity: 0 }}
-//             animate={{ opacity: 1 }}
-//             exit={{ opacity: 0 }}
-//             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-//             onClick={() => setShowPasswordModal(false)}
-//           >
-//             <motion.div
-//               initial={{ scale: 0.9, opacity: 0 }}
-//               animate={{ scale: 1, opacity: 1 }}
-//               exit={{ scale: 0.9, opacity: 0 }}
-//               onClick={(e) => e.stopPropagation()}
-//               className="bg-white shadow-2xl max-w-md w-full overflow-hidden"
-//             >
-//               <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 text-white">
-//                 <div className="flex items-center justify-between">
-//                   <div className="flex items-center gap-3">
-//                     <div className="w-12 h-12 bg-white/20 backdrop-blur-xl flex items-center justify-center">
-//                       <Lock className="w-6 h-6" />
-//                     </div>
-//                     <div>
-//                       <h3 className="text-xl font-bold">Set Client Password</h3>
-//                       <p className="text-sm text-emerald-100">
-//                         {selectedClient.name}
-//                       </p>
-//                     </div>
-//                   </div>
-//                   <button
-//                     onClick={() => setShowPasswordModal(false)}
-//                     className="p-2 hover:bg-white/20 transition-colors"
-//                   >
-//                     <X className="w-5 h-5" />
-//                   </button>
-//                 </div>
-//               </div>
-
-//               <div className="p-6 space-y-4">
-//                 <div className="bg-blue-50 border-2 border-blue-200 p-4">
-//                   <p className="text-sm text-slate-700">
-//                     <strong>Client ID:</strong>{" "}
-//                     {selectedClient.code ||
-//                       selectedClient.id?.slice(0, 8).toUpperCase()}
-//                   </p>
-//                   <p className="text-sm text-slate-700">
-//                     <strong>Phone:</strong>{" "}
-//                     {selectedClient.whatsAppNumber || "N/A"}
-//                   </p>
-//                   <p className="text-sm text-slate-700">
-//                     <strong>Balance KES:</strong> KES{" "}
-//                     {(selectedClient.balanceKES || 0).toLocaleString("en-US", {
-//                       minimumFractionDigits: 2,
-//                     })}
-//                   </p>
-//                   <p className="text-sm text-slate-700">
-//                     <strong>Balance USD:</strong> ${" "}
-//                     {(selectedClient.balanceUSD || 0).toLocaleString("en-US", {
-//                       minimumFractionDigits: 2,
-//                     })}
-//                   </p>
-//                 </div>
-
-//                 <div>
-//                   <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-//                     New Password
-//                   </label>
-//                   <div className="relative">
-//                     <input
-//                       type={showPassword ? "text" : "password"}
-//                       value={newPassword}
-//                       onChange={(e) => setNewPassword(e.target.value)}
-//                       placeholder="Enter new password"
-//                       className="w-full px-4 py-3 pr-10 border-2 border-slate-200 focus:border-emerald-500 outline-none bg-white"
-//                     />
-//                     <button
-//                       type="button"
-//                       onClick={() => setShowPassword(!showPassword)}
-//                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-//                     >
-//                       {showPassword ? (
-//                         <EyeOff className="w-5 h-5" />
-//                       ) : (
-//                         <Eye className="w-5 h-5" />
-//                       )}
-//                     </button>
-//                   </div>
-//                 </div>
-
-//                 <div>
-//                   <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-//                     Confirm Password
-//                   </label>
-//                   <input
-//                     type={showPassword ? "text" : "password"}
-//                     value={confirmPassword}
-//                     onChange={(e) => setConfirmPassword(e.target.value)}
-//                     placeholder="Confirm new password"
-//                     className="w-full px-4 py-3 border-2 border-slate-200 focus:border-emerald-500 outline-none bg-white"
-//                   />
-//                 </div>
-
-//                 <button
-//                   onClick={generateRandomPassword}
-//                   className="w-full px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition-all flex items-center justify-center gap-2"
-//                 >
-//                   <RefreshCw className="w-4 h-4" />
-//                   Generate Random Password
-//                 </button>
-
-//                 <div className="bg-amber-50 border-2 border-amber-200 p-3">
-//                   <p className="text-xs text-amber-800">
-//                     <strong>⚠ Important:</strong> Make sure to share this
-//                     password securely with the client. They can change it after
-//                     their first login.
-//                   </p>
-//                 </div>
-
-//                 <div className="flex gap-3 pt-4">
-//                   <button
-//                     onClick={handlePasswordSubmit}
-//                     disabled={isSettingPassword}
-//                     className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-//                   >
-//                     {isSettingPassword ? (
-//                       <Loader2 className="w-5 h-5 animate-spin" />
-//                     ) : (
-//                       <CheckCircle className="w-5 h-5" />
-//                     )}
-//                     {isSettingPassword ? "Setting..." : "Set Password"}
-//                   </button>
-//                   <button
-//                     onClick={() => setShowPasswordModal(false)}
-//                     className="flex-1 px-6 py-3 bg-slate-200 text-slate-700 font-bold hover:bg-slate-300 transition-all"
-//                   >
-//                     Cancel
-//                   </button>
-//                 </div>
-//               </div>
-//             </motion.div>
-//           </motion.div>
-//         )}
-//       </AnimatePresence>
-//     </motion.div>
-//   );
-// }
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -1703,6 +25,10 @@ import {
   Plus,
   Tag,
   FolderOpen,
+  AlertTriangle,
+  Phone,
+  Mail,
+  MapPin,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -1712,6 +38,8 @@ import {
   updateExpenseCategory,
   deleteExpenseCategory,
   resetClientPassword,
+  getCompanyById,
+  getStoredAuth,
   ClientDto,
   ExpenseCategoryDto,
 } from "@/lib/api";
@@ -1728,14 +56,16 @@ export function OfficeSettings({
   onProfileImageChange,
 }: OfficeSettingsProps) {
   // Company Settings
-  const [companyName, setCompanyName] = useState("Sarif Money Exchange");
+  const [companyName, setCompanyName] = useState("");
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
-  const [officeName, setOfficeName] = useState("Nairobi Central Office");
-  const [officeEmail, setOfficeEmail] = useState("nairobi@sarifexchange.com");
-  const [officePhone, setOfficePhone] = useState("+254 712 345 678");
+  const [officeName, setOfficeName] = useState("");
+  const [officeEmail, setOfficeEmail] = useState("");
+  const [officePhone, setOfficePhone] = useState("");
+  const [officeAddress, setOfficeAddress] = useState("");
   const [defaultCurrency, setDefaultCurrency] = useState("KES");
   const [autoReconcile, setAutoReconcile] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
+  const [companyLoading, setCompanyLoading] = useState(true);
 
   // Client Password Management
   const [clients, setClients] = useState<ClientDto[]>([]);
@@ -1763,10 +93,40 @@ export function OfficeSettings({
     null
   );
 
+  // Delete Category Confirmation Modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] =
+    useState<ExpenseCategoryDto | null>(null);
+
   useEffect(() => {
+    fetchCompanyInfo();
     fetchClients();
     fetchExpenseCategories();
   }, []);
+
+  const fetchCompanyInfo = async () => {
+    try {
+      setCompanyLoading(true);
+      const auth = getStoredAuth();
+      if (auth?.user?.companyId) {
+        const result = await getCompanyById(auth.user.companyId);
+        if (result.success && result.data) {
+          setCompanyName(result.data.name || "");
+          setOfficeName(result.data.ownerName || result.data.name || "");
+          setOfficeEmail(result.data.email || "");
+          setOfficePhone(result.data.phoneNumber || "");
+          setOfficeAddress(result.data.address || "");
+          if (result.data.logoUrl) {
+            setCompanyLogo(result.data.logoUrl);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching company info:", error);
+    } finally {
+      setCompanyLoading(false);
+    }
+  };
 
   const fetchClients = async () => {
     try {
@@ -1859,17 +219,22 @@ export function OfficeSettings({
     }
   };
 
-  const handleDeleteCategory = async (categoryId: string) => {
-    if (!confirm("Are you sure you want to delete this category?")) {
-      return;
-    }
+  const openDeleteCategoryModal = (category: ExpenseCategoryDto) => {
+    setCategoryToDelete(category);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteCategory = async () => {
+    if (!categoryToDelete) return;
 
     try {
-      setDeletingCategoryId(categoryId);
-      const result = await deleteExpenseCategory(categoryId);
+      setDeletingCategoryId(categoryToDelete.id);
+      const result = await deleteExpenseCategory(categoryToDelete.id);
 
       if (result.success) {
         toast.success("Expense category deleted successfully!");
+        setShowDeleteModal(false);
+        setCategoryToDelete(null);
         fetchExpenseCategories();
       } else {
         toast.error(result.message || "Failed to delete category");
@@ -2058,48 +423,92 @@ export function OfficeSettings({
         </div>
 
         <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-              Company Name
-            </label>
-            <input
-              type="text"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="Enter your company name"
-              className="w-full px-4 py-3 border-2 border-purple-200 focus:border-purple-500 outline-none bg-white"
-            />
-            <p className="text-xs text-slate-500 mt-1">
-              This will appear on invoices, reports, and client communications
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-              Company Logo
-            </label>
-            {companyLogo ? (
-              <div className="flex items-start gap-6">
-                <div className="relative group">
-                  <img
-                    src={companyLogo}
-                    alt="Company Logo"
-                    className="w-40 h-40 object-contain bg-white p-4 border-2 border-purple-200 shadow-lg"
+          {companyLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <RefreshCw className="w-6 h-6 text-purple-600 animate-spin" />
+              <span className="ml-2 text-slate-600">
+                Loading company info...
+              </span>
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
+                  Company Name
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="Enter your company name"
+                    className="w-full px-4 py-3 border-2 border-purple-200 focus:border-purple-500 outline-none bg-white"
+                    readOnly
                   />
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <ImageIcon className="w-8 h-8 text-white" />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <span className="text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded">
+                      From System
+                    </span>
                   </div>
                 </div>
-                <div className="flex-1 space-y-3">
-                  <div className="bg-white p-4 border-2 border-purple-200">
-                    <p className="text-sm font-medium text-slate-900 mb-1">
-                      Logo uploaded successfully!
-                    </p>
-                    <p className="text-xs text-slate-600">
-                      This logo will appear on all your invoices and documents
-                    </p>
+                <p className="text-xs text-slate-500 mt-1">
+                  Company name is managed by the system administrator
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
+                  Company Logo
+                </label>
+                {companyLogo ? (
+                  <div className="flex items-start gap-6">
+                    <div className="relative group">
+                      <img
+                        src={companyLogo}
+                        alt="Company Logo"
+                        className="w-40 h-40 object-contain bg-white p-4 border-2 border-purple-200 shadow-lg"
+                      />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <ImageIcon className="w-8 h-8 text-white" />
+                      </div>
+                    </div>
+                    <div className="flex-1 space-y-3">
+                      <div className="bg-white p-4 border-2 border-purple-200">
+                        <p className="text-sm font-medium text-slate-900 mb-1">
+                          Logo uploaded successfully!
+                        </p>
+                        <p className="text-xs text-slate-600">
+                          This logo will appear on all your invoices and
+                          documents
+                        </p>
+                      </div>
+                      <div className="flex gap-3">
+                        <label className="cursor-pointer">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoUpload}
+                            className="hidden"
+                          />
+                          <div className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold transition-all">
+                            <Upload className="w-4 h-4" />
+                            Replace Logo
+                          </div>
+                        </label>
+                        <button
+                          onClick={handleRemoveLogo}
+                          className="flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-bold transition-all"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Remove
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex gap-3">
+                ) : (
+                  <div className="border-2 border-dashed border-purple-300 p-8 text-center bg-white">
+                    <ImageIcon className="w-12 h-12 text-purple-400 mx-auto mb-4" />
+                    <p className="text-slate-600 mb-4">No logo uploaded yet</p>
                     <label className="cursor-pointer">
                       <input
                         type="file"
@@ -2107,44 +516,20 @@ export function OfficeSettings({
                         onChange={handleLogoUpload}
                         className="hidden"
                       />
-                      <div className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold transition-all">
-                        <Upload className="w-4 h-4" />
-                        Replace Logo
+                      <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold hover:shadow-lg transition-all">
+                        <Upload className="w-5 h-5" />
+                        Upload Company Logo
                       </div>
                     </label>
-                    <button
-                      onClick={handleRemoveLogo}
-                      className="flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-bold transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Remove
-                    </button>
+                    <p className="text-xs text-slate-500 mt-3">
+                      Recommended: PNG or JPG, transparent background, 400x400px
+                      minimum. Max 5MB
+                    </p>
                   </div>
-                </div>
+                )}
               </div>
-            ) : (
-              <div className="border-2 border-dashed border-purple-300 p-8 text-center bg-white">
-                <ImageIcon className="w-12 h-12 text-purple-400 mx-auto mb-4" />
-                <p className="text-slate-600 mb-4">No logo uploaded yet</p>
-                <label className="cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleLogoUpload}
-                    className="hidden"
-                  />
-                  <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold hover:shadow-lg transition-all">
-                    <Upload className="w-5 h-5" />
-                    Upload Company Logo
-                  </div>
-                </label>
-                <p className="text-xs text-slate-500 mt-3">
-                  Recommended: PNG or JPG, transparent background, 400x400px
-                  minimum. Max 5MB
-                </p>
-              </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -2330,7 +715,7 @@ export function OfficeSettings({
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteCategory(category.id)}
+                            onClick={() => openDeleteCategoryModal(category)}
                             disabled={deletingCategoryId === category.id}
                             className="p-2 bg-red-100 hover:bg-red-200 text-red-700 transition-all disabled:opacity-50"
                             title="Delete Category"
@@ -2496,45 +881,78 @@ export function OfficeSettings({
               Basic office details and contact information
             </p>
           </div>
+          {companyLoading && (
+            <RefreshCw className="w-5 h-5 text-blue-600 animate-spin ml-auto" />
+          )}
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-              Office Name
-            </label>
-            <input
-              type="text"
-              value={officeName}
-              onChange={(e) => setOfficeName(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
-            />
+        {companyLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="flex flex-col items-center gap-3">
+              <RefreshCw className="w-8 h-8 text-blue-600 animate-spin" />
+              <p className="text-sm text-slate-600">
+                Loading office information...
+              </p>
+            </div>
           </div>
-          <div className="grid md:grid-cols-2 gap-4">
+        ) : (
+          <div className="space-y-4">
             <div>
               <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-                Email Address
+                <Building2 className="w-4 h-4 inline mr-2" />
+                Office Name
               </label>
               <input
-                type="email"
-                value={officeEmail}
-                onChange={(e) => setOfficeEmail(e.target.value)}
+                type="text"
+                value={officeName}
+                onChange={(e) => setOfficeName(e.target.value)}
+                placeholder="Enter office name"
                 className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
               />
             </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
+                  <Mail className="w-4 h-4 inline mr-2" />
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={officeEmail}
+                  onChange={(e) => setOfficeEmail(e.target.value)}
+                  placeholder="Enter email address"
+                  className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
+                  <Phone className="w-4 h-4 inline mr-2" />
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={officePhone}
+                  onChange={(e) => setOfficePhone(e.target.value)}
+                  placeholder="Enter phone number"
+                  className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
+                />
+              </div>
+            </div>
             <div>
               <label className="block text-sm font-bold text-slate-700 uppercase mb-2">
-                Phone Number
+                <MapPin className="w-4 h-4 inline mr-2" />
+                Office Address
               </label>
               <input
-                type="tel"
-                value={officePhone}
-                onChange={(e) => setOfficePhone(e.target.value)}
+                type="text"
+                value={officeAddress}
+                onChange={(e) => setOfficeAddress(e.target.value)}
+                placeholder="Enter office address"
                 className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
               />
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Currency Settings */}
@@ -2727,6 +1145,122 @@ export function OfficeSettings({
                   </button>
                   <button
                     onClick={() => setShowCategoryModal(false)}
+                    className="flex-1 px-6 py-3 bg-slate-200 text-slate-700 font-bold hover:bg-slate-300 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Category Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteModal && categoryToDelete && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => {
+              setShowDeleteModal(false);
+              setCategoryToDelete(null);
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white shadow-2xl max-w-md w-full overflow-hidden"
+            >
+              {/* Header */}
+              <div className="bg-gradient-to-r from-red-600 to-rose-600 p-6 text-white">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-white/20 backdrop-blur-xl flex items-center justify-center">
+                      <AlertTriangle className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold">Delete Category</h3>
+                      <p className="text-sm text-red-100">
+                        This action cannot be undone
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowDeleteModal(false);
+                      setCategoryToDelete(null);
+                    }}
+                    className="p-2 hover:bg-white/20 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-4">
+                <div className="bg-red-50 border-2 border-red-200 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-red-100 flex items-center justify-center flex-shrink-0">
+                      <Tag className="w-5 h-5 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-900 text-lg">
+                        {categoryToDelete.name}
+                      </p>
+                      {categoryToDelete.description && (
+                        <p className="text-sm text-slate-600 mt-1">
+                          {categoryToDelete.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 border-2 border-amber-200 p-4">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-bold text-amber-800">
+                        Warning
+                      </p>
+                      <p className="text-sm text-amber-700 mt-1">
+                        Deleting this category will remove it permanently. Any
+                        expenses associated with this category may need to be
+                        reassigned.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-center text-slate-600">
+                  Are you sure you want to delete this expense category?
+                </p>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={handleDeleteCategory}
+                    disabled={deletingCategoryId === categoryToDelete.id}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {deletingCategoryId === categoryToDelete.id ? (
+                      <RefreshCw className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-5 h-5" />
+                    )}
+                    Yes, Delete Category
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowDeleteModal(false);
+                      setCategoryToDelete(null);
+                    }}
                     className="flex-1 px-6 py-3 bg-slate-200 text-slate-700 font-bold hover:bg-slate-300 transition-all"
                   >
                     Cancel
