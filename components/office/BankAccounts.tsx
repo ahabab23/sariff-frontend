@@ -1,3 +1,4 @@
+"use client";
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -45,7 +46,10 @@ import {
   Currency,
   getAccountTypeLabel,
   apiRequest,
+  getStoredAuth,
 } from "@/lib/api";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 // Updated Transaction interface to match backend StatementLineDto
 interface Transaction {
@@ -554,11 +558,478 @@ export function BankAccounts() {
   };
 
   const handleExportStatement = () => {
-    toast.success("Statement exported successfully!");
+    if (!selectedAccount) {
+      toast.error("Please select an account first");
+      return;
+    }
+
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+
+      // Get company info from auth
+      const auth = getStoredAuth();
+      const companyName = auth?.user?.companyName || "Money Exchange";
+      const companyPhone = auth?.user?.whatsAppNumber || "";
+      const companyEmail = auth?.user?.email || "";
+      const currencyLabel = selectedAccount.currency === 0 ? "KES" : "USD";
+
+      // ========== CORPORATE HEADER ==========
+      // Top accent line
+      doc.setFillColor(37, 99, 235);
+      doc.rect(0, 0, pageWidth, 4, "F");
+
+      // Company branding area
+      doc.setFillColor(250, 250, 250);
+      doc.rect(0, 4, pageWidth, 36, "F");
+
+      // Logo placeholder
+      doc.setFillColor(37, 99, 235);
+      doc.rect(14, 10, 24, 24, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.text(companyName.charAt(0).toUpperCase(), 26, 26, {
+        align: "center",
+      });
+
+      // Company name and document title
+      doc.setTextColor(17, 24, 39);
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text(companyName, 44, 18);
+
+      doc.setTextColor(107, 114, 128);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.text("Bank Account Statement", 44, 26);
+
+      // Right side - Document info
+      doc.setTextColor(107, 114, 128);
+      doc.setFontSize(8);
+      doc.text("Statement Date", pageWidth - 14, 14, { align: "right" });
+      doc.setTextColor(17, 24, 39);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text(
+        new Date().toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        }),
+        pageWidth - 14,
+        21,
+        { align: "right" }
+      );
+
+      doc.setTextColor(107, 114, 128);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      doc.text("Account No.", pageWidth - 14, 28, { align: "right" });
+      doc.setTextColor(17, 24, 39);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text(selectedAccount.accountNumber, pageWidth - 14, 35, {
+        align: "right",
+      });
+
+      // Separator line
+      doc.setDrawColor(229, 231, 235);
+      doc.setLineWidth(0.5);
+      doc.line(14, 42, pageWidth - 14, 42);
+
+      // ========== ACCOUNT INFORMATION ==========
+      let yPos = 50;
+
+      doc.setTextColor(17, 24, 39);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text("ACCOUNT DETAILS", 14, yPos);
+
+      yPos += 6;
+      doc.setFillColor(249, 250, 251);
+      doc.rect(14, yPos, pageWidth - 28, 24, "F");
+
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(17, 24, 39);
+      doc.text(selectedAccount.bankName, 18, yPos + 8);
+
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(107, 114, 128);
+      doc.text(`Account Name: ${selectedAccount.accountName}`, 18, yPos + 15);
+      doc.text(
+        `Account Code: ${selectedAccount.code} | Currency: ${currencyLabel}`,
+        18,
+        yPos + 21
+      );
+
+      // Status badge
+      doc.setFillColor(
+        selectedAccount.isActive ? 220 : 254,
+        selectedAccount.isActive ? 252 : 226,
+        selectedAccount.isActive ? 231 : 226
+      );
+      doc.rect(pageWidth - 40, yPos + 6, 22, 6, "F");
+      doc.setFontSize(7);
+      doc.setTextColor(
+        selectedAccount.isActive ? 22 : 153,
+        selectedAccount.isActive ? 101 : 27,
+        selectedAccount.isActive ? 52 : 27
+      );
+      doc.text(
+        selectedAccount.isActive ? "ACTIVE" : "INACTIVE",
+        pageWidth - 29,
+        yPos + 10,
+        { align: "center" }
+      );
+
+      // ========== BALANCE SUMMARY ==========
+      yPos += 32;
+      doc.setTextColor(17, 24, 39);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text("BALANCE SUMMARY", 14, yPos);
+
+      yPos += 6;
+      const cardWidth = (pageWidth - 38) / 3;
+
+      // Opening Balance
+      doc.setDrawColor(229, 231, 235);
+      doc.rect(14, yPos, cardWidth, 20, "S");
+      doc.setFontSize(7);
+      doc.setTextColor(107, 114, 128);
+      doc.setFont("helvetica", "normal");
+      doc.text("Opening Balance", 16, yPos + 6);
+      doc.setFontSize(11);
+      doc.setTextColor(17, 24, 39);
+      doc.setFont("helvetica", "bold");
+      doc.text(
+        `${currencyLabel} ${(
+          selectedAccount.openingBalance || 0
+        ).toLocaleString()}`,
+        16,
+        yPos + 14
+      );
+
+      // Net Movement
+      const netMovement = selectedAccount.netMovement || 0;
+      const netPositive = netMovement >= 0;
+      doc.rect(14 + cardWidth + 5, yPos, cardWidth, 20, "S");
+      doc.setFontSize(7);
+      doc.setTextColor(107, 114, 128);
+      doc.setFont("helvetica", "normal");
+      doc.text("Net Movement", 18 + cardWidth + 5, yPos + 6);
+      doc.setFontSize(11);
+      doc.setTextColor(
+        netPositive ? 22 : 185,
+        netPositive ? 163 : 28,
+        netPositive ? 74 : 28
+      );
+      doc.setFont("helvetica", "bold");
+      doc.text(
+        `${netPositive ? "+" : "-"}${currencyLabel} ${Math.abs(
+          netMovement
+        ).toLocaleString()}`,
+        18 + cardWidth + 5,
+        yPos + 14
+      );
+
+      // Current Balance
+      const balance = selectedAccount.balance || 0;
+      const balancePositive = balance >= 0;
+      doc.rect(14 + (cardWidth + 5) * 2, yPos, cardWidth, 20, "S");
+      doc.setFontSize(7);
+      doc.setTextColor(107, 114, 128);
+      doc.setFont("helvetica", "normal");
+      doc.text("Closing Balance", 18 + (cardWidth + 5) * 2, yPos + 6);
+      doc.setFontSize(11);
+      doc.setTextColor(
+        balancePositive ? 22 : 185,
+        balancePositive ? 163 : 28,
+        balancePositive ? 74 : 28
+      );
+      doc.setFont("helvetica", "bold");
+      doc.text(
+        `${currencyLabel} ${Math.abs(balance).toLocaleString()}`,
+        18 + (cardWidth + 5) * 2,
+        yPos + 14
+      );
+
+      // ========== TRANSACTION HISTORY ==========
+      if (filteredTransactions.length > 0) {
+        yPos += 30;
+        doc.setTextColor(17, 24, 39);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.text("TRANSACTION HISTORY", 14, yPos);
+
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(107, 114, 128);
+        doc.setFontSize(9);
+        doc.text(
+          `${filteredTransactions.length} transactions`,
+          pageWidth - 14,
+          yPos,
+          { align: "right" }
+        );
+
+        const txnTableData = filteredTransactions.map((txn) => {
+          const isCredit = txn.thisAccountAction === "Credit";
+          const desc = txn.description || "";
+          const bal = txn.balanceAfter ?? 0;
+          return [
+            new Date(txn.date).toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "short",
+              year: "2-digit",
+            }),
+            txn.reference || txn.code || "-",
+            desc.substring(0, 30) + (desc.length > 30 ? "..." : ""),
+            isCredit ? "CR" : "DR",
+            (txn.amount || 0).toLocaleString(),
+            `${bal >= 0 ? "" : "-"}${Math.abs(bal).toLocaleString()}`,
+          ];
+        });
+
+        autoTable(doc, {
+          startY: yPos + 4,
+          head: [
+            ["Date", "Reference", "Description", "Type", "Amount", "Balance"],
+          ],
+          body: txnTableData,
+          theme: "plain",
+          styles: { fontSize: 8, cellPadding: 3 },
+          headStyles: {
+            fillColor: [249, 250, 251],
+            textColor: [75, 85, 99],
+            fontStyle: "bold",
+            lineWidth: 0.1,
+            lineColor: [229, 231, 235],
+          },
+          bodyStyles: { lineWidth: 0.1, lineColor: [243, 244, 246] },
+          columnStyles: {
+            0: { cellWidth: 24 },
+            1: { cellWidth: 28 },
+            2: { cellWidth: 58 },
+            3: { cellWidth: 14, halign: "center" },
+            4: { cellWidth: 28, halign: "right" },
+            5: { cellWidth: 28, halign: "right" },
+          },
+          alternateRowStyles: { fillColor: [249, 250, 251] },
+          margin: { left: 14, right: 14 },
+          didParseCell: (data: any) => {
+            if (data.section === "body" && data.column.index === 3) {
+              data.cell.styles.textColor =
+                data.cell.raw === "CR" ? [22, 163, 74] : [220, 38, 38];
+              data.cell.styles.fontStyle = "bold";
+            }
+            if (data.section === "body" && data.column.index === 5) {
+              const isNegative = (data.cell.raw as string).startsWith("-");
+              data.cell.styles.textColor = isNegative
+                ? [185, 28, 28]
+                : [22, 163, 74];
+              data.cell.styles.fontStyle = "bold";
+            }
+          },
+          didDrawPage: (data: any) => {
+            doc.setDrawColor(229, 231, 235);
+            doc.line(14, pageHeight - 20, pageWidth - 14, pageHeight - 20);
+            doc.setFontSize(7);
+            doc.setTextColor(156, 163, 175);
+            doc.text(companyName, 14, pageHeight - 12);
+            doc.text(
+              `Page ${data.pageNumber}`,
+              pageWidth / 2,
+              pageHeight - 12,
+              { align: "center" }
+            );
+            doc.text(
+              "Computer-generated statement",
+              pageWidth - 14,
+              pageHeight - 12,
+              { align: "right" }
+            );
+          },
+        });
+      }
+
+      const fileName = `${companyName.replace(/\s+/g, "_")}_Bank_Statement_${
+        selectedAccount.code
+      }_${new Date().toISOString().split("T")[0]}.pdf`;
+      doc.save(fileName);
+      toast.success("Bank statement exported successfully!");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to generate PDF");
+    }
   };
 
   const handlePrintStatement = () => {
-    toast.success("Printing statement...");
+    if (!selectedAccount) {
+      toast.error("Please select an account first");
+      return;
+    }
+
+    const auth = getStoredAuth();
+    const companyName = auth?.user?.companyName || "Money Exchange";
+    const currencyLabel = selectedAccount.currency === 0 ? "KES" : "USD";
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Bank Statement - ${selectedAccount.bankName}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #111827; font-size: 12px; }
+          .header { border-bottom: 3px solid #2563eb; padding-bottom: 20px; margin-bottom: 20px; }
+          .header-top { display: flex; justify-content: space-between; align-items: flex-start; }
+          .company-name { font-size: 24px; font-weight: bold; color: #111827; }
+          .doc-title { color: #6b7280; font-size: 14px; margin-top: 4px; }
+          .doc-info { text-align: right; }
+          .doc-info label { color: #6b7280; font-size: 10px; display: block; }
+          .doc-info span { font-weight: bold; color: #111827; }
+          .account-box { background: #f9fafb; padding: 16px; margin-bottom: 20px; }
+          .account-name { font-size: 16px; font-weight: bold; margin-bottom: 8px; }
+          .account-details { color: #6b7280; }
+          .summary-row { display: flex; gap: 16px; margin-bottom: 20px; }
+          .summary-card { flex: 1; border: 1px solid #e5e7eb; padding: 12px; }
+          .summary-card label { color: #6b7280; font-size: 10px; display: block; margin-bottom: 4px; }
+          .summary-card .value { font-size: 16px; font-weight: bold; }
+          .positive { color: #16a34a; }
+          .negative { color: #dc2626; }
+          table { width: 100%; border-collapse: collapse; }
+          th { background: #f9fafb; color: #4b5563; font-weight: 600; text-align: left; padding: 10px 8px; border-bottom: 1px solid #e5e7eb; }
+          td { padding: 10px 8px; border-bottom: 1px solid #f3f4f6; }
+          tr:nth-child(even) { background: #f9fafb; }
+          .text-right { text-align: right; }
+          .text-center { text-align: center; }
+          .cr { color: #16a34a; font-weight: 600; }
+          .dr { color: #dc2626; font-weight: 600; }
+          .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #9ca3af; font-size: 10px; }
+          @media print { body { padding: 20px; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="header-top">
+            <div>
+              <div class="company-name">${companyName}</div>
+              <div class="doc-title">Bank Account Statement</div>
+            </div>
+            <div class="doc-info">
+              <label>Statement Date</label>
+              <span>${new Date().toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+              })}</span>
+              <br/><br/>
+              <label>Account No.</label>
+              <span>${selectedAccount.accountNumber}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="account-box">
+          <div class="account-name">${selectedAccount.bankName}</div>
+          <div class="account-details">
+            Account Name: ${selectedAccount.accountName} | Code: ${
+      selectedAccount.code
+    } | Currency: ${currencyLabel}
+          </div>
+        </div>
+
+        <div class="summary-row">
+          <div class="summary-card">
+            <label>Opening Balance</label>
+            <div class="value">${currencyLabel} ${(
+      selectedAccount.openingBalance || 0
+    ).toLocaleString()}</div>
+          </div>
+          <div class="summary-card">
+            <label>Net Movement</label>
+            <div class="value ${
+              (selectedAccount.netMovement || 0) >= 0 ? "positive" : "negative"
+            }">${
+      (selectedAccount.netMovement || 0) >= 0 ? "+" : "-"
+    }${currencyLabel} ${Math.abs(
+      selectedAccount.netMovement || 0
+    ).toLocaleString()}</div>
+          </div>
+          <div class="summary-card">
+            <label>Closing Balance</label>
+            <div class="value ${
+              (selectedAccount.balance || 0) >= 0 ? "positive" : "negative"
+            }">${currencyLabel} ${Math.abs(
+      selectedAccount.balance || 0
+    ).toLocaleString()}</div>
+          </div>
+        </div>
+
+        <h3 style="margin-bottom: 10px;">Transaction History</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Reference</th>
+              <th>Description</th>
+              <th class="text-center">Type</th>
+              <th class="text-right">Amount</th>
+              <th class="text-right">Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredTransactions
+              .map(
+                (txn) => `
+              <tr>
+                <td>${new Date(txn.date).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "2-digit",
+                })}</td>
+                <td>${txn.reference || txn.code || "-"}</td>
+                <td>${(txn.description || "").substring(0, 40)}${
+                  (txn.description || "").length > 40 ? "..." : ""
+                }</td>
+                <td class="text-center ${
+                  txn.thisAccountAction === "Credit" ? "cr" : "dr"
+                }">${txn.thisAccountAction === "Credit" ? "CR" : "DR"}</td>
+                <td class="text-right">${(
+                  txn.amount || 0
+                ).toLocaleString()}</td>
+                <td class="text-right ${
+                  (txn.balanceAfter || 0) >= 0 ? "positive" : "negative"
+                }">${(txn.balanceAfter || 0) >= 0 ? "" : "-"}${Math.abs(
+                  txn.balanceAfter || 0
+                ).toLocaleString()}</td>
+              </tr>
+            `
+              )
+              .join("")}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          <p>This is a computer-generated statement and does not require a signature.</p>
+          <p>${companyName} • Generated on ${new Date().toLocaleString()}</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => printWindow.print(), 250);
+    }
+    toast.success("Print preview opened!");
   };
 
   const handleViewTransaction = (txn: Transaction) => {
@@ -2348,7 +2819,7 @@ export function BankAccounts() {
                                 <p className="text-lg font-bold text-slate-900">
                                   {getAccountTypeLabel(
                                     selectedTransaction.relatedAccount!
-                                      .accountType
+                                      .accountType as import("@/lib/api").AccountType
                                   )}
                                 </p>
                                 <p className="text-xs text-slate-600">
@@ -2527,7 +2998,7 @@ export function BankAccounts() {
                                 <p className="text-xs font-bold text-slate-900">
                                   {getAccountTypeLabel(
                                     selectedTransaction.relatedAccount!
-                                      .accountType
+                                      .accountType as import("@/lib/api").AccountType
                                   )}
                                 </p>
                                 <p

@@ -1,3 +1,4 @@
+"use client";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -26,7 +27,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
-import { projectId, publicAnonKey } from "../../utils/supabase/info";
+import { getClients } from "@/lib/api";
 
 interface Invoice {
   id: string;
@@ -169,20 +170,12 @@ export function InvoiceManager() {
 
   const fetchClients = async () => {
     try {
-      const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-32ed8237/accounts`,
-        {
-          headers: {
-            Authorization: `Bearer ${publicAnonKey}`,
-          },
-        }
-      );
-      const result = await response.json();
-      if (result.success) {
-        const clientAccounts = result.accounts.filter(
-          (acc: any) => acc.type === "Client"
-        );
-        setClients(clientAccounts);
+      const result = await getClients();
+      if (result.success && result.data) {
+        const items = Array.isArray(result.data)
+          ? result.data
+          : (result.data as any).items || [];
+        setClients(items);
       }
     } catch (error) {
       console.error("Error fetching clients:", error);

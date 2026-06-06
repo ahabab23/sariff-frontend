@@ -1,3 +1,4 @@
+"use client";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -112,13 +113,10 @@ export function OfficeSettings({
         const result = await getCompanyById(auth.user.companyId);
         if (result.success && result.data) {
           setCompanyName(result.data.name || "");
-          setOfficeName(result.data.ownerName || result.data.name || "");
+          setOfficeName(result.data.name || "");
           setOfficeEmail(result.data.email || "");
-          setOfficePhone(result.data.phoneNumber || "");
+          setOfficePhone(result.data.whatsAppNumber || "");
           setOfficeAddress(result.data.address || "");
-          if (result.data.logoUrl) {
-            setCompanyLogo(result.data.logoUrl);
-          }
         }
       }
     } catch (error) {
@@ -370,8 +368,7 @@ export function OfficeSettings({
   };
 
   // Helper to get client display name
-  const getClientName = (client: ClientDto) =>
-    client.fullName || client.name || "Unknown";
+  const getClientName = (client: ClientDto) => client.fullName || "Unknown";
 
   const filteredClients = clients.filter((client) => {
     const name = getClientName(client).toLowerCase();

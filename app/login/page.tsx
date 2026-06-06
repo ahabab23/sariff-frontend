@@ -29,7 +29,6 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useAuth, UserRoleType } from "@/providers/AuthProvider";
-import { UserRole } from "@/lib/api";
 
 export default function LoginPage() {
   const { login, verifyOtp, isAuthenticated, isLoading } = useAuth();
@@ -40,8 +39,7 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [otpStep, setOtpStep] = useState(false);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [detectedRole, setDetectedRole] = useState<UserRole>(null);
-  const [biometricAvailable] = useState(true);
+  const [detectedRole, setDetectedRole] = useState<UserRoleType>(null);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [validationErrors, setValidationErrors] = useState<{
     userId?: string;
@@ -113,12 +111,6 @@ export default function LoginPage() {
     }
   };
 
-  // const handleBiometricLogin = () => {
-  //   toast.success("Biometric authentication successful!");
-  //   setTimeout(() => {
-  //     onLogin("super-admin", "Sarah Anderson");
-  //   }, 1000);
-  // };
   const getRoleTypeFromUserId = (id: string): UserRoleType => {
     const upperCode = id.toUpperCase();
     if (upperCode.startsWith("SA")) return "super-admin";
@@ -592,41 +584,6 @@ export default function LoginPage() {
                     </motion.p>
                   </div>
 
-                  {/* Biometric Login Option */}
-                  {/* <AnimatePresence>
-                    {isSuperAdminPreview && biometricAvailable && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="mb-6"
-                      >
-                        <motion.button
-                          type="button"
-                          onClick={handleBiometricLogin}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          className="w-full p-4 bg-gradient-to-r from-violet-100 to-purple-100 border-2 border-violet-300 text-violet-900 font-bold flex items-center justify-center gap-3 group relative overflow-hidden"
-                        >
-                          <motion.div className="absolute inset-0 bg-gradient-to-r from-violet-200 to-purple-200 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          <Fingerprint className="w-6 h-6 relative z-10" />
-                          <span className="relative z-10">
-                            Quick Login with Biometric
-                          </span>
-                          <Sparkles className="w-4 h-4 relative z-10" />
-                        </motion.button>
-
-                        <div className="flex items-center gap-3 my-4">
-                          <div className="flex-1 h-px bg-slate-200" />
-                          <span className="text-xs text-slate-500 font-semibold">
-                            OR USE CREDENTIALS
-                          </span>
-                          <div className="flex-1 h-px bg-slate-200" />
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence> */}
-
                   {/* Form */}
                   <form
                     onSubmit={handleSubmit}
@@ -962,59 +919,6 @@ export default function LoginPage() {
                     </motion.button>
                   </form>
 
-                  {/* Last Login Info */}
-                  {/* <AnimatePresence>
-                    {userId &&
-                      users[userId as keyof typeof users] &&
-                      !validationErrors.userId && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className={`mt-6 p-4 backdrop-blur-sm border-2 ${
-                            isSuperAdminPreview
-                              ? "bg-gradient-to-br from-violet-50/80 to-purple-50/80 border-violet-200/50"
-                              : isOfficeUserPreview
-                              ? "bg-gradient-to-br from-blue-50/80 to-cyan-50/80 border-blue-200/50"
-                              : "bg-gradient-to-br from-slate-50/80 to-slate-100/80 border-slate-200/50"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                            <Clock
-                              className={`w-4 h-4 ${
-                                isSuperAdminPreview
-                                  ? "text-violet-600"
-                                  : isOfficeUserPreview
-                                  ? "text-blue-600"
-                                  : "text-slate-600"
-                              }`}
-                            />
-                            <span className="text-xs font-bold text-slate-700">
-                              Last Login Activity
-                            </span>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-xs text-slate-600">
-                              <span className="font-semibold">Time:</span>{" "}
-                              {users[userId as keyof typeof users].lastLogin}
-                            </p>
-                            <p className="text-xs text-slate-600">
-                              <span className="font-semibold">Device:</span>{" "}
-                              {users[userId as keyof typeof users].device}
-                            </p>
-                            <p className="text-xs text-slate-600">
-                              <span className="font-semibold">
-                                Total Logins:
-                              </span>{" "}
-                              {users[
-                                userId as keyof typeof users
-                              ].loginCount.toLocaleString()}
-                            </p>
-                          </div>
-                        </motion.div>
-                      )}
-                  </AnimatePresence> */}
-
                   {/* Premium Security Notice */}
                   <motion.div
                     className={`mt-6 p-5 backdrop-blur-sm border-2 relative overflow-hidden ${
@@ -1326,9 +1230,8 @@ export default function LoginPage() {
                       </div>
                       <div>
                         <p className="text-sm text-slate-700 leading-relaxed font-medium mb-2">
-                          For demo purposes, enter any 6-digit code. In
-                          production, you'll receive a real OTP via SMS with
-                          5-minute expiry.
+                          You will receive a 6-digit OTP via WhatsApp. Enter it
+                          below to complete your secure login.
                         </p>
                         <p className="text-xs text-slate-600 flex items-center gap-1">
                           <Clock className="w-3 h-3" />

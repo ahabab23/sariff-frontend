@@ -1,3 +1,4 @@
+"use client";
 import { useState, useEffect, useCallback } from "react";
 import {
   Wallet,
@@ -41,7 +42,10 @@ import {
   UpdateCashAccountDto,
   Currency,
   getAccountTypeLabel,
+  getStoredAuth,
 } from "@/lib/api";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 // Transaction interface to match backend StatementLineDto
 interface Transaction {
@@ -324,7 +328,7 @@ export function CashAtHand() {
   const openEditModal = (account: CashAccount) => {
     setSelectedAccount(account);
     setFormData({
-      currency: account.currency,
+      currency: account.currency as import("@/lib/api").Currency,
       openingBalance: account.openingBalance,
     });
     setModalType("edit");
@@ -483,11 +487,373 @@ export function CashAtHand() {
   );
 
   const handleExport = () => {
-    toast.success("Cash at Hand statement exported successfully!");
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+
+      // Get company info from auth
+      const auth = getStoredAuth();
+      const companyName = auth?.user?.companyName || "Money Exchange";
+      const companyPhone = auth?.user?.whatsAppNumber || "";
+
+      // ========== CORPORATE HEADER ==========
+      doc.setFillColor(37, 99, 235);
+      doc.rect(0, 0, pageWidth, 4, "F");
+
+      doc.setFillColor(250, 250, 250);
+      doc.rect(0, 4, pageWidth, 36, "F");
+
+      doc.setFillColor(37, 99, 235);
+      doc.rect(14, 10, 24, 24, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.text(companyName.charAt(0).toUpperCase(), 26, 26, {
+        align: "center",
+      });
+
+      doc.setTextColor(17, 24, 39);
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text(companyName, 44, 18);
+
+      doc.setTextColor(107, 114, 128);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "normal");
+      doc.text("Cash at Hand Report", 44, 26);
+
+      doc.setTextColor(107, 114, 128);
+      doc.setFontSize(8);
+      doc.text("Report Date", pageWidth - 14, 14, { align: "right" });
+      doc.setTextColor(17, 24, 39);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text(
+        new Date().toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+        }),
+        pageWidth - 14,
+        21,
+        { align: "right" }
+      );
+
+      doc.setDrawColor(229, 231, 235);
+      doc.setLineWidth(0.5);
+      doc.line(14, 42, pageWidth - 14, 42);
+
+      // ========== CASH BALANCES ==========
+      let yPos = 50;
+      doc.setTextColor(17, 24, 39);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text("CASH PORTFOLIO", 14, yPos);
+
+      yPos += 6;
+      const cardWidth = (pageWidth - 32) / 2;
+
+      // KES Card
+      doc.setDrawColor(229, 231, 235);
+      doc.rect(14, yPos, cardWidth, 28, "S");
+      doc.setFontSize(8);
+      doc.setTextColor(107, 114, 128);
+      doc.setFont("helvetica", "normal");
+      doc.text("Kenyan Shilling (KES)", 18, yPos + 8);
+
+      const kesPositive = stats.balanceKES >= 0;
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(
+        kesPositive ? 22 : 185,
+        kesPositive ? 163 : 28,
+        kesPositive ? 74 : 28
+      );
+      doc.text(
+        `${kesPositive ? "" : "-"}KES ${Math.abs(
+          stats.balanceKES
+        ).toLocaleString()}`,
+        18,
+        yPos + 18
+      );
+
+      doc.setFontSize(7);
+      doc.setTextColor(107, 114, 128);
+      doc.text(
+        `In: ${stats.totalCreditKES.toLocaleString()} | Out: ${stats.totalDebitKES.toLocaleString()}`,
+        18,
+        yPos + 24
+      );
+
+      // USD Card
+      doc.rect(18 + cardWidth, yPos, cardWidth, 28, "S");
+      doc.setFontSize(8);
+      doc.setTextColor(107, 114, 128);
+      doc.setFont("helvetica", "normal");
+      doc.text("US Dollar (USD)", 22 + cardWidth, yPos + 8);
+
+      const usdPositive = stats.balanceUSD >= 0;
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(
+        usdPositive ? 22 : 185,
+        usdPositive ? 163 : 28,
+        usdPositive ? 74 : 28
+      );
+      doc.text(
+        `${usdPositive ? "" : "-"}USD ${Math.abs(
+          stats.balanceUSD
+        ).toLocaleString()}`,
+        22 + cardWidth,
+        yPos + 18
+      );
+
+      doc.setFontSize(7);
+      doc.setTextColor(107, 114, 128);
+      doc.text(
+        `In: ${stats.totalCreditUSD.toLocaleString()} | Out: ${stats.totalDebitUSD.toLocaleString()}`,
+        22 + cardWidth,
+        yPos + 24
+      );
+
+      // ========== TRANSACTION HISTORY ==========
+      if (filteredTransactions.length > 0) {
+        yPos += 38;
+        doc.setTextColor(17, 24, 39);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.text("TRANSACTION HISTORY", 14, yPos);
+
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(107, 114, 128);
+        doc.setFontSize(9);
+        doc.text(
+          `${filteredTransactions.length} transactions`,
+          pageWidth - 14,
+          yPos,
+          { align: "right" }
+        );
+
+        const txnTableData = filteredTransactions.map((txn) => {
+          const isCredit = txn.thisAccountAction === "Credit";
+          const currencyLabel = txn.currency === 0 ? "KES" : "USD";
+          return [
+            new Date(txn.date).toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "short",
+              year: "2-digit",
+            }),
+            txn.reference || txn.code,
+            txn.description.substring(0, 28) +
+              (txn.description.length > 28 ? "..." : ""),
+            isCredit ? "CR" : "DR",
+            currencyLabel,
+            txn.amount.toLocaleString(),
+            `${txn.balanceAfter >= 0 ? "" : "-"}${Math.abs(
+              txn.balanceAfter
+            ).toLocaleString()}`,
+          ];
+        });
+
+        autoTable(doc, {
+          startY: yPos + 4,
+          head: [
+            [
+              "Date",
+              "Reference",
+              "Description",
+              "Type",
+              "Curr",
+              "Amount",
+              "Balance",
+            ],
+          ],
+          body: txnTableData,
+          theme: "plain",
+          styles: { fontSize: 8, cellPadding: 3 },
+          headStyles: {
+            fillColor: [249, 250, 251],
+            textColor: [75, 85, 99],
+            fontStyle: "bold",
+            lineWidth: 0.1,
+            lineColor: [229, 231, 235],
+          },
+          bodyStyles: { lineWidth: 0.1, lineColor: [243, 244, 246] },
+          columnStyles: {
+            0: { cellWidth: 22 },
+            1: { cellWidth: 26 },
+            2: { cellWidth: 46 },
+            3: { cellWidth: 12, halign: "center" },
+            4: { cellWidth: 14, halign: "center" },
+            5: { cellWidth: 26, halign: "right" },
+            6: { cellWidth: 28, halign: "right" },
+          },
+          alternateRowStyles: { fillColor: [249, 250, 251] },
+          margin: { left: 14, right: 14 },
+          didParseCell: (data: any) => {
+            if (data.section === "body" && data.column.index === 3) {
+              data.cell.styles.textColor =
+                data.cell.raw === "CR" ? [22, 163, 74] : [220, 38, 38];
+              data.cell.styles.fontStyle = "bold";
+            }
+            if (data.section === "body" && data.column.index === 6) {
+              const isNegative = (data.cell.raw as string).startsWith("-");
+              data.cell.styles.textColor = isNegative
+                ? [185, 28, 28]
+                : [22, 163, 74];
+              data.cell.styles.fontStyle = "bold";
+            }
+          },
+          didDrawPage: (data: any) => {
+            doc.setDrawColor(229, 231, 235);
+            doc.line(14, pageHeight - 20, pageWidth - 14, pageHeight - 20);
+            doc.setFontSize(7);
+            doc.setTextColor(156, 163, 175);
+            doc.text(companyName, 14, pageHeight - 12);
+            doc.text(
+              `Page ${data.pageNumber}`,
+              pageWidth / 2,
+              pageHeight - 12,
+              { align: "center" }
+            );
+            doc.text(
+              "Computer-generated report",
+              pageWidth - 14,
+              pageHeight - 12,
+              { align: "right" }
+            );
+          },
+        });
+      }
+
+      const fileName = `${companyName.replace(/\s+/g, "_")}_Cash_Report_${
+        new Date().toISOString().split("T")[0]
+      }.pdf`;
+      doc.save(fileName);
+      toast.success("Cash report exported successfully!");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to generate PDF");
+    }
   };
 
   const handlePrint = () => {
-    toast.success("Printing Cash at Hand statement...");
+    const auth = getStoredAuth();
+    const companyName = auth?.user?.companyName || "Money Exchange";
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Cash at Hand Report - ${companyName}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; color: #111827; font-size: 12px; }
+          .header { border-bottom: 3px solid #2563eb; padding-bottom: 20px; margin-bottom: 20px; }
+          .company-name { font-size: 24px; font-weight: bold; }
+          .doc-title { color: #6b7280; font-size: 14px; margin-top: 4px; }
+          .summary-row { display: flex; gap: 20px; margin-bottom: 20px; }
+          .summary-card { flex: 1; border: 1px solid #e5e7eb; padding: 16px; }
+          .summary-card label { color: #6b7280; font-size: 10px; display: block; margin-bottom: 8px; }
+          .summary-card .value { font-size: 20px; font-weight: bold; }
+          .positive { color: #16a34a; }
+          .negative { color: #dc2626; }
+          .meta { color: #6b7280; font-size: 10px; margin-top: 8px; }
+          table { width: 100%; border-collapse: collapse; }
+          th { background: #f9fafb; color: #4b5563; font-weight: 600; text-align: left; padding: 10px 8px; border-bottom: 1px solid #e5e7eb; }
+          td { padding: 10px 8px; border-bottom: 1px solid #f3f4f6; }
+          tr:nth-child(even) { background: #f9fafb; }
+          .cr { color: #16a34a; font-weight: 600; }
+          .dr { color: #dc2626; font-weight: 600; }
+          .text-right { text-align: right; }
+          .text-center { text-align: center; }
+          .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #9ca3af; font-size: 10px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="company-name">${companyName}</div>
+          <div class="doc-title">Cash at Hand Report • ${new Date().toLocaleDateString(
+            "en-GB",
+            { day: "2-digit", month: "long", year: "numeric" }
+          )}</div>
+        </div>
+
+        <div class="summary-row">
+          <div class="summary-card">
+            <label>Kenyan Shilling (KES)</label>
+            <div class="value ${
+              stats.balanceKES >= 0 ? "positive" : "negative"
+            }">${stats.balanceKES >= 0 ? "" : "-"}KES ${Math.abs(
+      stats.balanceKES
+    ).toLocaleString()}</div>
+            <div class="meta">In: ${stats.totalCreditKES.toLocaleString()} | Out: ${stats.totalDebitKES.toLocaleString()}</div>
+          </div>
+          <div class="summary-card">
+            <label>US Dollar (USD)</label>
+            <div class="value ${
+              stats.balanceUSD >= 0 ? "positive" : "negative"
+            }">${stats.balanceUSD >= 0 ? "" : "-"}USD ${Math.abs(
+      stats.balanceUSD
+    ).toLocaleString()}</div>
+            <div class="meta">In: ${stats.totalCreditUSD.toLocaleString()} | Out: ${stats.totalDebitUSD.toLocaleString()}</div>
+          </div>
+        </div>
+
+        <h3 style="margin-bottom: 10px;">Transaction History (${
+          filteredTransactions.length
+        })</h3>
+        <table>
+          <thead><tr><th>Date</th><th>Reference</th><th>Description</th><th class="text-center">Type</th><th class="text-center">Curr</th><th class="text-right">Amount</th><th class="text-right">Balance</th></tr></thead>
+          <tbody>
+            ${filteredTransactions
+              .map(
+                (txn) => `
+              <tr>
+                <td>${new Date(txn.date).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "2-digit",
+                })}</td>
+                <td>${txn.reference || txn.code}</td>
+                <td>${txn.description.substring(0, 35)}${
+                  txn.description.length > 35 ? "..." : ""
+                }</td>
+                <td class="text-center ${
+                  txn.thisAccountAction === "Credit" ? "cr" : "dr"
+                }">${txn.thisAccountAction === "Credit" ? "CR" : "DR"}</td>
+                <td class="text-center">${
+                  txn.currency === 0 ? "KES" : "USD"
+                }</td>
+                <td class="text-right">${txn.amount.toLocaleString()}</td>
+                <td class="text-right ${
+                  txn.balanceAfter >= 0 ? "positive" : "negative"
+                }">${txn.balanceAfter >= 0 ? "" : "-"}${Math.abs(
+                  txn.balanceAfter
+                ).toLocaleString()}</td>
+              </tr>
+            `
+              )
+              .join("")}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          <p>This is a computer-generated report. ${companyName} • ${new Date().toLocaleString()}</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => printWindow.print(), 250);
+    }
+    toast.success("Print preview opened!");
   };
 
   // Loading state
@@ -1082,7 +1448,8 @@ export function CashAtHand() {
                                 </div>
                                 <div className="text-slate-600">
                                   {getAccountTypeLabel(
-                                    txn.relatedAccount.accountType
+                                    txn.relatedAccount
+                                      .accountType as import("@/lib/api").AccountType
                                   )}{" "}
                                   • {txn.relatedAccount.action}
                                 </div>
@@ -1915,7 +2282,8 @@ export function CashAtHand() {
                         <p className="text-slate-500">Type</p>
                         <p className="font-bold text-slate-900 truncate">
                           {getAccountTypeLabel(
-                            selectedTransaction.relatedAccount.accountType
+                            selectedTransaction.relatedAccount
+                              .accountType as import("@/lib/api").AccountType
                           )}
                         </p>
                       </div>

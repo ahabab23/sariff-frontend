@@ -19,10 +19,10 @@ export default function HomePage() {
           router.push("/admin");
           break;
         case "office-user":
-          router.push("/dashboard");
+          router.push("/office/dashboard");
           break;
         case "client":
-          router.push("/dashboard");
+          router.push("/client/dashboard");
           break;
         default:
           router.push("/login");
