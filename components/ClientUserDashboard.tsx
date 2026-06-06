@@ -234,10 +234,10 @@ export function ClientUserDashboard({
 
   // Filter State
   const [currencyFilter, setCurrencyFilter] = useState<Currency | undefined>(
-    undefined
+    undefined,
   );
   const [typeFilter, setTypeFilter] = useState<TransactionType | undefined>(
-    undefined
+    undefined,
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [filterPeriod, setFilterPeriod] = useState("all");
@@ -251,7 +251,7 @@ export function ClientUserDashboard({
   const [selectedTransaction, setSelectedTransaction] =
     useState<ClientTransactionDto | null>(null);
   const [selectedAlert, setSelectedAlert] = useState<ClientAlertDto | null>(
-    null
+    null,
   );
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordForm, setPasswordForm] = useState<ChangePasswordDto>({
@@ -344,7 +344,7 @@ export function ClientUserDashboard({
       const result = await getClientTransactions(
         currentPage,
         pageSize,
-        filters
+        filters,
       );
       if (result.success && result.data) {
         setTransactions(result.data.items);
@@ -430,7 +430,7 @@ export function ClientUserDashboard({
       const result = await markAlertAsRead(alertId);
       if (result.success) {
         setAlerts((prev) =>
-          prev.map((a) => (a.id === alertId ? { ...a, isRead: true } : a))
+          prev.map((a) => (a.id === alertId ? { ...a, isRead: true } : a)),
         );
         if (quickStats) {
           setQuickStats({
@@ -510,7 +510,7 @@ export function ClientUserDashboard({
       // Safe profile data
       const clientName = profile.fullName || userName || "Client";
       const clientCode = profile.code || "N/A";
-      const clientPhone = profile.phoneNumber || "N/A";
+      const clientPhone = profile.whatsAppNumber || "N/A";
       const clientEmail = profile.email || "N/A";
       const kesBalance = profile.balanceKES ?? 0;
       const usdBalance = profile.balanceUSD ?? 0;
@@ -555,7 +555,7 @@ export function ClientUserDashboard({
         }),
         pageWidth - 14,
         21,
-        { align: "right" }
+        { align: "right" },
       );
 
       doc.setTextColor(107, 114, 128);
@@ -620,12 +620,12 @@ export function ClientUserDashboard({
       doc.setTextColor(
         kesPositive ? 22 : 185,
         kesPositive ? 163 : 28,
-        kesPositive ? 74 : 28
+        kesPositive ? 74 : 28,
       );
       doc.text(
         `${kesPositive ? "" : "-"}KES ${Math.abs(kesBalance).toLocaleString()}`,
         18,
-        yPos + 16
+        yPos + 16,
       );
 
       // USD Balance Box
@@ -642,12 +642,12 @@ export function ClientUserDashboard({
       doc.setTextColor(
         usdPositive ? 22 : 185,
         usdPositive ? 163 : 28,
-        usdPositive ? 74 : 28
+        usdPositive ? 74 : 28,
       );
       doc.text(
         `${usdPositive ? "" : "-"}USD ${Math.abs(usdBalance).toLocaleString()}`,
         22 + balanceWidth,
-        yPos + 16
+        yPos + 16,
       );
 
       // ========== TRANSACTION HISTORY ==========
@@ -684,7 +684,7 @@ export function ClientUserDashboard({
             currency,
             (txn.amount ?? 0).toLocaleString(),
             `${runningBalance >= 0 ? "" : "-"}${Math.abs(
-              runningBalance
+              runningBalance,
             ).toLocaleString()}`,
           ];
         });
@@ -749,13 +749,13 @@ export function ClientUserDashboard({
               `Page ${data.pageNumber}`,
               pageWidth / 2,
               pageHeight - 12,
-              { align: "center" }
+              { align: "center" },
             );
             doc.text(
               "Computer-generated statement",
               pageWidth - 14,
               pageHeight - 12,
-              { align: "right" }
+              { align: "right" },
             );
           },
         });
@@ -763,7 +763,7 @@ export function ClientUserDashboard({
 
       const fileName = `${companyName.replace(
         /\s+/g,
-        "_"
+        "_",
       )}_Statement_${clientCode}_${new Date().toISOString().split("T")[0]}.pdf`;
       doc.save(fileName);
       toast.success("Statement exported successfully!");
@@ -887,14 +887,14 @@ export function ClientUserDashboard({
           <div class="summary-card">
             <label>KES Balance</label>
             <div class="value ${kesBalance >= 0 ? "positive" : "negative"}">${
-      kesBalance >= 0 ? "" : "-"
-    }KES ${Math.abs(kesBalance).toLocaleString()}</div>
+              kesBalance >= 0 ? "" : "-"
+            }KES ${Math.abs(kesBalance).toLocaleString()}</div>
           </div>
           <div class="summary-card">
             <label>USD Balance</label>
             <div class="value ${usdBalance >= 0 ? "positive" : "negative"}">${
-      usdBalance >= 0 ? "" : "-"
-    }USD ${Math.abs(usdBalance).toLocaleString()}</div>
+              usdBalance >= 0 ? "" : "-"
+            }USD ${Math.abs(usdBalance).toLocaleString()}</div>
           </div>
         </div>
 
@@ -922,7 +922,7 @@ export function ClientUserDashboard({
               <tr>
                 <td>${new Date(txn.date || new Date()).toLocaleDateString(
                   "en-GB",
-                  { day: "2-digit", month: "short", year: "2-digit" }
+                  { day: "2-digit", month: "short", year: "2-digit" },
                 )}</td>
                 <td>${txn.reference || txn.code || "-"}</td>
                 <td>${(txn.description || "").substring(0, 35)}${
@@ -1111,7 +1111,7 @@ export function ClientUserDashboard({
                 </span>
                 <p className="text-xs font-medium text-slate-500 hidden lg:block">
                   {getClientTypeLabel(
-                    profile?.clientType ?? ClientType.Temporary
+                    profile?.clientType ?? ClientType.Temporary,
                   )}
                 </p>
               </div>
@@ -1156,7 +1156,7 @@ export function ClientUserDashboard({
                 </p>
                 <p className="text-xs font-semibold text-transparent bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text">
                   {getClientTypeLabel(
-                    profile?.clientType ?? ClientType.Temporary
+                    profile?.clientType ?? ClientType.Temporary,
                   )}
                 </p>
               </div>
@@ -1510,7 +1510,7 @@ export function ClientUserDashboard({
                                 <span className="text-slate-900">
                                   {formatCurrency(
                                     txn.balanceAfter,
-                                    txn.currency
+                                    txn.currency,
                                   )}
                                 </span>
                               </span>
@@ -1592,13 +1592,13 @@ export function ClientUserDashboard({
                                 <td className="px-6 py-4 text-sm font-bold text-slate-900 font-mono">
                                   {formatCurrency(
                                     txn.balanceAfter,
-                                    txn.currency
+                                    txn.currency,
                                   )}
                                 </td>
                                 <td className="px-6 py-4">
                                   <span
                                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border-2 ${getStatusBadgeClass(
-                                      txn.status
+                                      txn.status,
                                     )}`}
                                   >
                                     <CheckCircle className="w-3 h-3" />
@@ -1705,10 +1705,10 @@ export function ClientUserDashboard({
                                 alert.type === "success"
                                   ? "from-emerald-50 to-teal-50 border-emerald-300"
                                   : alert.type === "warning"
-                                  ? "from-amber-50 to-orange-50 border-amber-300"
-                                  : alert.type === "error"
-                                  ? "from-red-50 to-rose-50 border-red-300"
-                                  : "from-blue-50 to-cyan-50 border-blue-300"
+                                    ? "from-amber-50 to-orange-50 border-amber-300"
+                                    : alert.type === "error"
+                                      ? "from-red-50 to-rose-50 border-red-300"
+                                      : "from-blue-50 to-cyan-50 border-blue-300"
                               } hover:shadow-lg border-2 transition-all text-left group ${
                                 alert.isRead ? "opacity-60" : ""
                               }`}
@@ -1718,10 +1718,10 @@ export function ClientUserDashboard({
                                   alert.type === "success"
                                     ? "text-emerald-600"
                                     : alert.type === "warning"
-                                    ? "text-amber-600"
-                                    : alert.type === "error"
-                                    ? "text-red-600"
-                                    : "text-blue-600"
+                                      ? "text-amber-600"
+                                      : alert.type === "error"
+                                        ? "text-red-600"
+                                        : "text-blue-600"
                                 }`}
                               />
                               <div className="flex-1 min-w-0">
@@ -1818,8 +1818,8 @@ export function ClientUserDashboard({
                             {period === "all"
                               ? "All Time"
                               : period === "month"
-                              ? "This Month"
-                              : "This Week"}
+                                ? "This Month"
+                                : "This Week"}
                           </button>
                         ))}
                       </div>
@@ -1977,7 +1977,7 @@ export function ClientUserDashboard({
                                 <p className="text-sm font-bold text-slate-900">
                                   {formatCurrency(
                                     txn.balanceAfter,
-                                    txn.currency
+                                    txn.currency,
                                   )}
                                 </p>
                               </div>
@@ -2060,13 +2060,13 @@ export function ClientUserDashboard({
                                 <td className="px-6 py-4 text-sm font-bold text-slate-900 font-mono">
                                   {formatCurrency(
                                     txn.balanceAfter,
-                                    txn.currency
+                                    txn.currency,
                                   )}
                                 </td>
                                 <td className="px-6 py-4">
                                   <span
                                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border-2 ${getStatusBadgeClass(
-                                      txn.status
+                                      txn.status,
                                     )}`}
                                   >
                                     <CheckCircle className="w-3 h-3" />
@@ -2100,7 +2100,7 @@ export function ClientUserDashboard({
                             <button
                               onClick={() =>
                                 setCurrentPage((p) =>
-                                  Math.min(totalPages, p + 1)
+                                  Math.min(totalPages, p + 1),
                                 )
                               }
                               disabled={currentPage === totalPages}
@@ -2235,7 +2235,7 @@ export function ClientUserDashboard({
                         <button
                           onClick={() =>
                             setAlertPage((p) =>
-                              Math.min(alertTotalPages, p + 1)
+                              Math.min(alertTotalPages, p + 1),
                             )
                           }
                           disabled={alertPage === alertTotalPages}
@@ -2304,7 +2304,7 @@ export function ClientUserDashboard({
                         <p className="text-2xl font-black text-transparent bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text">
                           {formatCurrency(
                             analytics.totals.netIncomeKES,
-                            Currency.KES
+                            Currency.KES,
                           )}
                         </p>
                       </div>
@@ -2338,7 +2338,7 @@ export function ClientUserDashboard({
                         <p className="text-2xl font-black text-transparent bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text">
                           {formatCurrency(
                             analytics.totals.netIncomeKES,
-                            Currency.KES
+                            Currency.KES,
                           )}
                         </p>
                       </div>
@@ -2355,7 +2355,7 @@ export function ClientUserDashboard({
                         <p className="text-2xl font-black text-transparent bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text">
                           {formatCurrency(
                             analytics.totals.avgTransactionKES,
-                            Currency.KES
+                            Currency.KES,
                           )}
                         </p>
                       </div>
@@ -2582,7 +2582,7 @@ export function ClientUserDashboard({
                           <p className="text-blue-50 leading-relaxed">
                             {analytics.totals.growthPercentage > 0
                               ? `Your account is growing! ${analytics.totals.growthPercentage.toFixed(
-                                  1
+                                  1,
                                 )}% increase this month.`
                               : "Your account activity is steady. Keep tracking your transactions!"}
                           </p>
@@ -2603,7 +2603,7 @@ export function ClientUserDashboard({
                             transactions with an average of{" "}
                             {formatCurrency(
                               analytics.totals.avgTransactionKES,
-                              Currency.KES
+                              Currency.KES,
                             )}{" "}
                             per transaction.
                           </p>
@@ -2647,7 +2647,7 @@ export function ClientUserDashboard({
                       </h2>
                       <p className="text-blue-100 font-semibold mb-4">
                         {getClientTypeLabel(
-                          profile?.clientType ?? ClientType.Temporary
+                          profile?.clientType ?? ClientType.Temporary,
                         )}{" "}
                         • ID: {profile?.code || "Loading..."}
                       </p>
@@ -2793,7 +2793,7 @@ export function ClientUserDashboard({
                         Opening:{" "}
                         {formatCurrency(
                           profile?.openingBalanceKES ?? 0,
-                          Currency.KES
+                          Currency.KES,
                         )}
                       </p>
                     </div>
@@ -2812,7 +2812,7 @@ export function ClientUserDashboard({
                         Opening:{" "}
                         {formatCurrency(
                           profile?.openingBalanceUSD ?? 0,
-                          Currency.USD
+                          Currency.USD,
                         )}
                       </p>
                     </div>
@@ -2919,7 +2919,7 @@ export function ClientUserDashboard({
                 {/* Status Banner */}
                 <div
                   className={`p-4 border-2 ${getStatusBadgeClass(
-                    selectedTransaction.status
+                    selectedTransaction.status,
                   )}`}
                 >
                   <div className="flex items-center gap-3">
@@ -2996,7 +2996,7 @@ export function ClientUserDashboard({
                     <button
                       onClick={() => {
                         navigator.clipboard.writeText(
-                          selectedTransaction.reference
+                          selectedTransaction.reference,
                         );
                         toast.success("Reference copied!");
                       }}
@@ -3025,7 +3025,7 @@ export function ClientUserDashboard({
                         {selectedTransaction.type === "Debit" ? "-" : "+"}
                         {formatCurrency(
                           selectedTransaction.amount,
-                          selectedTransaction.currency
+                          selectedTransaction.currency,
                         )}
                       </p>
                     </div>
@@ -3036,7 +3036,7 @@ export function ClientUserDashboard({
                       <p className="text-3xl font-black font-mono text-slate-900">
                         {formatCurrency(
                           selectedTransaction.balanceAfter,
-                          selectedTransaction.currency
+                          selectedTransaction.currency,
                         )}
                       </p>
                     </div>
@@ -3048,7 +3048,7 @@ export function ClientUserDashboard({
                     <p className="text-lg font-bold font-mono text-slate-600">
                       {formatCurrency(
                         selectedTransaction.balanceBefore,
-                        selectedTransaction.currency
+                        selectedTransaction.currency,
                       )}
                     </p>
                   </div>
@@ -3075,7 +3075,7 @@ export function ClientUserDashboard({
                     onClick={() =>
                       handleDownloadReceipt(
                         selectedTransaction.id,
-                        selectedTransaction.code
+                        selectedTransaction.code,
                       )
                     }
                     className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold hover:shadow-lg transition-all"
@@ -3090,8 +3090,8 @@ export function ClientUserDashboard({
                           selectedTransaction.code
                         }\nAmount: ${formatCurrency(
                           selectedTransaction.amount,
-                          selectedTransaction.currency
-                        )}\nDate: ${formatDate(selectedTransaction.date)}`
+                          selectedTransaction.currency,
+                        )}\nDate: ${formatDate(selectedTransaction.date)}`,
                       );
                       toast.success("Transaction details copied!");
                     }}
@@ -3177,10 +3177,10 @@ export function ClientUserDashboard({
                               selectedAlert.type === "success"
                                 ? "bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 border-emerald-300"
                                 : selectedAlert.type === "warning"
-                                ? "bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 border-amber-300"
-                                : selectedAlert.type === "error"
-                                ? "bg-gradient-to-r from-red-50 to-rose-50 text-red-700 border-red-300"
-                                : "bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-700 border-blue-300"
+                                  ? "bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 border-amber-300"
+                                  : selectedAlert.type === "error"
+                                    ? "bg-gradient-to-r from-red-50 to-rose-50 text-red-700 border-red-300"
+                                    : "bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-700 border-blue-300"
                             }`}
                           >
                             {selectedAlert.type.toUpperCase()}
