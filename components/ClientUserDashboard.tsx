@@ -814,7 +814,7 @@ export function ClientUserDashboard({
     const companyName = auth?.user?.companyName || "Money Exchange";
     const clientName = profile.fullName || userName || "Client";
     const clientCode = profile.code || "N/A";
-    const clientPhone = profile.phoneNumber || "N/A";
+    const clientPhone = profile.whatsAppNumber || "N/A";
     const clientEmail = profile.email || "N/A";
     const kesBalance = profile.balanceKES ?? 0;
     const usdBalance = profile.balanceUSD ?? 0;
