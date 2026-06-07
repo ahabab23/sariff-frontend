@@ -39,8 +39,8 @@ import {
   updateExpenseCategory,
   deleteExpenseCategory,
   resetClientPassword,
-  getCompanyById,
-  getStoredAuth,
+  getMyCompanyInfo,
+  updateMyCompanySettings,
   ClientDto,
   ExpenseCategoryDto,
 } from "@/lib/api";
@@ -108,19 +108,17 @@ export function OfficeSettings({
   const fetchCompanyInfo = async () => {
     try {
       setCompanyLoading(true);
-      const auth = getStoredAuth();
-      if (auth?.user?.companyId) {
-        const result = await getCompanyById(auth.user.companyId);
-        if (result.success && result.data) {
-          setCompanyName(result.data.name || "");
-          setOfficeName(result.data.name || "");
-          setOfficeEmail(result.data.email || "");
-          setOfficePhone(result.data.whatsAppNumber || "");
-          setOfficeAddress(result.data.address || "");
-        }
+      const result = await getMyCompanyInfo();
+      if (result.success && result.data) {
+        setCompanyName(result.data.name || "");
+        setOfficeName(result.data.name || "");
+        setOfficeEmail(result.data.email || "");
+        setOfficePhone(result.data.whatsAppNumber || "");
+        setOfficeAddress(result.data.address || "");
       }
     } catch (error) {
       console.error("Error fetching company info:", error);
+      toast.error("Failed to load data. Please refresh.");
     } finally {
       setCompanyLoading(false);
     }
@@ -129,7 +127,7 @@ export function OfficeSettings({
   const fetchClients = async () => {
     try {
       setLoading(true);
-      const result = await getClients(1, 1000);
+      const result = await getClients(1, 200);
       if (result.success && result.data?.items) {
         setClients(result.data.items);
       }
@@ -259,8 +257,29 @@ export function OfficeSettings({
     setShowCategoryModal(true);
   };
 
-  const handleSaveSettings = () => {
-    toast.success("Settings saved successfully!");
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSaveSettings = async () => {
+    setIsSaving(true);
+    try {
+      const result = await updateMyCompanySettings({
+        name: officeName.trim() || undefined,
+        email: officeEmail.trim() || undefined,
+        address: officeAddress.trim() || undefined,
+      });
+
+      if (result.success) {
+        toast.success("Settings saved successfully!");
+        // Refresh to confirm saved data
+        await fetchCompanyInfo();
+      } else {
+        toast.error(result.message || "Failed to save settings");
+      }
+    } catch (error) {
+      toast.error("Failed to save settings. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1041,10 +1060,11 @@ export function OfficeSettings({
       <div className="flex justify-end">
         <button
           onClick={handleSaveSettings}
-          className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold hover:shadow-lg transition-all"
+          disabled={isSaving}
+          className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold hover:shadow-lg transition-all disabled:opacity-50"
         >
           <Save className="w-5 h-5" />
-          Save All Settings
+          {isSaving ? "Saving..." : "Save All Settings"}
         </button>
       </div>
 

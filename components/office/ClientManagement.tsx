@@ -2,7 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { buildCredentialMessage, shareViaWhatsApp, buildTransactionMessage } from "@/lib/whatsapp";
+import {
+  buildCredentialMessage,
+  shareViaWhatsApp,
+  buildTransactionMessage,
+  fmt,
+} from "@/lib/whatsapp";
 import { SuccessShareModal } from "@/components/ui/SuccessShareModal";
 import {
   Users,
@@ -63,6 +68,8 @@ import {
   getAccountTypeLabel,
   apiRequest,
   getStoredAuth,
+  reverseClientTransaction,
+  updateTransaction,
 } from "@/lib/api";
 
 // ==============================================
@@ -81,13 +88,6 @@ interface ClientStatsDto {
 
 interface ConvertClientDto {
   password: string;
-}
-
-// DTO for updating a transaction
-interface UpdateTransactionDto {
-  description?: string;
-  notes?: string;
-  reference?: string;
 }
 
 // Local transaction type for display (matches backend StatementLineDto)
@@ -111,6 +111,8 @@ interface DisplayTransaction {
   counterCurrency?: number;
   reconciliationStatus: number;
   createdAt: string;
+  isReversed?: boolean;
+  isReversal?: boolean;
   // Related account info from API
   relatedAccount?: {
     accountId: string;
@@ -139,7 +141,13 @@ export function ClientManagement() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showConvertModal, setShowConvertModal] = useState(false);
-  const [shareModal, setShareModal] = useState<{ show: boolean; title: string; details: { label: string; value: string }[]; phone: string; message: string }>({ show: false, title: '', details: [], phone: '', message: '' });
+  const [shareModal, setShareModal] = useState<{
+    show: boolean;
+    title: string;
+    details: { label: string; value: string }[];
+    phone: string;
+    message: string;
+  }>({ show: false, title: "", details: [], phone: "", message: "" });
 
   // Transaction-related states
   const [selectedTransaction, setSelectedTransaction] =
@@ -162,7 +170,7 @@ export function ClientManagement() {
     "all" | "credit" | "debit"
   >("all");
   const [currencyFilter, setCurrencyFilter] = useState<"all" | "KES" | "USD">(
-    "all"
+    "all",
   );
 
   // Data states
@@ -183,7 +191,7 @@ export function ClientManagement() {
   const calculatedTotalPages = Math.max(
     1,
     totalPages || 1,
-    Math.ceil((totalCount || 0) / (pageSize || 1)) || 1
+    Math.ceil((totalCount || 0) / (pageSize || 1)) || 1,
   );
 
   // Transaction pagination
@@ -227,7 +235,7 @@ export function ClientManagement() {
         currentPage,
         pageSize,
         normalizedSearch,
-        filter
+        filter,
       );
 
       if (result.success && result.data) {
@@ -252,6 +260,7 @@ export function ClientManagement() {
       }
     } catch (error) {
       console.error("Error fetching client stats:", error);
+      toast.error("Failed to load data. Please refresh.");
     }
   }, []);
 
@@ -260,11 +269,8 @@ export function ClientManagement() {
     try {
       const result = await getClientStatement(clientId);
 
-      console.log("Client Statement Response:", result);
-
       if (result.success && result.data) {
         const data = result.data;
-        console.log(data);
         let transactions: DisplayTransaction[] = [];
 
         // Handle different response structures
@@ -375,23 +381,32 @@ export function ClientManagement() {
       const result = await createClient(dto);
 
       if (result.success) {
-        const clientCode = result.data?.code || '';
+        const clientCode = result.data?.code || "";
         toast.success("Client created successfully!");
         setShowAddClient(false);
         fetchClients();
         fetchClientStats();
-        // Show WhatsApp share for permanent clients with password
-        if (formData.whatsAppNumber && formData.password && formData.clientType === 0) {
+        // Show WhatsApp share for permanent clients
+        if (
+          formData.whatsAppNumber &&
+          formData.password &&
+          formData.clientType === 0
+        ) {
           setShareModal({
             show: true,
-            title: 'Client Created',
+            title: "Client Created",
             details: [
-              { label: 'Name', value: formData.fullName },
-              { label: 'Code', value: clientCode },
-              { label: 'Phone', value: formData.whatsAppNumber },
+              { label: "Name", value: formData.fullName },
+              { label: "Code", value: clientCode },
+              { label: "Phone", value: formData.whatsAppNumber },
             ],
             phone: formData.whatsAppNumber,
-            message: buildCredentialMessage({ role: 'client', fullName: formData.fullName, code: clientCode, password: formData.password }),
+            message: buildCredentialMessage({
+              role: "client",
+              fullName: formData.fullName,
+              code: clientCode,
+              password: formData.password,
+            }),
           });
         }
         resetForm();
@@ -478,7 +493,7 @@ export function ClientManagement() {
         {
           method: "POST",
           body: JSON.stringify(dto),
-        }
+        },
       );
 
       if (result.success) {
@@ -561,43 +576,19 @@ export function ClientManagement() {
 
     setIsSubmitting(true);
     try {
-      const dto: UpdateTransactionDto = {
+      const result = await updateTransaction(selectedTransaction.id, {
         description: editTransactionForm.description || undefined,
         notes: editTransactionForm.notes || undefined,
         reference: editTransactionForm.reference || undefined,
-      };
-
-      const result = await apiRequest<any>(
-        `/api/transaction/${selectedTransaction.id}`,
-        {
-          method: "PUT",
-          body: JSON.stringify(dto),
-        }
-      );
+      });
 
       if (result.success) {
+        toast.success(
+          `Transaction ${
+            selectedTransaction.reference || selectedTransaction.code
+          } updated successfully`,
+        );
         setShowEditTransaction(false);
-        // Offer WhatsApp share for updated transaction
-        if (selectedClient?.whatsAppNumber) {
-          const cur = selectedTransaction.currency === 1 ? 'USD' : 'KES';
-          const amt = (selectedTransaction.credit || selectedTransaction.debit || selectedTransaction.amount || 0);
-          const msg = buildTransactionMessage({
-            clientName: selectedClient.fullName,
-            type: selectedTransaction.credit ? 'Credit' : 'Debit',
-            amount: amt.toLocaleString('en-US', { minimumFractionDigits: 2 }),
-            currency: cur,
-            balance: (selectedTransaction.balanceAfter || 0).toLocaleString('en-US', { minimumFractionDigits: 2 }),
-            code: selectedTransaction.code || selectedTransaction.reference || '',
-            description: editTransactionForm.description || selectedTransaction.description || '',
-            date: new Date(selectedTransaction.date || selectedTransaction.transactionDate || '').toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-          });
-          toast.success(`Transaction ${selectedTransaction.reference || selectedTransaction.code} updated successfully`, {
-            duration: 8000,
-            action: { label: '📱 Share via WhatsApp', onClick: () => shareViaWhatsApp(selectedClient.whatsAppNumber, msg) },
-          });
-        } else {
-          toast.success(`Transaction ${selectedTransaction.reference || selectedTransaction.code} updated successfully`);
-        }
         setSelectedTransaction(null);
         // Refresh transactions
         if (selectedClient) {
@@ -621,21 +612,17 @@ export function ClientManagement() {
     try {
       // Call client-specific endpoint to delete transaction from client statement
       // This bypasses the restriction on general transaction deletion for client accounts
-      const result = await apiRequest<boolean>(
-        `/api/client/${selectedClient.id}/transaction/${selectedTransaction.id}`,
-        {
-          method: "DELETE",
-          body: JSON.stringify({
-            reason: "User requested deletion from client statement",
-          }),
-        }
+      const result = await reverseClientTransaction(
+        selectedClient.id,
+        selectedTransaction.id,
+        "User requested deletion from client statement",
       );
 
       if (result.success) {
         toast.success(
           `Transaction ${
             selectedTransaction.reference || selectedTransaction.code
-          } deleted successfully`
+          } deleted successfully`,
         );
         setShowDeleteTransaction(false);
         setSelectedTransaction(null);
@@ -664,13 +651,13 @@ export function ClientManagement() {
   const getFilteredTransactions = () => {
     let transactions = [...clientTransactions];
 
-    // Apply type filter
+    // Apply type filter — use thisAccountAction (viewer's perspective), not raw transactionType
     if (transactionFilter !== "all") {
       transactions = transactions.filter((t) => {
         if (transactionFilter === "credit")
-          return t.transactionType === TransactionType.Credit;
+          return t.thisAccountAction === "Credit";
         if (transactionFilter === "debit")
-          return t.transactionType === TransactionType.Debit;
+          return t.thisAccountAction === "Debit";
         return true;
       });
     }
@@ -691,7 +678,7 @@ export function ClientManagement() {
         (t) =>
           (t.description || "").toLowerCase().includes(search) ||
           (t.reference || "").toLowerCase().includes(search) ||
-          (t.code || "").toLowerCase().includes(search)
+          (t.code || "").toLowerCase().includes(search),
       );
     }
 
@@ -701,13 +688,13 @@ export function ClientManagement() {
   // Pagination for transactions
   const filteredTransactions = getFilteredTransactions();
   const totalTransactionPages = Math.ceil(
-    filteredTransactions.length / transactionsPerPage
+    filteredTransactions.length / transactionsPerPage,
   );
   const indexOfLastTransaction = transactionsCurrentPage * transactionsPerPage;
   const indexOfFirstTransaction = indexOfLastTransaction - transactionsPerPage;
   const currentTransactions = filteredTransactions.slice(
     indexOfFirstTransaction,
-    indexOfLastTransaction
+    indexOfLastTransaction,
   );
 
   // ==============================================
@@ -775,7 +762,7 @@ export function ClientManagement() {
         }),
         pageWidth - 14,
         21,
-        { align: "right" }
+        { align: "right" },
       );
 
       doc.setTextColor(107, 114, 128);
@@ -840,12 +827,12 @@ export function ClientManagement() {
       doc.setTextColor(
         kesPositive ? 22 : 185,
         kesPositive ? 163 : 28,
-        kesPositive ? 74 : 28
+        kesPositive ? 74 : 28,
       );
       doc.text(
         `${kesPositive ? "" : "-"}KES ${Math.abs(kesBalance).toLocaleString()}`,
         18,
-        yPos + 16
+        yPos + 16,
       );
 
       // USD Balance Box
@@ -862,12 +849,12 @@ export function ClientManagement() {
       doc.setTextColor(
         usdPositive ? 22 : 185,
         usdPositive ? 163 : 28,
-        usdPositive ? 74 : 28
+        usdPositive ? 74 : 28,
       );
       doc.text(
         `${usdPositive ? "" : "-"}USD ${Math.abs(usdBalance).toLocaleString()}`,
         22 + balanceWidth,
-        yPos + 16
+        yPos + 16,
       );
 
       // ========== TRANSACTION HISTORY ==========
@@ -885,18 +872,17 @@ export function ClientManagement() {
           `${filteredTransactions.length} transactions`,
           pageWidth - 14,
           yPos,
-          { align: "right" }
+          { align: "right" },
         );
 
         const txnTableData = filteredTransactions.map((txn) => {
-          const isCredit =
-            txn.thisAccountAction === "Credit" ||
-            txn.transactionType === TransactionType.Credit;
+          const isCredit = txn.thisAccountAction === "Credit";
           const currency = txn.currency === Currency.KES ? "KES" : "USD";
           const runningBalance = txn.balanceAfter ?? 0;
           const desc = txn.description || "";
           const dateStr =
             txn.transactionDate || txn.createdAt || new Date().toISOString();
+          const amtFormatted = `${currency} ${(txn.amount ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
 
           return [
             new Date(dateStr).toLocaleDateString("en-GB", {
@@ -905,13 +891,11 @@ export function ClientManagement() {
               year: "2-digit",
             }),
             txn.reference || txn.code || "-",
-            desc.substring(0, 28) + (desc.length > 28 ? "..." : ""),
+            desc.substring(0, 32) + (desc.length > 32 ? "..." : ""),
             isCredit ? "CR" : "DR",
-            currency,
-            (txn.amount ?? 0).toLocaleString(),
-            `${runningBalance >= 0 ? "" : "-"}${Math.abs(
-              runningBalance
-            ).toLocaleString()}`,
+            isCredit ? amtFormatted : "",
+            !isCredit ? amtFormatted : "",
+            `${currency} ${runningBalance >= 0 ? "" : "-"}${Math.abs(runningBalance).toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
           ];
         });
 
@@ -920,68 +904,95 @@ export function ClientManagement() {
           head: [
             [
               "Date",
-              "Reference",
+              "Ref",
               "Description",
               "Type",
-              "Curr",
-              "Amount",
+              "Credit",
+              "Debit",
               "Balance",
             ],
           ],
           body: txnTableData,
-          theme: "plain",
-          styles: { fontSize: 8, cellPadding: 3 },
-          headStyles: {
-            fillColor: [249, 250, 251],
-            textColor: [75, 85, 99],
-            fontStyle: "bold",
-            lineWidth: 0.1,
+          theme: "grid",
+          styles: {
+            fontSize: 7.5,
+            cellPadding: { top: 3, right: 4, bottom: 3, left: 4 },
+            lineWidth: 0.2,
             lineColor: [229, 231, 235],
+            overflow: "linebreak",
           },
-          bodyStyles: { lineWidth: 0.1, lineColor: [243, 244, 246] },
+          headStyles: {
+            fillColor: [37, 99, 235],
+            textColor: [255, 255, 255],
+            fontStyle: "bold",
+            fontSize: 7.5,
+            halign: "center",
+          },
+          bodyStyles: {
+            textColor: [55, 65, 81],
+          },
           columnStyles: {
-            0: { cellWidth: 22 },
-            1: { cellWidth: 26 },
-            2: { cellWidth: 48 },
-            3: { cellWidth: 12, halign: "center" },
-            4: { cellWidth: 14, halign: "center" },
-            5: { cellWidth: 26, halign: "right" },
-            6: { cellWidth: 28, halign: "right" },
+            0: { cellWidth: 20, halign: "center" },
+            1: { cellWidth: 24, fontSize: 7 },
+            2: { cellWidth: 52 },
+            3: { cellWidth: 12, halign: "center", fontStyle: "bold" },
+            4: { cellWidth: 24, halign: "right", fontStyle: "bold" },
+            5: { cellWidth: 24, halign: "right", fontStyle: "bold" },
+            6: { cellWidth: 26, halign: "right", fontStyle: "bold" },
           },
-          alternateRowStyles: { fillColor: [249, 250, 251] },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
           margin: { left: 14, right: 14 },
           didParseCell: (data: any) => {
-            if (data.section === "body" && data.column.index === 3) {
-              data.cell.styles.textColor =
-                data.cell.raw === "CR" ? [22, 163, 74] : [220, 38, 38];
-              data.cell.styles.fontStyle = "bold";
-            }
-            if (data.section === "body" && data.column.index === 6) {
-              const cellVal = String(data.cell.raw || "");
-              const isNegative = cellVal.startsWith("-");
-              data.cell.styles.textColor = isNegative
-                ? [185, 28, 28]
-                : [22, 163, 74];
-              data.cell.styles.fontStyle = "bold";
+            if (data.section === "body") {
+              // Credit column (4) — green
+              if (data.column.index === 4 && data.cell.raw) {
+                data.cell.styles.textColor = [22, 163, 74];
+              }
+              // Debit column (5) — red
+              if (data.column.index === 5 && data.cell.raw) {
+                data.cell.styles.textColor = [220, 38, 38];
+              }
+              // Type column (3) — colored
+              if (data.column.index === 3) {
+                data.cell.styles.textColor =
+                  data.cell.raw === "CR" ? [22, 163, 74] : [220, 38, 38];
+              }
+              // Balance column (6) — colored by sign
+              if (data.column.index === 6) {
+                const cellVal = String(data.cell.raw || "");
+                const isNegative = cellVal.startsWith("-");
+                data.cell.styles.textColor = isNegative
+                  ? [185, 28, 28]
+                  : [17, 24, 39];
+              }
             }
           },
           didDrawPage: (data: any) => {
-            doc.setDrawColor(229, 231, 235);
-            doc.line(14, pageHeight - 20, pageWidth - 14, pageHeight - 20);
+            // Footer on each page
+            doc.setDrawColor(37, 99, 235);
+            doc.setLineWidth(0.5);
+            doc.line(14, pageHeight - 22, pageWidth - 14, pageHeight - 22);
             doc.setFontSize(7);
-            doc.setTextColor(156, 163, 175);
-            doc.text(companyName, 14, pageHeight - 12);
+            doc.setTextColor(107, 114, 128);
+            doc.text(companyName, 14, pageHeight - 14);
             doc.text(
               `Page ${data.pageNumber}`,
               pageWidth / 2,
-              pageHeight - 12,
-              { align: "center" }
+              pageHeight - 14,
+              { align: "center" },
             );
             doc.text(
-              "Computer-generated statement",
+              `Generated: ${new Date().toLocaleString("en-GB")}`,
               pageWidth - 14,
-              pageHeight - 12,
-              { align: "right" }
+              pageHeight - 14,
+              { align: "right" },
+            );
+            doc.setFontSize(6);
+            doc.text(
+              "This is a computer-generated statement and does not require a signature.",
+              pageWidth / 2,
+              pageHeight - 8,
+              { align: "center" },
             );
           },
         });
@@ -989,7 +1000,7 @@ export function ClientManagement() {
 
       const fileName = `${companyName.replace(
         /\s+/g,
-        "_"
+        "_",
       )}_Statement_${clientCode}_${new Date().toISOString().split("T")[0]}.pdf`;
       doc.save(fileName);
       toast.success("Statement exported successfully!");
@@ -1056,7 +1067,7 @@ export function ClientManagement() {
         }),
         pageWidth - 14,
         21,
-        { align: "right" }
+        { align: "right" },
       );
 
       doc.setTextColor(107, 114, 128);
@@ -1109,7 +1120,7 @@ export function ClientManagement() {
         doc.text(
           String(clientStats.permanentClients ?? 0),
           18 + cardWidth,
-          yPos + 14
+          yPos + 14,
         );
 
         // KES Balance
@@ -1124,13 +1135,13 @@ export function ClientManagement() {
         doc.setTextColor(
           kesPositive ? 22 : 185,
           kesPositive ? 163 : 28,
-          kesPositive ? 74 : 28
+          kesPositive ? 74 : 28,
         );
         doc.setFont("helvetica", "bold");
         doc.text(
           `${kesPositive ? "" : "-"}${Math.abs(kesBal).toLocaleString()}`,
           18 + (cardWidth + 4) * 2,
-          yPos + 14
+          yPos + 14,
         );
 
         // USD Balance
@@ -1145,13 +1156,13 @@ export function ClientManagement() {
         doc.setTextColor(
           usdPositive ? 22 : 185,
           usdPositive ? 163 : 28,
-          usdPositive ? 74 : 28
+          usdPositive ? 74 : 28,
         );
         doc.setFont("helvetica", "bold");
         doc.text(
           `${usdPositive ? "" : "-"}${Math.abs(usdBal).toLocaleString()}`,
           18 + (cardWidth + 4) * 3,
-          yPos + 14
+          yPos + 14,
         );
 
         yPos += 28;
@@ -1816,7 +1827,7 @@ export function ClientManagement() {
                     <button
                       onClick={() =>
                         setCurrentPage((p) =>
-                          Math.min(calculatedTotalPages, p + 1)
+                          Math.min(calculatedTotalPages, p + 1),
                         )
                       }
                       disabled={currentPage >= calculatedTotalPages}
@@ -1995,7 +2006,7 @@ export function ClientManagement() {
                           >
                             {selectedClient.balanceUSD >= 0 ? "+$" : "-$"}
                             {Math.abs(
-                              selectedClient.balanceUSD
+                              selectedClient.balanceUSD,
                             )?.toLocaleString()}
                           </p>
                         </div>
@@ -2043,7 +2054,7 @@ export function ClientManagement() {
                           value={transactionFilter}
                           onChange={(e) =>
                             setTransactionFilter(
-                              e.target.value as "all" | "credit" | "debit"
+                              e.target.value as "all" | "credit" | "debit",
                             )
                           }
                           className="w-full pl-12 pr-4 py-3 bg-white border text-slate-600  border-slate-300 text-sm font-medium focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer"
@@ -2063,7 +2074,7 @@ export function ClientManagement() {
                           value={currencyFilter}
                           onChange={(e) =>
                             setCurrencyFilter(
-                              e.target.value as "all" | "KES" | "USD"
+                              e.target.value as "all" | "KES" | "USD",
                             )
                           }
                           className="w-full pl-12 pr-4 py-3 bg-white border text-slate-600 border-slate-300 text-sm font-medium focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer"
@@ -2111,7 +2122,7 @@ export function ClientManagement() {
                         <thead className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-b border-slate-300">
                           <tr>
                             <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                              Date & Time
+                              Date
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                               Description
@@ -2125,9 +2136,6 @@ export function ClientManagement() {
                             <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider">
                               Balance
                             </th>
-                            <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                              Reference
-                            </th>
                             <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">
                               Actions
                             </th>
@@ -2140,22 +2148,80 @@ export function ClientManagement() {
                               initial={{ opacity: 0, x: -20 }}
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ delay: idx * 0.03 }}
-                              className="hover:bg-blue-50/50 transition-colors group"
+                              className={`hover:bg-blue-50/50 transition-colors group ${
+                                txn.isReversed ? "opacity-50 bg-red-50/30" : ""
+                              } ${txn.isReversal ? "bg-amber-50/30 italic" : ""}`}
                             >
-                              <td className="px-4 py-4 text-sm text-slate-600 whitespace-nowrap font-medium">
-                                <div className="flex items-center gap-2">
-                                  <Calendar className="w-4 h-4 text-slate-400" />
+                              <td className="px-4 py-4 text-sm text-slate-600">
+                                <div className="font-semibold text-slate-900">
                                   {txn.transactionDate
                                     ? new Date(
-                                        txn.transactionDate
-                                      ).toLocaleString()
+                                        txn.transactionDate,
+                                      ).toLocaleDateString("en-GB", {
+                                        day: "2-digit",
+                                        month: "short",
+                                        year: "numeric",
+                                      })
                                     : txn.createdAt
-                                    ? new Date(txn.createdAt).toLocaleString()
-                                    : "N/A"}
+                                      ? new Date(
+                                          txn.createdAt,
+                                        ).toLocaleDateString("en-GB", {
+                                          day: "2-digit",
+                                          month: "short",
+                                          year: "numeric",
+                                        })
+                                      : "N/A"}
+                                </div>
+                                <div className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                                  <Clock className="w-3 h-3" />
+                                  {txn.transactionDate
+                                    ? new Date(
+                                        txn.transactionDate,
+                                      ).toLocaleTimeString("en-GB", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })
+                                    : txn.createdAt
+                                      ? new Date(
+                                          txn.createdAt,
+                                        ).toLocaleTimeString("en-GB", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })
+                                      : ""}
                                 </div>
                               </td>
-                              <td className="px-4 py-4 text-sm text-slate-900 font-semibold">
-                                {txn.description || "No description"}
+                              <td
+                                className={`px-4 py-4 text-sm font-semibold ${
+                                  txn.isReversed
+                                    ? "text-red-400 line-through"
+                                    : "text-slate-900"
+                                }`}
+                              >
+                                <div>
+                                  {txn.description || "No description"}
+                                  {txn.isReversed && (
+                                    <span
+                                      className="ml-2 text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-normal no-underline inline-block"
+                                      style={{ textDecoration: "none" }}
+                                    >
+                                      REVERSED
+                                    </span>
+                                  )}
+                                  {txn.isReversal && (
+                                    <span className="ml-2 text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-normal not-italic inline-block">
+                                      REVERSAL
+                                    </span>
+                                  )}
+                                </div>
+                                {(txn.reference || txn.code) && (
+                                  <div
+                                    className="text-xs text-blue-500 font-mono font-normal mt-0.5"
+                                    style={{ textDecoration: "none" }}
+                                  >
+                                    {txn.reference || txn.code}
+                                  </div>
+                                )}
                               </td>
                               <td className="px-4 py-4 whitespace-nowrap">
                                 <span
@@ -2196,9 +2262,6 @@ export function ClientManagement() {
                                 {txn.currency === Currency.USD ? "$ " : "KES "}
                                 {txn.balanceAfter.toLocaleString()}
                               </td>
-                              <td className="px-4 py-4 text-sm text-blue-600 font-mono whitespace-nowrap">
-                                {txn.reference || txn.code || "N/A"}
-                              </td>
                               <td className="px-4 py-4 whitespace-nowrap">
                                 <div className="flex items-center justify-center gap-1">
                                   <button
@@ -2208,20 +2271,28 @@ export function ClientManagement() {
                                   >
                                     <Eye className="w-4 h-4" />
                                   </button>
-                                  <button
-                                    onClick={() => handleEditTransaction(txn)}
-                                    className="p-2 bg-emerald-600 text-white hover:bg-emerald-700 transition-all"
-                                    title="Edit Transaction"
-                                  >
-                                    <Edit3 className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteTransaction(txn)}
-                                    className="p-2 bg-red-600 text-white hover:bg-red-700 transition-all"
-                                    title="Delete Transaction"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
+                                  {!txn.isReversed && !txn.isReversal && (
+                                    <>
+                                      <button
+                                        onClick={() =>
+                                          handleEditTransaction(txn)
+                                        }
+                                        className="p-2 bg-emerald-600 text-white hover:bg-emerald-700 transition-all"
+                                        title="Edit Transaction"
+                                      >
+                                        <Edit3 className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        onClick={() =>
+                                          handleDeleteTransaction(txn)
+                                        }
+                                        className="p-2 bg-red-600 text-white hover:bg-red-700 transition-all"
+                                        title="Delete Transaction"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
                               </td>
                             </motion.tr>
@@ -2243,7 +2314,7 @@ export function ClientManagement() {
                             <span className="font-bold text-slate-900">
                               {Math.min(
                                 indexOfLastTransaction,
-                                filteredTransactions.length
+                                filteredTransactions.length,
                               )}
                             </span>{" "}
                             of{" "}
@@ -2257,7 +2328,7 @@ export function ClientManagement() {
                             <button
                               onClick={() =>
                                 setTransactionsCurrentPage((p) =>
-                                  Math.max(1, p - 1)
+                                  Math.max(1, p - 1),
                                 )
                               }
                               disabled={transactionsCurrentPage === 1}
@@ -2311,7 +2382,7 @@ export function ClientManagement() {
                             <button
                               onClick={() =>
                                 setTransactionsCurrentPage((p) =>
-                                  Math.min(totalTransactionPages, p + 1)
+                                  Math.min(totalTransactionPages, p + 1),
                                 )
                               }
                               disabled={
@@ -2428,13 +2499,13 @@ export function ClientManagement() {
                         <Calendar className="w-3.5 h-3.5 text-slate-400" />
                         {selectedTransaction.transactionDate
                           ? new Date(
-                              selectedTransaction.transactionDate
+                              selectedTransaction.transactionDate,
                             ).toLocaleString()
                           : selectedTransaction.createdAt
-                          ? new Date(
-                              selectedTransaction.createdAt
-                            ).toLocaleString()
-                          : "N/A"}
+                            ? new Date(
+                                selectedTransaction.createdAt,
+                              ).toLocaleString()
+                            : "N/A"}
                       </p>
                     </div>
                     <div className="bg-slate-50 p-3 border border-slate-200">
@@ -2958,25 +3029,25 @@ export function ClientManagement() {
                         <div className="w-10 h-10 bg-blue-100 flex items-center justify-center">
                           {getAccountTypeLabel(
                             selectedTransaction.relatedAccount
-                              .accountType as import("@/lib/api").AccountType
+                              .accountType as import("@/lib/api").AccountType,
                           ) === "Cash" && (
                             <Wallet className="w-5 h-5 text-blue-600" />
                           )}
                           {getAccountTypeLabel(
                             selectedTransaction.relatedAccount
-                              .accountType as import("@/lib/api").AccountType
+                              .accountType as import("@/lib/api").AccountType,
                           ) === "Bank" && (
                             <CreditCard className="w-5 h-5 text-blue-600" />
                           )}
                           {getAccountTypeLabel(
                             selectedTransaction.relatedAccount
-                              .accountType as import("@/lib/api").AccountType
+                              .accountType as import("@/lib/api").AccountType,
                           ) === "M-Pesa" && (
                             <Phone className="w-5 h-5 text-blue-600" />
                           )}
                           {getAccountTypeLabel(
                             selectedTransaction.relatedAccount
-                              .accountType as import("@/lib/api").AccountType
+                              .accountType as import("@/lib/api").AccountType,
                           ) === "Client" && (
                             <User className="w-5 h-5 text-blue-600" />
                           )}
@@ -2985,7 +3056,7 @@ export function ClientManagement() {
                           <p className="text-lg font-bold text-slate-900">
                             {getAccountTypeLabel(
                               selectedTransaction.relatedAccount
-                                .accountType as import("@/lib/api").AccountType
+                                .accountType as import("@/lib/api").AccountType,
                             )}
                           </p>
                           <p className="text-xs text-slate-600">
@@ -3127,25 +3198,25 @@ export function ClientManagement() {
                           >
                             {getAccountTypeLabel(
                               selectedTransaction.relatedAccount
-                                .accountType as import("@/lib/api").AccountType
+                                .accountType as import("@/lib/api").AccountType,
                             ) === "Cash" && (
                               <Wallet className="w-6 h-6 text-blue-600" />
                             )}
                             {getAccountTypeLabel(
                               selectedTransaction.relatedAccount
-                                .accountType as import("@/lib/api").AccountType
+                                .accountType as import("@/lib/api").AccountType,
                             ) === "Bank" && (
                               <CreditCard className="w-6 h-6 text-blue-600" />
                             )}
                             {getAccountTypeLabel(
                               selectedTransaction.relatedAccount
-                                .accountType as import("@/lib/api").AccountType
+                                .accountType as import("@/lib/api").AccountType,
                             ) === "M-Pesa" && (
                               <Phone className="w-6 h-6 text-blue-600" />
                             )}
                             {getAccountTypeLabel(
                               selectedTransaction.relatedAccount
-                                .accountType as import("@/lib/api").AccountType
+                                .accountType as import("@/lib/api").AccountType,
                             ) === "Client" && (
                               <User className="w-6 h-6 text-blue-600" />
                             )}
@@ -3153,7 +3224,7 @@ export function ClientManagement() {
                           <p className="text-xs font-bold text-slate-900">
                             {getAccountTypeLabel(
                               selectedTransaction.relatedAccount
-                                .accountType as import("@/lib/api").AccountType
+                                .accountType as import("@/lib/api").AccountType,
                             )}
                           </p>
                           <p
@@ -4058,12 +4129,11 @@ export function ClientManagement() {
       </AnimatePresence>
       <SuccessShareModal
         isOpen={shareModal.show}
-        onClose={() => setShareModal(s => ({ ...s, show: false }))}
+        onClose={() => setShareModal((s) => ({ ...s, show: false }))}
         title={shareModal.title}
         details={shareModal.details}
         whatsappPhone={shareModal.phone}
         whatsappMessage={shareModal.message}
-        whatsappLabel="Share Credentials via WhatsApp"
       />
     </motion.div>
   );

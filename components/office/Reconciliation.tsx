@@ -578,6 +578,7 @@ export function Reconciliation() {
       }
     } catch (error) {
       console.error("Error fetching balance summary:", error);
+      toast.error("Failed to load data. Please refresh.");
     }
   }, [selectedAccountId, selectedAccountType, actualBalanceInput]);
 
@@ -589,6 +590,7 @@ export function Reconciliation() {
       }
     } catch (error) {
       console.error("Error fetching reconciliation history:", error);
+      toast.error("Failed to load data. Please refresh.");
     }
   }, [selectedAccountType]);
 
@@ -834,6 +836,7 @@ export function Reconciliation() {
         }
       } catch (error) {
         console.error("Error auto-matching:", error);
+        toast.error("Failed to load data. Please refresh.");
       }
     }
 
@@ -1283,6 +1286,15 @@ export function Reconciliation() {
         doc.text("TRANSACTION DETAILS", 14, yPos);
 
         const txnTableData = filteredTransactions.map((txn) => {
+          // Determine if the reconciled account is source or dest
+          const isSource =
+            txn.sourceAccountType === selectedAccountType &&
+            txn.sourceAccountId === selectedAccountId;
+          // Source uses transactionType directly; dest gets the opposite
+          const isDebit = isSource
+            ? txn.transactionType === TransactionType.Debit
+            : txn.transactionType === TransactionType.Credit;
+
           return [
             txn.code,
             new Date(txn.transactionDate).toLocaleDateString("en-GB", {
@@ -1291,7 +1303,7 @@ export function Reconciliation() {
             }),
             txn.description.substring(0, 28) +
               (txn.description.length > 28 ? "..." : ""),
-            txn.transactionType === TransactionType.Debit ? "DR" : "CR",
+            isDebit ? "DR" : "CR",
             txn.amount.toLocaleString(),
             getReconciliationStatusLabel(txn.reconciliationStatus),
           ];
@@ -1323,8 +1335,9 @@ export function Reconciliation() {
           margin: { left: 14, right: 14 },
           didParseCell: (data: any) => {
             if (data.section === "body" && data.column.index === 3) {
+              // Reconciliation is asset accounts only: DR = money IN (green), CR = money OUT (red)
               data.cell.styles.textColor =
-                data.cell.raw === "CR" ? [22, 163, 74] : [220, 38, 38];
+                data.cell.raw === "DR" ? [22, 163, 74] : [220, 38, 38];
               data.cell.styles.fontStyle = "bold";
             }
             if (data.section === "body" && data.column.index === 5) {
@@ -3022,7 +3035,10 @@ export function Reconciliation() {
                           </span>
                         </td>
                         <td className="px-4 py-4 text-center">
-                          {txn.transactionType === TransactionType.Debit ? (
+                          {(txn.sourceAccountType === selectedAccountType &&
+                          txn.sourceAccountId === selectedAccountId
+                            ? txn.transactionType === TransactionType.Debit
+                            : txn.transactionType === TransactionType.Credit) ? (
                             <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold">
                               <ArrowUpCircle className="w-3 h-3" />
                               DR
@@ -4003,8 +4019,10 @@ export function Reconciliation() {
                     <p className="text-xs font-bold text-slate-500 uppercase mb-2">
                       Type
                     </p>
-                    {selectedTransaction.transactionType ===
-                    TransactionType.Debit ? (
+                    {(selectedTransaction.sourceAccountType === selectedAccountType &&
+                    selectedTransaction.sourceAccountId === selectedAccountId
+                      ? selectedTransaction.transactionType === TransactionType.Debit
+                      : selectedTransaction.transactionType === TransactionType.Credit) ? (
                       <span className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 font-bold">
                         <ArrowUpCircle className="w-5 h-5" />
                         DEBIT

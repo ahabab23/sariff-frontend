@@ -283,6 +283,7 @@ export function Reports() {
       }
     } catch (error) {
       console.error("Error fetching daily report:", error);
+      toast.error("Failed to load data. Please refresh.");
     }
   }, []);
 
@@ -290,7 +291,9 @@ export function Reports() {
   const fetchTransactions = useCallback(async () => {
     try {
       // Use the correct report endpoint
-      const response = await apiRequest<any[]>("/api/report/transactions");
+      const response = await apiRequest<any[]>(
+        "/api/report/transactions?page=1&pageSize=500"
+      );
 
       if (response.success && response.data) {
         const txnData = Array.isArray(response.data)
@@ -352,13 +355,14 @@ export function Reports() {
       }
     } catch (error) {
       console.error("Error fetching transactions:", error);
+      toast.error("Failed to load data. Please refresh.");
     }
   }, []);
 
   // Fetch client balances
   const fetchClientBalances = useCallback(async () => {
     try {
-      const response = await getClients(1, 1000); // Get all clients with pagination
+      const response = await getClients(1, 200); // Get all clients with pagination
       if (response.success && response.data) {
         // Handle paginated response - data has .items array
         const clientList = response.data.items || response.data;
@@ -444,6 +448,7 @@ export function Reports() {
       }));
     } catch (error) {
       console.error("Error fetching account summary:", error);
+      toast.error("Failed to load data. Please refresh.");
     }
   }, []);
 
@@ -630,7 +635,7 @@ export function Reports() {
         date.setDate(date.getDate() - i);
         dailyProfits.push({
           date: date.toLocaleDateString("en-KE", { weekday: "short" }),
-          profit: Math.floor(Math.random() * 50000) + 10000, // Placeholder - would need daily aggregation API
+          profit: 0, // Historical daily data requires daily summaries API
         });
       }
 
@@ -2172,10 +2177,10 @@ export function Reports() {
                       Date
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Reference
+                      Description
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Description
+                      Account
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                       Flow
@@ -2186,15 +2191,12 @@ export function Reports() {
                     <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                       Currency
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Category
-                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-100">
                   {currentItems.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center">
+                      <td colSpan={6} className="px-6 py-12 text-center">
                         <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                         <p className="text-slate-600">No transactions found</p>
                       </td>
@@ -2205,20 +2207,38 @@ export function Reports() {
                         key={txn.id}
                         className="hover:bg-slate-50 transition-colors"
                       >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                          {new Date(txn.date).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
+                        <td className="px-6 py-4 text-sm text-slate-900">
+                          <div className="font-semibold">
+                            {new Date(txn.date).toLocaleDateString("en-GB", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </div>
+                          <div className="text-xs text-slate-400 mt-0.5">
+                            {new Date(txn.date).toLocaleTimeString("en-GB", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm font-mono text-slate-600">
-                            {txn.reference}
-                          </span>
+                        <td className="px-6 py-4 text-sm text-slate-900">
+                          <div>{txn.description}</div>
+                          {txn.reference && (
+                            <div className="text-xs text-blue-500 font-mono mt-0.5">
+                              {txn.reference}
+                            </div>
+                          )}
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-900 max-w-xs truncate">
-                          {txn.description}
+                        <td className="px-6 py-4 text-sm text-slate-700">
+                          <div className="font-medium">
+                            {txn.sourceAccountName || "—"}
+                          </div>
+                          {txn.destAccountName && (
+                            <div className="text-xs text-slate-400 mt-0.5">
+                              → {txn.destAccountName}
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
@@ -2243,11 +2263,6 @@ export function Reports() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 font-semibold">
                           {txn.currency}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2 py-1 bg-slate-100 text-slate-700 text-xs font-medium">
-                            {txn.category || "General"}
-                          </span>
                         </td>
                       </tr>
                     ))
@@ -2278,7 +2293,7 @@ export function Reports() {
                             .toLocaleString()}
                         </div>
                       </td>
-                      <td colSpan={2}></td>
+                      <td colSpan={1}></td>
                     </tr>
                   </tfoot>
                 )}
@@ -2294,10 +2309,10 @@ export function Reports() {
                       Time
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Reference
+                      Description
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Description
+                      Account
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
                       Flow
@@ -2340,15 +2355,29 @@ export function Reports() {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
                             {new Date(
                               txn.transactionDate || txn.createdAt
-                            ).toLocaleTimeString()}
+                            ).toLocaleTimeString("en-GB", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              second: "2-digit",
+                            })}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="text-sm font-mono text-slate-600">
-                              {txn.reference || txn.code}
-                            </span>
+                          <td className="px-6 py-4 text-sm text-slate-900">
+                            <div>{txn.description || txn.notes || ""}</div>
+                            {(txn.reference || txn.code) && (
+                              <div className="text-xs text-blue-500 font-mono mt-0.5">
+                                {txn.reference || txn.code}
+                              </div>
+                            )}
                           </td>
-                          <td className="px-6 py-4 text-sm text-slate-900 max-w-xs truncate">
-                            {txn.description || txn.notes || ""}
+                          <td className="px-6 py-4 text-sm text-slate-700">
+                            <div className="font-medium">
+                              {txn.sourceAccountName || "—"}
+                            </div>
+                            {txn.destAccountName && (
+                              <div className="text-xs text-slate-400 mt-0.5">
+                                → {txn.destAccountName}
+                              </div>
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span

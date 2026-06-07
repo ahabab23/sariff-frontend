@@ -270,6 +270,7 @@ export function ExpensesAccount() {
       }
     } catch (error) {
       console.error("Error:", error);
+      toast.error("Failed to load data. Please refresh.");
     }
   }, []);
 
@@ -284,6 +285,7 @@ export function ExpensesAccount() {
       }
     } catch (error) {
       console.error("Error:", error);
+      toast.error("Failed to load data. Please refresh.");
     }
   }, []);
 
@@ -301,6 +303,7 @@ export function ExpensesAccount() {
       }
     } catch (error) {
       console.error("Error:", error);
+      toast.error("Failed to load data. Please refresh.");
     }
   }, []);
 
@@ -332,6 +335,7 @@ export function ExpensesAccount() {
       }
     } catch (error) {
       console.error("Error:", error);
+      toast.error("Failed to load data. Please refresh.");
     }
   }, []);
 

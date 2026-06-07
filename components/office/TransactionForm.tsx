@@ -21,8 +21,9 @@ import {
   Minus,
 } from "lucide-react";
 import { toast } from "sonner";
-import { shareViaWhatsApp, buildTransactionMessage } from "@/lib/whatsapp";
+import { buildTransactionMessage, fmt } from "@/lib/whatsapp";
 import { SuccessShareModal } from "@/components/ui/SuccessShareModal";
+import { PinModal, checkPinStatus } from "@/components/ui/PinModal";
 import {
   createTransaction,
   getBankAccounts,
@@ -83,10 +84,10 @@ const isAssetAccount = (accountType: AccountType): boolean => {
 export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
   // Form state
   const [transactionType, setTransactionType] = useState<TransactionType>(
-    TransactionType.Credit
+    TransactionType.Credit,
   );
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
-    PaymentMethod.Cash
+    PaymentMethod.Cash,
   );
   const [currency, setCurrency] = useState<Currency>(Currency.KES);
   const [amount, setAmount] = useState("");
@@ -94,16 +95,16 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
   const [notes, setNotes] = useState("");
   const [exchangeRate, setExchangeRate] = useState("");
   const [dateValue, setDateValue] = useState(
-    new Date().toISOString().split("T")[0]
+    new Date().toISOString().split("T")[0],
   );
 
   // Account selection
   const [primaryAccountType, setPrimaryAccountType] = useState<AccountType>(
-    AccountType.Client
+    AccountType.Client,
   );
   const [primaryAccountId, setPrimaryAccountId] = useState("");
   const [counterAccountType, setCounterAccountType] = useState<AccountType>(
-    AccountType.Cash
+    AccountType.Cash,
   );
   const [counterAccountId, setCounterAccountId] = useState("");
 
@@ -120,7 +121,14 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
   // Loading states
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [txnShareModal, setTxnShareModal] = useState<{ show: boolean; title: string; details: { label: string; value: string }[]; phone: string; message: string }>({ show: false, title: '', details: [], phone: '', message: '' });
+  const [shareModal, setShareModal] = useState<{
+    show: boolean;
+    title: string;
+    details: { label: string; value: string }[];
+    phone: string;
+    message: string;
+  }>({ show: false, title: "", details: [], phone: "", message: "" });
+  const [showPin, setShowPin] = useState(false);
 
   // ============================================================
   // DETERMINE BALANCE EFFECT
@@ -144,7 +152,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
           getCashAccounts(),
           getBankAccounts(),
           getMpesaAgents(),
-          getClients(1, 1000),
+          getClients(1, 200),
         ]);
 
         if (cashRes.success && cashRes.data) {
@@ -245,7 +253,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
   // Get filtered accounts based on search term
   const getFilteredAccounts = (
     type: AccountType,
-    searchTerm: string
+    searchTerm: string,
   ): AccountOption[] => {
     const accounts = getAccountsByType(type);
     if (!searchTerm.trim()) {
@@ -256,7 +264,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
       (account) =>
         account.name.toLowerCase().includes(lowerSearch) ||
         account.accountNumber?.toLowerCase().includes(lowerSearch) ||
-        account.agentNumber?.toLowerCase().includes(lowerSearch)
+        account.agentNumber?.toLowerCase().includes(lowerSearch),
     );
   };
 
@@ -300,7 +308,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
 
   // Get counter account type based on payment method
   const getCounterAccountTypeFromPayment = (
-    method: PaymentMethod
+    method: PaymentMethod,
   ): AccountType => {
     switch (method) {
       case PaymentMethod.Cash:
@@ -346,7 +354,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
   const primaryAccount = useMemo(() => {
     return (
       getAccountsByType(primaryAccountType).find(
-        (a) => a.id === primaryAccountId
+        (a) => a.id === primaryAccountId,
       ) || null
     );
   }, [
@@ -361,7 +369,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
   const counterAccount = useMemo(() => {
     return (
       getAccountsByType(counterAccountType).find(
-        (a) => a.id === counterAccountId
+        (a) => a.id === counterAccountId,
       ) || null
     );
   }, [
@@ -462,8 +470,19 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
 
   const actionLabels = getActionLabels();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // PIN-gated submit — check backend if PIN is required
+  const handleSubmitWithPin = async (e: React.FormEvent) => {
     e.preventDefault();
+    const status = await checkPinStatus();
+    if (status.isEnabled && status.hasPin) {
+      setShowPin(true);
+    } else {
+      handleSubmit(); // No PIN required — proceed directly
+    }
+  };
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setIsSubmitting(true);
 
     try {
@@ -480,7 +499,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
         primaryAccountId === counterAccountId
       ) {
         throw new Error(
-          "Cannot select the same account on both sides. Please choose different accounts."
+          "Cannot select the same account on both sides. Please choose different accounts.",
         );
       }
 
@@ -548,8 +567,6 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
         notes: notes.trim() || undefined,
       };
 
-      console.log("Submitting transaction:", payload);
-
       const result = await createTransaction(payload);
 
       if (!result.success) {
@@ -561,51 +578,76 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
           ? "Received"
           : "Deposited"
         : isAssetAccount(primaryAccountType)
-        ? "Paid out"
-        : "Withdrawn";
+          ? "Paid out"
+          : "Withdrawn";
 
-      // Offer WhatsApp share if client is involved
-      const clientAccType = primaryAccountType === 3 ? 'primary' : counterAccountType === 3 ? 'counter' : null;
-      if (clientAccType) {
-        const rawAccId = clientAccType === 'primary' ? primaryAccountId : counterAccountId;
-        const clientId = rawAccId.endsWith('_KES') || rawAccId.endsWith('_USD') ? rawAccId.slice(0, -4) : rawAccId;
-        const clientInfo = clients?.find((c: any) => c.id === clientId);
+      toast.success(
+        `✅ ${actionText} successfully! Code: ${result.data?.code || "N/A"}`,
+        { duration: 1000 },
+      );
+
+      // Show WhatsApp share modal if client is involved
+      const isClientPri = primaryAccountType === AccountType.Client;
+      const isClientCtr = counterAccountType === AccountType.Client;
+      if (isClientPri || isClientCtr) {
+        const rawId = isClientPri ? primaryAccountId : counterAccountId;
+        const clientId =
+          rawId.endsWith("_KES") || rawId.endsWith("_USD")
+            ? rawId.slice(0, -4)
+            : rawId;
+        const clientInfo = clients.find((c) => c.id === clientId);
         if (clientInfo?.whatsAppNumber) {
-          const txnCode = result.data?.code || '';
-          const txnCur = currency === 1 ? 'USD' : 'KES';
-          // Get balances from response
-          const clientBalAfter = clientAccType === 'primary' ? result.data?.sourceBalanceAfter : result.data?.destBalanceAfter;
-          const txnCurrency = clientAccType === 'primary' ? result.data?.currency : (result.data?.counterCurrency ?? result.data?.currency);
-          const isKES = (txnCurrency === 0 || txnCurrency === undefined);
-          const kesBalance = isKES ? (clientBalAfter ?? 0) : (clientInfo.balanceKES ?? 0);
-          const usdBalance = !isKES ? (clientBalAfter ?? 0) : (clientInfo.balanceUSD ?? 0);
-          const balanceStr = `KES ${kesBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })} | USD ${usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+          const txnCode = result.data?.code || "";
+          const cur = currency === Currency.USD ? "USD" : "KES";
+          // Get actual balance from response
+          const balAfter = isClientPri
+            ? result.data?.sourceBalanceAfter
+            : result.data?.destBalanceAfter;
+          const txnCur = isClientPri
+            ? result.data?.currency
+            : (result.data?.counterCurrency ?? result.data?.currency);
+          const isKES = txnCur === 0 || txnCur === undefined;
+          const kesBal = isKES ? (balAfter ?? 0) : (clientInfo.balanceKES ?? 0);
+          const usdBal = !isKES
+            ? (balAfter ?? 0)
+            : (clientInfo.balanceUSD ?? 0);
 
           const msg = buildTransactionMessage({
-            clientName: clientInfo.fullName || clientInfo.name || 'Client',
-            type: isBalanceIncrease ? 'Credit' : 'Debit',
-            amount: parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2 }),
-            currency: txnCur, balance: balanceStr, code: txnCode, description: description.trim(),
-            date: new Date().toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+            clientName: clientInfo.fullName,
+            type: isBalanceIncrease ? "Credit" : "Debit",
+            amount: fmt(parseFloat(amount)),
+            currency: cur,
+            balanceKES: fmt(kesBal),
+            balanceUSD: fmt(usdBal),
+            code: txnCode,
+            description: description.trim(),
+            date: new Date().toLocaleString("en-GB", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
           });
 
-          setTxnShareModal({
-            show: true, title: `${actionText} Successfully`,
+          setShareModal({
+            show: true,
+            title: `${actionText} Successfully`,
             details: [
-              { label: 'Reference', value: txnCode },
-              { label: 'Client', value: clientInfo.fullName || clientInfo.name || '' },
-              { label: 'Amount', value: `${txnCur} ${parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}` },
-              { label: 'KES Balance', value: `KES ${kesBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}` },
-              { label: 'USD Balance', value: `USD ${usdBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}` },
-              { label: 'Description', value: description.trim() },
+              { label: "Reference", value: txnCode },
+              { label: "Client", value: clientInfo.fullName },
+              { label: "Amount", value: `${cur} ${fmt(parseFloat(amount))}` },
+              { label: "KES Balance", value: `KES ${fmt(kesBal)}` },
+              { label: "USD Balance", value: `USD ${fmt(usdBal)}` },
+              { label: "Description", value: description.trim() },
             ],
-            phone: clientInfo.whatsAppNumber, message: msg,
+            phone: clientInfo.whatsAppNumber,
+            message: msg,
           });
           if (onSuccess) onSuccess();
-          return; // Don't call onClose — modal will handle it
+          return; // Modal will handle close
         }
       }
-      toast.success(`✅ ${actionText} successfully! Code: ${result.data?.code || "N/A"}`, { duration: 4000 });
 
       if (onSuccess) {
         onSuccess();
@@ -617,7 +659,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
         `❌ Transaction failed: ${
           error instanceof Error ? error.message : "Unknown error"
         }`,
-        { duration: 5000 }
+        { duration: 5000 },
       );
     } finally {
       setIsSubmitting(false);
@@ -691,7 +733,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
 
         {/* Form */}
         <form
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmitWithPin}
           className="p-5 space-y-4 overflow-y-auto max-h-[calc(90vh-180px)]"
         >
           {/* Primary Account Selection FIRST */}
@@ -1038,10 +1080,10 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
                 {paymentMethod === PaymentMethod.Cash
                   ? "cash account"
                   : paymentMethod === PaymentMethod.Bank
-                  ? "bank"
-                  : paymentMethod === PaymentMethod.Mpesa
-                  ? "M-Pesa agent"
-                  : "account"}
+                    ? "bank"
+                    : paymentMethod === PaymentMethod.Mpesa
+                      ? "M-Pesa agent"
+                      : "account"}
                 ...
               </option>
               {filteredCounterAccounts.map((account) => (
@@ -1304,7 +1346,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
           </button>
           <button
             type="submit"
-            onClick={handleSubmit}
+            onClick={handleSubmitWithPin}
             className={`flex-1 px-4 py-2.5 bg-gradient-to-r ${buttonGradient} text-white font-bold text-sm transition-all shadow-md disabled:opacity-50`}
             disabled={isSubmitting}
           >
@@ -1329,13 +1371,24 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
         </div>
       </motion.div>
       <SuccessShareModal
-        isOpen={txnShareModal.show}
-        onClose={() => { setTxnShareModal(s => ({ ...s, show: false })); onClose(); }}
-        title={txnShareModal.title}
-        details={txnShareModal.details}
-        whatsappPhone={txnShareModal.phone}
-        whatsappMessage={txnShareModal.message}
-        whatsappLabel="Share via WhatsApp"
+        isOpen={shareModal.show}
+        onClose={() => {
+          setShareModal((s) => ({ ...s, show: false }));
+          onClose();
+        }}
+        title={shareModal.title}
+        details={shareModal.details}
+        whatsappPhone={shareModal.phone}
+        whatsappMessage={shareModal.message}
+      />
+      <PinModal
+        isOpen={showPin}
+        onClose={() => setShowPin(false)}
+        onVerified={() => {
+          setShowPin(false);
+          handleSubmit();
+        }}
+        title="Enter Transaction PIN"
       />
     </div>
   );

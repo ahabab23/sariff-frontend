@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText,
@@ -39,10 +39,24 @@ import {
   CreditCard,
   Receipt,
   Star,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import {
+  getInvoices,
+  createInvoice as apiCreateInvoice,
+  deleteInvoice as apiDeleteInvoice,
+  updateInvoiceStatus,
+  downloadInvoicePdf,
+  getClients,
+  InvoiceResponseDto,
+  InvoiceStatus,
+  CreateInvoiceDto,
+  Currency,
+  ClientDto,
+} from "@/lib/api";
 
 interface InvoiceItem {
   id: string;
@@ -194,6 +208,67 @@ export default function InvoiceManagement() {
   const [selectedTemplate, setSelectedTemplate] = useState("modern-blue");
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Map backend InvoiceStatus number to frontend string
+  const mapStatus = (status: number, dueDate: string): Invoice["status"] => {
+    switch (status) {
+      case InvoiceStatus.Draft: return "draft";
+      case InvoiceStatus.Sent: {
+        // Check if overdue
+        if (new Date(dueDate) < new Date()) return "overdue";
+        return "sent";
+      }
+      case InvoiceStatus.Paid: return "paid";
+      case InvoiceStatus.Cancelled: return "cancelled";
+      default: return "draft";
+    }
+  };
+
+  // Map backend response to local Invoice interface
+  const mapInvoice = (inv: InvoiceResponseDto): Invoice => ({
+    id: inv.id,
+    invoiceNumber: inv.invoiceNumber,
+    date: inv.invoiceDate,
+    dueDate: inv.dueDate,
+    clientName: inv.clientName,
+    clientEmail: inv.clientEmail || "",
+    clientPhone: inv.clientPhone || "",
+    clientAddress: inv.clientAddress || "",
+    items: inv.items.map((item) => ({
+      id: item.id,
+      description: item.description,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      amount: item.amount,
+    })),
+    subtotal: inv.subtotal,
+    tax: inv.taxAmount,
+    discount: inv.discountAmount,
+    total: inv.total,
+    status: mapStatus(inv.status, inv.dueDate),
+    currency: inv.currency === Currency.KES ? "KES" : "USD",
+    notes: inv.notes || "",
+    createdAt: inv.invoiceDate,
+  });
+
+  // Fetch invoices from backend
+  const fetchInvoices = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await getInvoices(1, 200);
+      if (result.success && result.data) {
+        const items = result.data.items || [];
+        setInvoices(items.map(mapInvoice));
+      }
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      toast.error("Failed to load invoices");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
     name: "SARIF FINTECH",
@@ -223,140 +298,10 @@ export default function InvoiceManagement() {
     notes: "Thank you for your business! Payment is due within 30 days.",
   });
 
-  // Load mock data
+  // Load invoices from backend
   useEffect(() => {
-    loadMockInvoices();
-  }, []);
-
-  const loadMockInvoices = () => {
-    const mockInvoices: Invoice[] = [
-      {
-        id: "1",
-        invoiceNumber: "INV-2024-001",
-        date: "2024-01-15",
-        dueDate: "2024-02-15",
-        clientName: "John Mwangi Enterprises",
-        clientEmail: "john.mwangi@business.co.ke",
-        clientPhone: "+254 712 345 678",
-        clientAddress: "Westlands Business Park, Nairobi",
-        items: [
-          {
-            id: "1",
-            description: "Currency Exchange Service - USD to KES",
-            quantity: 1000,
-            unitPrice: 150,
-            amount: 150000,
-          },
-          {
-            id: "2",
-            description: "Transaction Processing Fee",
-            quantity: 1,
-            unitPrice: 2500,
-            amount: 2500,
-          },
-        ],
-        subtotal: 152500,
-        tax: 0,
-        discount: 2500,
-        total: 150000,
-        status: "paid",
-        currency: "KES",
-        notes:
-          "Thank you for your business! We appreciate your prompt payment.",
-        createdAt: "2024-01-15T10:00:00",
-      },
-      {
-        id: "2",
-        invoiceNumber: "INV-2024-002",
-        date: "2024-01-20",
-        dueDate: "2024-02-20",
-        clientName: "Sarah Akinyi Trading Ltd",
-        clientEmail: "sarah@tradingltd.co.ke",
-        clientPhone: "+254 723 456 789",
-        clientAddress: "Karen Business Center, Nairobi",
-        items: [
-          {
-            id: "1",
-            description: "International Money Transfer Service",
-            quantity: 1,
-            unitPrice: 500,
-            amount: 500,
-          },
-          {
-            id: "2",
-            description: "Exchange Rate Premium",
-            quantity: 1,
-            unitPrice: 150,
-            amount: 150,
-          },
-        ],
-        subtotal: 650,
-        tax: 0,
-        discount: 50,
-        total: 600,
-        status: "sent",
-        currency: "USD",
-        notes:
-          "Payment due within 30 days. Bank details available upon request.",
-        createdAt: "2024-01-20T14:30:00",
-      },
-      {
-        id: "3",
-        invoiceNumber: "INV-2024-003",
-        date: "2024-01-22",
-        dueDate: "2024-02-22",
-        clientName: "Mohamed Hassan Imports",
-        clientEmail: "moh.hassan@imports.com",
-        clientPhone: "+254 734 567 890",
-        clientAddress: "Industrial Area, Mombasa",
-        items: [
-          {
-            id: "1",
-            description: "Bulk Currency Exchange - KES to USD",
-            quantity: 5000,
-            unitPrice: 0.0073,
-            amount: 36.5,
-          },
-        ],
-        subtotal: 36.5,
-        tax: 0,
-        discount: 0,
-        total: 36.5,
-        status: "overdue",
-        currency: "USD",
-        notes: "URGENT: Payment overdue. Please settle immediately.",
-        createdAt: "2024-01-22T09:15:00",
-      },
-      {
-        id: "4",
-        invoiceNumber: "INV-2024-004",
-        date: "2024-01-25",
-        dueDate: "2024-02-25",
-        clientName: "Grace Wanjiru Solutions",
-        clientEmail: "grace@solutions.co.ke",
-        clientPhone: "+254 745 678 901",
-        clientAddress: "Kilimani, Nairobi",
-        items: [
-          {
-            id: "1",
-            description: "M-Pesa Business Integration Setup",
-            quantity: 1,
-            unitPrice: 15000,
-            amount: 15000,
-          },
-        ],
-        subtotal: 15000,
-        tax: 0,
-        discount: 0,
-        total: 15000,
-        status: "draft",
-        currency: "KES",
-        notes: "Draft - Pending client approval.",
-        createdAt: "2024-01-25T16:45:00",
-      },
-    ];
-    setInvoices(mockInvoices);
-  };
+    fetchInvoices();
+  }, [fetchInvoices]);
 
   // Calculate totals
   const calculateTotals = () => {
@@ -407,8 +352,8 @@ export default function InvoiceManagement() {
     }
   };
 
-  // Create invoice
-  const handleCreateInvoice = () => {
+  // Create invoice via backend
+  const handleCreateInvoice = async () => {
     if (!formData.clientName || !formData.clientEmail) {
       toast.error("Please fill in client name and email");
       return;
@@ -421,36 +366,42 @@ export default function InvoiceManagement() {
       return;
     }
 
-    const { subtotal, taxAmount, total } = calculateTotals();
+    setSubmitting(true);
+    try {
+      const dto: CreateInvoiceDto = {
+        clientName: formData.clientName,
+        clientEmail: formData.clientEmail,
+        clientPhone: formData.clientPhone,
+        clientAddress: formData.clientAddress,
+        dueDate: formData.dueDate,
+        currency: formData.currency === "KES" ? Currency.KES : Currency.USD,
+        items: formData.items.map((item) => ({
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+        })),
+        taxRate: formData.tax,
+        discountAmount: formData.discount,
+        notes: formData.notes,
+      };
 
-    const newInvoice: Invoice = {
-      id: Date.now().toString(),
-      invoiceNumber: `INV-${new Date().getFullYear()}-${String(
-        invoices.length + 1
-      ).padStart(3, "0")}`,
-      date: formData.date,
-      dueDate: formData.dueDate,
-      clientName: formData.clientName,
-      clientEmail: formData.clientEmail,
-      clientPhone: formData.clientPhone,
-      clientAddress: formData.clientAddress,
-      items: formData.items,
-      subtotal,
-      tax: taxAmount,
-      discount: formData.discount,
-      total,
-      status: "draft",
-      currency: formData.currency,
-      notes: formData.notes,
-      createdAt: new Date().toISOString(),
-    };
-
-    setInvoices([newInvoice, ...invoices]);
-    setShowCreateModal(false);
-    resetForm();
-    toast.success("✨ Invoice created successfully!", {
-      description: `Invoice ${newInvoice.invoiceNumber} for ${formData.clientName}`,
-    });
+      const result = await apiCreateInvoice(dto);
+      if (result.success) {
+        toast.success("Invoice created successfully!", {
+          description: `Invoice for ${formData.clientName}`,
+        });
+        setShowCreateModal(false);
+        resetForm();
+        await fetchInvoices();
+      } else {
+        toast.error(result.message || "Failed to create invoice");
+      }
+    } catch (error) {
+      console.error("Error creating invoice:", error);
+      toast.error("Failed to create invoice");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const resetForm = () => {
@@ -531,7 +482,7 @@ export default function InvoiceManagement() {
         try {
           doc.addImage(companyInfo.logo, "PNG", 14, 10, 35, 35);
         } catch (e) {
-          console.log("Logo not added");
+          // Logo failed to load — skip silently
         }
       }
 
@@ -1056,7 +1007,12 @@ export default function InvoiceManagement() {
           animate={{ opacity: 1 }}
           className="bg-white shadow-xl overflow-hidden border-2 border-slate-200"
         >
-          {filteredInvoices.length === 0 ? (
+          {loading ? (
+            <div className="p-20 text-center">
+              <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+              <p className="text-slate-600">Loading invoices...</p>
+            </div>
+          ) : filteredInvoices.length === 0 ? (
             <div className="p-20 text-center">
               <div className="inline-block p-6 bg-slate-100 mb-4">
                 <FileText className="w-16 h-16 text-slate-400 mx-auto" />
@@ -1199,6 +1155,45 @@ export default function InvoiceManagement() {
                           )}
                           {invoice.status}
                         </motion.span>
+                        {/* Status change actions */}
+                        <div className="flex gap-1 mt-2">
+                          {invoice.status === "draft" && (
+                            <button
+                              onClick={async () => {
+                                const result = await updateInvoiceStatus(invoice.id, InvoiceStatus.Sent);
+                                if (result.success) { toast.success("Invoice sent"); fetchInvoices(); }
+                                else toast.error(result.message || "Failed");
+                              }}
+                              className="text-[10px] px-2 py-0.5 bg-blue-100 text-blue-700 hover:bg-blue-200 font-semibold transition-all"
+                            >
+                              Mark Sent
+                            </button>
+                          )}
+                          {(invoice.status === "sent" || invoice.status === "overdue") && (
+                            <button
+                              onClick={async () => {
+                                const result = await updateInvoiceStatus(invoice.id, InvoiceStatus.Paid);
+                                if (result.success) { toast.success("Invoice marked as paid"); fetchInvoices(); }
+                                else toast.error(result.message || "Failed");
+                              }}
+                              className="text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-semibold transition-all"
+                            >
+                              Mark Paid
+                            </button>
+                          )}
+                          {invoice.status !== "paid" && invoice.status !== "cancelled" && (
+                            <button
+                              onClick={async () => {
+                                const result = await updateInvoiceStatus(invoice.id, InvoiceStatus.Cancelled);
+                                if (result.success) { toast.success("Invoice cancelled"); fetchInvoices(); }
+                                else toast.error(result.message || "Failed");
+                              }}
+                              className="text-[10px] px-2 py-0.5 bg-red-100 text-red-700 hover:bg-red-200 font-semibold transition-all"
+                            >
+                              Cancel
+                            </button>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-5 whitespace-nowrap">
                         <div className="flex items-center gap-2">
@@ -1229,17 +1224,32 @@ export default function InvoiceManagement() {
                           <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
-                            onClick={() => {
-                              const newInvoice = {
-                                ...invoice,
-                                id: Date.now().toString(),
-                                invoiceNumber: `INV-${new Date().getFullYear()}-${String(
-                                  invoices.length + 1
-                                ).padStart(3, "0")}`,
-                                status: "draft" as const,
-                              };
-                              setInvoices([newInvoice, ...invoices]);
-                              toast.success("Invoice duplicated!");
+                            onClick={async () => {
+                              try {
+                                const dto: CreateInvoiceDto = {
+                                  clientName: invoice.clientName,
+                                  clientEmail: invoice.clientEmail,
+                                  clientPhone: invoice.clientPhone,
+                                  clientAddress: invoice.clientAddress,
+                                  dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+                                  currency: invoice.currency === "KES" ? Currency.KES : Currency.USD,
+                                  items: invoice.items.map((item) => ({
+                                    description: item.description,
+                                    quantity: item.quantity,
+                                    unitPrice: item.unitPrice,
+                                  })),
+                                  taxRate: 0,
+                                  discountAmount: invoice.discount,
+                                  notes: invoice.notes,
+                                };
+                                const result = await apiCreateInvoice(dto);
+                                if (result.success) {
+                                  toast.success("Invoice duplicated!");
+                                  fetchInvoices();
+                                } else {
+                                  toast.error(result.message || "Failed to duplicate");
+                                }
+                              } catch { toast.error("Failed to duplicate invoice"); }
                             }}
                             className="p-3 text-purple-600 hover:bg-purple-50 transition-all border-2 border-transparent hover:border-purple-200"
                             title="Duplicate"
@@ -1249,16 +1259,19 @@ export default function InvoiceManagement() {
                           <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
-                            onClick={() => {
+                            onClick={async () => {
                               if (
                                 confirm(
                                   `Are you sure you want to delete ${invoice.invoiceNumber}?`
                                 )
                               ) {
-                                setInvoices(
-                                  invoices.filter((i) => i.id !== invoice.id)
-                                );
-                                toast.success("Invoice deleted");
+                                const result = await apiDeleteInvoice(invoice.id);
+                                if (result.success) {
+                                  toast.success("Invoice deleted");
+                                  fetchInvoices();
+                                } else {
+                                  toast.error(result.message || "Failed to delete invoice");
+                                }
                               }
                             }}
                             className="p-3 text-red-600 hover:bg-red-50 transition-all border-2 border-transparent hover:border-red-200"

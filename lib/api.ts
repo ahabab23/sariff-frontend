@@ -1,5 +1,3 @@
-// =============================================
-
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 // ==============================================
@@ -107,12 +105,15 @@ export interface UnifiedLoginDto {
   code: string;
   phoneNumber: string;
   password: string;
+  deviceId?: string;
 }
 
 export interface OtpVerifyDto {
   code: string;
   phoneNumber: string;
   otp: string;
+  deviceId?: string;
+  deviceName?: string;
 }
 
 export interface LoginResponseDto {
@@ -192,7 +193,6 @@ export interface CreateClientDto {
   openingBalanceKES?: number;
   openingBalanceUSD?: number;
   password?: string;
-  expiryDays?: number;
 }
 
 export interface UpdateClientDto {
@@ -231,6 +231,8 @@ export interface TransactionDto {
   reconciliationStatus: ReconciliationStatus;
   createdAt: string;
   createdByName?: string;
+  isReversed?: boolean;
+  isReversal?: boolean;
 }
 
 export interface CreateTransactionDto {
@@ -274,6 +276,8 @@ export interface TransactionResponseDto {
   counterCurrency?: Currency;
   reconciliationStatus: ReconciliationStatus;
   createdAt: string;
+  isReversed?: boolean;
+  isReversal?: boolean;
 }
 
 // ==============================================
@@ -290,6 +294,9 @@ export interface BankAccountDto {
   currency: Currency;
   balance: number;
   openingBalance: number;
+  totalDebit: number;
+  totalCredit: number;
+  netMovement: number;
   isActive: boolean;
   createdAt: string;
 }
@@ -313,10 +320,13 @@ export interface MpesaAgentDto {
   agentName: string;
   agentNumber: string;
   phoneNumber: string;
-  tillNumber?: string;
-  paybillNumber?: string;
+  storeNumber?: string;
+  agentType?: number;
   balance: number;
   openingBalance: number;
+  totalDebit: number;
+  totalCredit: number;
+  netMovement: number;
   isActive: boolean;
   createdAt: string;
 }
@@ -325,8 +335,8 @@ export interface CreateMpesaAgentDto {
   agentName: string;
   agentNumber: string;
   phoneNumber: string;
-  tillNumber?: string;
-  paybillNumber?: string;
+  storeNumber?: string;
+  agentType?: number;
   openingBalance?: number;
 }
 
@@ -438,7 +448,8 @@ export interface SettleProfitDto {
 }
 
 export interface CreateExchangeDto {
-  clientId: string;
+  clientId?: string | null;
+  clientName?: string;
   exchangeType: ExchangeType;
   direction: ExchangeDirection;
   amount: number;
@@ -451,7 +462,7 @@ export interface ExchangeResponseDto {
   id: string;
   code: string;
   date: string;
-  clientId: string;
+  clientId: string | null;
   clientName: string;
   clientType: string;
   exchangeType: ExchangeType;
@@ -552,7 +563,7 @@ export interface FloatAlertDto {
 }
 
 export interface ClientExchangeHistoryDto {
-  clientId: string;
+  clientId: string | null;
   clientName: string;
   totalExchanges: number;
   totalKesExchanged: number;
@@ -606,6 +617,9 @@ export interface ExpenseCategoryDto {
   name: string;
   description?: string;
   isActive: boolean;
+  totalKES: number;
+  totalUSD: number;
+  transactionCount: number;
 }
 
 export interface ExpenseDto {
@@ -619,6 +633,7 @@ export interface ExpenseDto {
   currency: Currency;
   expenseDate: string;
   paymentMethod: PaymentMethod;
+  paymentAccountName?: string;
   reference?: string;
   notes?: string;
   createdAt: string;
@@ -671,9 +686,69 @@ export interface DashboardStatsDto {
 }
 
 // ==============================================
-// Invoice Types
+// Invoice Types — Matches backend DTOs
 // ==============================================
 
+export const InvoiceStatus = {
+  Draft: 0,
+  Sent: 1,
+  Paid: 2,
+  Cancelled: 3,
+} as const;
+export type InvoiceStatus = (typeof InvoiceStatus)[keyof typeof InvoiceStatus];
+
+export interface InvoiceItemDto {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface InvoiceItemResponseDto {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+}
+
+export interface CreateInvoiceDto {
+  clientId?: string | null;
+  clientName: string;
+  clientEmail?: string;
+  clientPhone?: string;
+  clientAddress?: string;
+  dueDate: string;
+  currency: Currency;
+  items: InvoiceItemDto[];
+  taxRate: number;
+  discountAmount: number;
+  notes?: string;
+  terms?: string;
+}
+
+export interface InvoiceResponseDto {
+  id: string;
+  invoiceNumber: string;
+  clientId: string | null;
+  clientName: string;
+  clientEmail?: string;
+  clientPhone?: string;
+  clientAddress?: string;
+  invoiceDate: string;
+  dueDate: string;
+  currency: Currency;
+  status: InvoiceStatus;
+  subtotal: number;
+  taxRate: number;
+  taxAmount: number;
+  discountAmount: number;
+  total: number;
+  notes?: string;
+  terms?: string;
+  items: InvoiceItemResponseDto[];
+}
+
+// Legacy simple DTO (kept for backwards compatibility)
 export interface InvoiceDto {
   id: string;
   invoiceNumber: string;
@@ -719,6 +794,8 @@ export interface TransactionReconciliationDto {
   reconciledAt: string | null;
   reconciledByName: string | null;
   reconciliationNotes: string | null;
+  sourceAccountType: AccountType;
+  sourceAccountId: string;
 }
 
 // Matches AccountReconciliationBalanceDto from backend
@@ -802,11 +879,16 @@ export interface CompanyDto {
   id: string;
   code: string;
   name: string;
+  ownerName: string;
   whatsAppNumber: string;
   email?: string;
+  logoUrl?: string;
+  taxId?: string;
+  website?: string;
   address?: string;
   isActive: boolean;
   createdAt: string;
+  lastLoginAt?: string;
 }
 
 export interface CompanySummaryDto {
@@ -1029,8 +1111,9 @@ export function setStoredAuth(auth: StoredAuth): void {
     ? new Date(auth.expiresAt)
     : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   const expires = expiryDate.toUTCString();
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
 
-  document.cookie = `auth_token=${auth.token}; path=/; expires=${expires}; SameSite=Lax`;
+  document.cookie = `auth_token=${auth.token}; path=/; expires=${expires}; SameSite=Lax${secure}`;
 
   const roleMap: Record<number, string> = {
     0: "super-admin",
@@ -1038,16 +1121,16 @@ export function setStoredAuth(auth: StoredAuth): void {
     2: "client",
   };
   const roleName = roleMap[auth.user.role] || "client";
-  document.cookie = `user_role=${roleName}; path=/; expires=${expires}; SameSite=Lax`;
+  document.cookie = `user_role=${roleName}; path=/; expires=${expires}; SameSite=Lax${secure}`;
 }
 
 export function clearStoredAuth(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem("sariff_auth");
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
 
-  document.cookie =
-    "auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-  document.cookie = "user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  document.cookie = `auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT${secure}`;
+  document.cookie = `user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT${secure}`;
 }
 
 export function getCompanyId(): string | undefined {
@@ -1061,7 +1144,7 @@ export function getCompanyId(): string | undefined {
 
 export async function apiRequest<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ): Promise<ApiResponse<T>> {
   const auth = getStoredAuth();
 
@@ -1074,19 +1157,20 @@ export async function apiRequest<T>(
     headers["Authorization"] = `Bearer ${auth.token}`;
   }
 
-  if (auth?.user?.companyId) {
-    headers["X-Company-Id"] = auth.user.companyId;
-  }
-
-  if (auth?.user?.id) {
-    headers["X-User-Id"] = auth.user.id;
-  }
+  // CompanyId and UserId are now extracted from JWT by the backend middleware.
+  // Sending X-Company-Id / X-User-Id headers was removed as a security fix.
 
   try {
+    // Timeout after 30s — prevents hanging on Render free-tier cold starts
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers,
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
 
     if (response.status === 401 && auth?.refreshToken) {
       const refreshed = await refreshToken(auth.refreshToken);
@@ -1109,7 +1193,14 @@ export async function apiRequest<T>(
     const data = await response.json();
     return data;
   } catch (error: any) {
-    console.error("API Request Error:", error);
+    if (error.name === "AbortError") {
+      return {
+        success: false,
+        message:
+          "Request timed out. The server may be starting up — please try again in a moment.",
+        data: null,
+      };
+    }
     return {
       success: false,
       message: error.message || "Network error occurred",
@@ -1119,8 +1210,8 @@ export async function apiRequest<T>(
 }
 
 async function refreshToken(
-  refreshTokenValue: string
-): Promise<AuthResponseDto | null> {
+  refreshTokenValue: string,
+): Promise<{ accessToken: string } | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
       method: "POST",
@@ -1130,15 +1221,27 @@ async function refreshToken(
 
     if (!response.ok) return null;
 
-    const result: ApiResponse<AuthResponseDto> = await response.json();
-    if (result.success && result.data?.accessToken && result.data?.user) {
+    const result: ApiResponse<TokenResponseDto> = await response.json();
+    if (result.success && result.data?.accessToken) {
+      // Backend returns flat TokenResponseDto — map to StoredAuth shape
+      const data = result.data;
       setStoredAuth({
-        token: result.data.accessToken,
-        refreshToken: result.data.refreshToken || refreshTokenValue,
-        user: result.data.user,
-        expiresAt: result.data.expiresAt || "",
+        token: data.accessToken,
+        refreshToken: data.refreshToken || refreshTokenValue,
+        user: {
+          id: data.companyId || "",
+          fullName: data.name,
+          whatsAppNumber: "",
+          role: data.role,
+          companyId: data.companyId,
+          companyName: data.name,
+          ownerName: data.ownerName,
+          userCode: data.code,
+          mustChangePassword: false,
+        },
+        expiresAt: data.expiresAt || "",
       });
-      return result.data;
+      return { accessToken: data.accessToken };
     }
     return null;
   } catch {
@@ -1151,25 +1254,43 @@ async function refreshToken(
 // ==============================================
 
 export async function login(
-  dto: UnifiedLoginDto
+  dto: UnifiedLoginDto,
 ): Promise<ApiResponse<LoginResponseDto>> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(dto),
-  });
-  return response.json();
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dto),
+    });
+    const data = await response.json();
+    return data;
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.message || "Network error — cannot reach server",
+      data: null,
+    };
+  }
 }
 
 export async function verifyOtp(
-  dto: OtpVerifyDto
+  dto: OtpVerifyDto,
 ): Promise<ApiResponse<TokenResponseDto>> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(dto),
-  });
-  return response.json();
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dto),
+    });
+    const data = await response.json();
+    return data;
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.message || "Network error — cannot reach server",
+      data: null,
+    };
+  }
 }
 
 export async function logout(): Promise<void> {
@@ -1184,87 +1305,78 @@ export async function logout(): Promise<void> {
 // Dashboard API Functions
 // ==============================================
 
+// OfficeUser: Get own company info (does NOT need SuperAdmin)
+export async function getMyCompanyInfo(): Promise<ApiResponse<CompanyDto>> {
+  return apiRequest("/api/dashboard/company");
+}
+
+// OfficeUser: Update own company settings (does NOT need SuperAdmin)
+export async function updateMyCompanySettings(dto: {
+  name?: string;
+  ownerName?: string;
+  email?: string;
+  address?: string;
+  logoUrl?: string;
+  taxId?: string;
+  website?: string;
+}): Promise<ApiResponse<CompanyDto>> {
+  return apiRequest("/api/dashboard/settings", {
+    method: "PUT",
+    body: JSON.stringify(dto),
+  });
+}
+
 export async function getDashboardStats(): Promise<
   ApiResponse<DashboardStatsDto>
 > {
-  const cashResult = await apiRequest<CashAccountDto[]>("/api/cash");
-  const bankResult = await apiRequest<BankAccountDto[]>("/api/bank");
-  const mpesaResult = await apiRequest<MpesaAgentDto[]>("/api/mpesa");
-  const clientResult = await apiRequest<PagedResult<ClientDto>>(
-    "/api/client?page=1&pageSize=1000"
-  );
-  const transactionResult = await apiRequest<PagedResult<TransactionDto>>(
-    "/api/transaction/today"
-  );
+  // Call the single backend dashboard endpoint instead of 5 separate calls
+  const result = await apiRequest<any>("/api/dashboard");
 
-  let cashKes = 0,
-    cashUsd = 0;
-  if (cashResult.success && cashResult.data) {
-    cashResult.data.forEach((c) => {
-      if (c.currency === Currency.KES) cashKes = c.balance;
-      else cashUsd = c.balance;
-    });
+  if (!result.success || !result.data) {
+    return {
+      success: false,
+      message: result.message || "Failed to load dashboard",
+      data: null,
+    };
   }
 
-  let bankKes = 0,
-    bankUsd = 0;
-  if (bankResult.success && bankResult.data) {
-    bankResult.data.forEach((b) => {
-      if (b.currency === Currency.KES) bankKes += b.balance;
-      else bankUsd += b.balance;
-    });
-  }
-
-  let mpesaTotal = 0;
-  if (mpesaResult.success && mpesaResult.data) {
-    mpesaResult.data.forEach((m) => (mpesaTotal += m.balance));
-  }
-
-  let clientKes = 0,
-    clientUsd = 0,
-    totalClients = 0;
-  if (clientResult.success && clientResult.data) {
-    totalClients = clientResult.data.totalCount;
-    clientResult.data.items.forEach((c) => {
-      clientKes += c.balanceKES;
-      clientUsd += c.balanceUSD;
-    });
-  }
+  const d = result.data;
+  const today = d.todayTransactions || {};
 
   const stats: DashboardStatsDto = {
-    cash: { kes: cashKes, usd: cashUsd },
-    banks: { kes: bankKes, usd: bankUsd },
-    mpesa: { total: mpesaTotal },
+    cash: { kes: d.cashKES || 0, usd: d.cashUSD || 0 },
+    banks: { kes: d.totalBankKES || 0, usd: d.totalBankUSD || 0 },
+    mpesa: { total: d.totalMpesa || 0 },
     exchange: { kes: 0, usd: 0 },
-    clients: { kes: clientKes, usd: clientUsd },
+    clients: { kes: 0, usd: 0 },
     walkin: { kes: 0, usd: 0 },
     daily: {
-      credits: 0,
-      debits: 0,
-      net: 0,
+      credits: (today.totalCreditKES || 0) + (today.totalCreditUSD || 0),
+      debits: (today.totalDebitKES || 0) + (today.totalDebitUSD || 0),
+      net: (today.netFlowKES || 0) + (today.netFlowUSD || 0),
       byCurrency: {
         kes: {
-          credits: (transactionResult.data as any)?.totalCreditKES,
-          debits: (transactionResult.data as any)?.totalDebitKES,
-          net: (transactionResult.data as any)?.netFlowKES,
+          credits: today.totalCreditKES || 0,
+          debits: today.totalDebitKES || 0,
+          net: today.netFlowKES || 0,
         },
         usd: {
-          credits: (transactionResult.data as any)?.totalCreditUSD,
-          debits: (transactionResult.data as any)?.totalDebitUSD,
-          net: (transactionResult.data as any)?.netFlowUSD,
+          credits: today.totalCreditUSD || 0,
+          debits: today.totalDebitUSD || 0,
+          net: today.netFlowUSD || 0,
         },
       },
     },
-    totalAccounts: totalClients,
+    totalAccounts: 0,
     totalTransactions: 0,
-    todayTransactions: transactionResult.data?.totalCount || 0,
+    todayTransactions: today.totalCount || 0,
   };
 
   return { success: true, message: "Dashboard stats loaded", data: stats };
 }
 
 export async function getRecentTransactions(
-  count: number = 10
+  count: number = 10,
 ): Promise<ApiResponse<TransactionDto[]>> {
   return apiRequest(`/api/transaction/recent?count=${count}`);
 }
@@ -1277,7 +1389,7 @@ export async function getClients(
   page: number = 1,
   pageSize: number = 10,
   search?: string,
-  filter?: string
+  filter?: string,
 ): Promise<ApiResponse<PagedResult<ClientDto>>> {
   let url = `/api/client?page=${page}&pageSize=${pageSize}`;
   if (search) url += `&search=${encodeURIComponent(search)}`;
@@ -1285,14 +1397,32 @@ export async function getClients(
   return apiRequest(url);
 }
 
+// PERF: Lightweight client list for dropdowns — no balance calculations
+export interface ClientLookupDto {
+  id: string;
+  code: string;
+  fullName: string;
+  whatsAppNumber: string;
+  idPassport?: string;
+  isActive: boolean;
+}
+
+export async function getClientLookup(
+  search?: string,
+): Promise<ApiResponse<ClientLookupDto[]>> {
+  let url = "/api/client/lookup";
+  if (search) url += `?search=${encodeURIComponent(search)}`;
+  return apiRequest(url);
+}
+
 export async function getClientById(
-  id: string
+  id: string,
 ): Promise<ApiResponse<ClientDto>> {
   return apiRequest(`/api/client/${id}`);
 }
 
 export async function createClient(
-  dto: CreateClientDto
+  dto: CreateClientDto,
 ): Promise<ApiResponse<ClientDto>> {
   return apiRequest("/api/client", {
     method: "POST",
@@ -1302,7 +1432,7 @@ export async function createClient(
 
 export async function updateClient(
   id: string,
-  dto: UpdateClientDto
+  dto: UpdateClientDto,
 ): Promise<ApiResponse<ClientDto>> {
   return apiRequest(`/api/client/${id}`, {
     method: "PUT",
@@ -1317,7 +1447,7 @@ export async function deleteClient(id: string): Promise<ApiResponse<boolean>> {
 export async function getClientStatement(
   id: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
 ): Promise<ApiResponse<any>> {
   let url = `/api/client/${id}/statement`;
   const params = new URLSearchParams();
@@ -1343,7 +1473,7 @@ export async function getTransactions(
     endDate?: string;
     type?: number;
     currency?: number;
-  }
+  },
 ): Promise<ApiResponse<PagedResult<TransactionDto>>> {
   let url = `/api/transaction?page=${page}&pageSize=${pageSize}`;
   if (filters) {
@@ -1356,7 +1486,7 @@ export async function getTransactions(
 }
 
 export async function createTransaction(
-  dto: CreateTransactionDto
+  dto: CreateTransactionDto,
 ): Promise<ApiResponse<TransactionDto>> {
   return apiRequest("/api/transaction", {
     method: "POST",
@@ -1365,16 +1495,40 @@ export async function createTransaction(
 }
 
 export async function getTransactionById(
-  id: string
+  id: string,
 ): Promise<ApiResponse<TransactionDto>> {
   return apiRequest(`/api/transaction/${id}`);
 }
 
+export async function updateTransaction(
+  id: string,
+  dto: { description?: string; notes?: string; reference?: string },
+): Promise<ApiResponse<TransactionDto>> {
+  return apiRequest(`/api/transaction/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(dto),
+  });
+}
+
 export async function deleteTransaction(
   id: string,
-  reason: string
+  reason: string,
 ): Promise<ApiResponse<boolean>> {
   return apiRequest(`/api/transaction/${id}`, {
+    method: "DELETE",
+    body: JSON.stringify({ reason }),
+  });
+}
+
+// Reverse a client transaction from the client statement.
+// This is the ONLY way to delete transactions involving client accounts.
+// The general deleteTransaction endpoint blocks client transactions.
+export async function reverseClientTransaction(
+  clientId: string,
+  transactionId: string,
+  reason: string,
+): Promise<ApiResponse<boolean>> {
+  return apiRequest(`/api/client/${clientId}/transaction/${transactionId}`, {
     method: "DELETE",
     body: JSON.stringify({ reason }),
   });
@@ -1395,20 +1549,20 @@ export async function getBankAccounts(): Promise<
 }
 
 export async function getBankAccountById(
-  id: string
+  id: string,
 ): Promise<ApiResponse<BankAccountDto>> {
   return apiRequest(`/api/bank/${id}`);
 }
 
 export async function createBankAccount(
-  dto: CreateBankAccountDto
+  dto: CreateBankAccountDto,
 ): Promise<ApiResponse<BankAccountDto>> {
   return apiRequest("/api/bank", { method: "POST", body: JSON.stringify(dto) });
 }
 
 export async function updateBankAccount(
   id: string,
-  dto: Partial<BankAccountDto>
+  dto: Partial<BankAccountDto>,
 ): Promise<ApiResponse<BankAccountDto>> {
   return apiRequest(`/api/bank/${id}`, {
     method: "PUT",
@@ -1417,7 +1571,7 @@ export async function updateBankAccount(
 }
 
 export async function deleteBankAccount(
-  id: string
+  id: string,
 ): Promise<ApiResponse<boolean>> {
   return apiRequest(`/api/bank/${id}`, { method: "DELETE" });
 }
@@ -1425,7 +1579,7 @@ export async function deleteBankAccount(
 export async function getBankAccountStatement(
   id: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
 ): Promise<ApiResponse<any>> {
   let url = `/api/bank/${id}/statement`;
   const params = new URLSearchParams();
@@ -1448,13 +1602,13 @@ export async function getMpesaAgents(): Promise<ApiResponse<MpesaAgentDto[]>> {
 }
 
 export async function getMpesaAgentById(
-  id: string
+  id: string,
 ): Promise<ApiResponse<MpesaAgentDto>> {
   return apiRequest(`/api/mpesa/${id}`);
 }
 
 export async function createMpesaAgent(
-  dto: CreateMpesaAgentDto
+  dto: CreateMpesaAgentDto,
 ): Promise<ApiResponse<MpesaAgentDto>> {
   return apiRequest("/api/mpesa", {
     method: "POST",
@@ -1464,7 +1618,7 @@ export async function createMpesaAgent(
 
 export async function updateMpesaAgent(
   id: string,
-  dto: Partial<MpesaAgentDto>
+  dto: Partial<MpesaAgentDto>,
 ): Promise<ApiResponse<MpesaAgentDto>> {
   return apiRequest(`/api/mpesa/${id}`, {
     method: "PUT",
@@ -1473,7 +1627,7 @@ export async function updateMpesaAgent(
 }
 
 export async function deleteMpesaAgent(
-  id: string
+  id: string,
 ): Promise<ApiResponse<boolean>> {
   return apiRequest(`/api/mpesa/${id}`, { method: "DELETE" });
 }
@@ -1481,7 +1635,7 @@ export async function deleteMpesaAgent(
 export async function getMpesaAgentStatement(
   id: string,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
 ): Promise<ApiResponse<any>> {
   let url = `/api/mpesa/${id}/statement`;
   const params = new URLSearchParams();
@@ -1508,7 +1662,7 @@ export async function getCashAccounts(): Promise<
 export async function getCashAccountStatement(
   currency: number,
   startDate?: string,
-  endDate?: string
+  endDate?: string,
 ): Promise<ApiResponse<any>> {
   let url = `/api/cash/statement/${currency}`;
   const params = new URLSearchParams();
@@ -1526,7 +1680,7 @@ export async function getCashStats(): Promise<ApiResponse<any>> {
  * Create a new cash account
  */
 export async function createCashAccount(
-  dto: CreateCashAccountDto
+  dto: CreateCashAccountDto,
 ): Promise<ApiResponse<CashAccountResponseDto>> {
   return apiRequest("/api/cash", {
     method: "POST",
@@ -1538,7 +1692,7 @@ export async function createCashAccount(
  * Get a specific cash account by ID
  */
 export async function getCashAccountById(
-  id: string
+  id: string,
 ): Promise<ApiResponse<CashAccountResponseDto>> {
   return apiRequest(`/api/cash/${id}`);
 }
@@ -1547,7 +1701,7 @@ export async function getCashAccountById(
  * Get cash account by currency
  */
 export async function getCashAccountByCurrency(
-  currency: Currency
+  currency: Currency,
 ): Promise<ApiResponse<CashAccountResponseDto>> {
   return apiRequest(`/api/cash/currency/${currency}`);
 }
@@ -1557,7 +1711,7 @@ export async function getCashAccountByCurrency(
  */
 export async function updateCashAccount(
   id: string,
-  dto: UpdateCashAccountDto
+  dto: UpdateCashAccountDto,
 ): Promise<ApiResponse<CashAccountResponseDto>> {
   return apiRequest(`/api/cash/${id}`, {
     method: "PUT",
@@ -1569,7 +1723,7 @@ export async function updateCashAccount(
  * Delete a cash account (soft delete)
  */
 export async function deleteCashAccount(
-  id: string
+  id: string,
 ): Promise<ApiResponse<boolean>> {
   return apiRequest(`/api/cash/${id}`, {
     method: "DELETE",
@@ -1587,7 +1741,7 @@ export async function getCurrentExchangeRate(): Promise<
 }
 
 export async function setExchangeRate(
-  dto: SetExchangeRateDto
+  dto: SetExchangeRateDto,
 ): Promise<ApiResponse<ExchangeRateDto>> {
   return apiRequest("/api/exchange/rate", {
     method: "POST",
@@ -1596,7 +1750,7 @@ export async function setExchangeRate(
 }
 
 export async function getExchangeRateHistory(
-  days: number = 30
+  days: number = 30,
 ): Promise<ApiResponse<ExchangeRateDto[]>> {
   return apiRequest(`/api/exchange/rate/history?days=${days}`);
 }
@@ -1604,9 +1758,9 @@ export async function getExchangeRateHistory(
 export async function convertCurrency(
   fromCurrency: Currency,
   toCurrency: Currency,
-  amount: number
+  amount: number,
 ): Promise<ApiResponse<any>> {
-  return apiRequest("/api/exchange/convert", {
+  return apiRequest("/api/exchange-rate/convert", {
     method: "POST",
     body: JSON.stringify({ fromCurrency, toCurrency, amount }),
   });
@@ -1625,7 +1779,7 @@ export async function getExchangeFloat(): Promise<
 
 // Fund the exchange float
 export async function fundExchangeFloat(
-  dto: FundFloatDto
+  dto: FundFloatDto,
 ): Promise<ApiResponse<ExchangeFloatDto>> {
   return apiRequest("/api/exchange/float/fund", {
     method: "POST",
@@ -1635,7 +1789,7 @@ export async function fundExchangeFloat(
 
 // Withdraw from exchange float
 export async function withdrawExchangeFloat(
-  dto: WithdrawFloatDto
+  dto: WithdrawFloatDto,
 ): Promise<ApiResponse<ExchangeFloatDto>> {
   return apiRequest("/api/exchange/float/withdraw", {
     method: "POST",
@@ -1645,7 +1799,7 @@ export async function withdrawExchangeFloat(
 
 // Settle accumulated profit
 export async function settleExchangeProfit(
-  dto: SettleProfitDto
+  dto: SettleProfitDto,
 ): Promise<ApiResponse<ExchangeFloatDto>> {
   return apiRequest("/api/exchange/float/settle-profit", {
     method: "POST",
@@ -1656,20 +1810,20 @@ export async function settleExchangeProfit(
 // Get float movement history
 export async function getFloatMovements(
   from?: string,
-  to?: string
+  to?: string,
 ): Promise<ApiResponse<FloatMovementDto[]>> {
   const params = new URLSearchParams();
   if (from) params.append("from", from);
   if (to) params.append("to", to);
   const queryString = params.toString();
   return apiRequest(
-    `/api/exchange/float/movements${queryString ? `?${queryString}` : ""}`
+    `/api/exchange/float/movements${queryString ? `?${queryString}` : ""}`,
   );
 }
 
 // Create exchange transaction
 export async function createExchange(
-  dto: CreateExchangeDto
+  dto: CreateExchangeDto,
 ): Promise<ApiResponse<ExchangeResponseDto>> {
   return apiRequest("/api/exchange/transaction", {
     method: "POST",
@@ -1684,7 +1838,7 @@ export async function getExchangeTransactions(
   search?: string,
   type?: ExchangeType,
   from?: string,
-  to?: string
+  to?: string,
 ): Promise<ApiResponse<PagedResult<ExchangeResponseDto>>> {
   const params = new URLSearchParams();
   params.append("page", page.toString());
@@ -1698,7 +1852,7 @@ export async function getExchangeTransactions(
 
 // Get single exchange transaction
 export async function getExchangeById(
-  id: string
+  id: string,
 ): Promise<ApiResponse<ExchangeResponseDto>> {
   return apiRequest(`/api/exchange/transaction/${id}`);
 }
@@ -1706,7 +1860,7 @@ export async function getExchangeById(
 // Void exchange transaction
 export async function voidExchange(
   id: string,
-  reason: string
+  reason: string,
 ): Promise<ApiResponse<boolean>> {
   return apiRequest(`/api/exchange/transaction/${id}/void`, {
     method: "POST",
@@ -1723,7 +1877,7 @@ export async function getExchangeTodaySummary(): Promise<
 
 // Record opening float
 export async function recordOpeningFloat(
-  dto: OpeningFloatDto
+  dto: OpeningFloatDto,
 ): Promise<ApiResponse<DailySummaryDto>> {
   return apiRequest("/api/exchange/daily/opening", {
     method: "POST",
@@ -1733,7 +1887,7 @@ export async function recordOpeningFloat(
 
 // Record closing float
 export async function recordClosingFloat(
-  dto: ClosingFloatDto
+  dto: ClosingFloatDto,
 ): Promise<ApiResponse<DailySummaryDto>> {
   return apiRequest("/api/exchange/daily/closing", {
     method: "POST",
@@ -1744,7 +1898,7 @@ export async function recordClosingFloat(
 // Get daily summaries
 export async function getExchangeDailySummaries(
   from: string,
-  to: string
+  to: string,
 ): Promise<ApiResponse<DailySummaryDto[]>> {
   return apiRequest(`/api/exchange/daily/summaries?from=${from}&to=${to}`);
 }
@@ -1752,7 +1906,7 @@ export async function getExchangeDailySummaries(
 // Get profit report
 export async function getExchangeProfitReport(
   from: string,
-  to: string
+  to: string,
 ): Promise<ApiResponse<ProfitReportDto>> {
   return apiRequest(`/api/exchange/reports/profit?from=${from}&to=${to}`);
 }
@@ -1761,16 +1915,16 @@ export async function getExchangeProfitReport(
 export async function getLargeTransactions(
   from: string,
   to: string,
-  threshold: number = 500000
+  threshold: number = 500000,
 ): Promise<ApiResponse<LargeTransactionReportDto[]>> {
   return apiRequest(
-    `/api/exchange/reports/large-transactions?from=${from}&to=${to}&threshold=${threshold}`
+    `/api/exchange/reports/large-transactions?from=${from}&to=${to}&threshold=${threshold}`,
   );
 }
 
 // Get client exchange history
 export async function getClientExchangeHistory(
-  clientId: string
+  clientId: string,
 ): Promise<ApiResponse<ClientExchangeHistoryDto>> {
   return apiRequest(`/api/exchange/reports/client/${clientId}`);
 }
@@ -1789,7 +1943,7 @@ export async function getExchangeAlerts(): Promise<
 
 // Update alert thresholds
 export async function updateExchangeAlertThresholds(
-  dto: UpdateAlertThresholdsDto
+  dto: UpdateAlertThresholdsDto,
 ): Promise<ApiResponse<boolean>> {
   return apiRequest("/api/exchange/alerts/thresholds", {
     method: "PUT",
@@ -1799,7 +1953,7 @@ export async function updateExchangeAlertThresholds(
 
 // Calculate exchange (without creating transaction)
 export async function calculateExchange(
-  dto: CalculateExchangeDto
+  dto: CalculateExchangeDto,
 ): Promise<ApiResponse<CalculationResultDto>> {
   return apiRequest("/api/exchange/calculate", {
     method: "POST",
@@ -1829,7 +1983,7 @@ export async function createExpenseCategory(dto: {
 
 export async function updateExpenseCategory(
   id: string,
-  dto: { name: string; description?: string }
+  dto: { name: string; description?: string },
 ): Promise<ApiResponse<ExpenseCategoryDto>> {
   return apiRequest(`/api/expense/category/${id}`, {
     method: "PUT",
@@ -1838,7 +1992,7 @@ export async function updateExpenseCategory(
 }
 
 export async function deleteExpenseCategory(
-  id: string
+  id: string,
 ): Promise<ApiResponse<boolean>> {
   return apiRequest(`/api/expense/category/${id}`, { method: "DELETE" });
 }
@@ -1846,7 +2000,7 @@ export async function deleteExpenseCategory(
 export async function getExpenses(
   page: number = 1,
   pageSize: number = 10,
-  filters?: { startDate?: string; endDate?: string; currency?: number }
+  filters?: { startDate?: string; endDate?: string; currency?: number },
 ): Promise<ApiResponse<PagedResult<ExpenseDto>>> {
   let url = `/api/expense?page=${page}&pageSize=${pageSize}`;
   if (filters) {
@@ -1858,7 +2012,7 @@ export async function getExpenses(
 }
 
 export async function createExpense(
-  dto: CreateExpenseDto
+  dto: CreateExpenseDto,
 ): Promise<ApiResponse<ExpenseDto>> {
   return apiRequest("/api/expense", {
     method: "POST",
@@ -1871,7 +2025,7 @@ export async function getExpenseStats(): Promise<ApiResponse<any>> {
 }
 export async function updateExpense(
   id: string,
-  data: UpdateExpenseDto
+  data: UpdateExpenseDto,
 ): Promise<ApiResponse<ExpenseDto>> {
   return apiRequest<ExpenseDto>(`/api/expense/${id}`, {
     method: "PUT",
@@ -1890,14 +2044,14 @@ export async function deleteExpense(id: string): Promise<ApiResponse<boolean>> {
 
 export async function getInvoices(
   page: number = 1,
-  pageSize: number = 10
-): Promise<ApiResponse<PagedResult<InvoiceDto>>> {
+  pageSize: number = 100,
+): Promise<ApiResponse<PagedResult<InvoiceResponseDto>>> {
   return apiRequest(`/api/invoice?page=${page}&pageSize=${pageSize}`);
 }
 
 export async function createInvoice(
-  dto: any
-): Promise<ApiResponse<InvoiceDto>> {
+  dto: CreateInvoiceDto,
+): Promise<ApiResponse<InvoiceResponseDto>> {
   return apiRequest("/api/invoice", {
     method: "POST",
     body: JSON.stringify(dto),
@@ -1905,19 +2059,39 @@ export async function createInvoice(
 }
 
 export async function getInvoiceById(
-  id: string
-): Promise<ApiResponse<InvoiceDto>> {
+  id: string,
+): Promise<ApiResponse<InvoiceResponseDto>> {
   return apiRequest(`/api/invoice/${id}`);
 }
 
 export async function updateInvoiceStatus(
   id: string,
-  status: number
-): Promise<ApiResponse<InvoiceDto>> {
+  status: InvoiceStatus,
+): Promise<ApiResponse<InvoiceResponseDto>> {
   return apiRequest(`/api/invoice/${id}/status`, {
     method: "PUT",
     body: JSON.stringify({ status }),
   });
+}
+
+export async function deleteInvoice(id: string): Promise<ApiResponse<boolean>> {
+  return apiRequest(`/api/invoice/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function downloadInvoicePdf(id: string): Promise<Blob> {
+  const auth = getStoredAuth();
+  const headers: Record<string, string> = {};
+  if (auth?.token) headers["Authorization"] = `Bearer ${auth.token}`;
+
+  const response = await fetch(`${API_BASE_URL}/api/invoice/${id}/pdf`, {
+    headers,
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to download invoice PDF (${response.status})`);
+  }
+  return response.blob();
 }
 
 // ==============================================
@@ -1937,7 +2111,7 @@ export async function getAccountTransactionsForReconciliation(
   accountId: string,
   filter?: ReconciliationFilterDto,
   page: number = 1,
-  pageSize: number = 50
+  pageSize: number = 50,
 ): Promise<ApiResponse<PagedResult<TransactionReconciliationDto>>> {
   const params = new URLSearchParams();
   if (filter?.status !== undefined)
@@ -1948,24 +2122,24 @@ export async function getAccountTransactionsForReconciliation(
   params.append("pageSize", pageSize.toString());
 
   return apiRequest(
-    `/api/reconciliation/account/${accountType}/${accountId}/transactions?${params.toString()}`
+    `/api/reconciliation/account/${accountType}/${accountId}/transactions?${params.toString()}`,
   );
 }
 
 // Get account balance summary for reconciliation
 export async function getAccountReconciliationSummary(
   accountType: AccountType,
-  accountId: string
+  accountId: string,
 ): Promise<ApiResponse<AccountReconciliationBalanceDto>> {
   return apiRequest(
-    `/api/reconciliation/account/${accountType}/${accountId}/summary`
+    `/api/reconciliation/account/${accountType}/${accountId}/summary`,
   );
 }
 
 // Reconcile a single transaction
 export async function reconcileTransaction(
   transactionId: string,
-  dto: ReconcileTransactionDto
+  dto: ReconcileTransactionDto,
 ): Promise<ApiResponse<TransactionReconciliationDto>> {
   return apiRequest(`/api/reconciliation/transaction/${transactionId}`, {
     method: "PUT",
@@ -1975,7 +2149,7 @@ export async function reconcileTransaction(
 
 // Bulk reconcile multiple transactions
 export async function bulkReconcileTransactions(
-  dto: BulkReconcileDto
+  dto: BulkReconcileDto,
 ): Promise<ApiResponse<number>> {
   return apiRequest("/api/reconciliation/bulk", {
     method: "PUT",
@@ -1985,7 +2159,7 @@ export async function bulkReconcileTransactions(
 
 // Create/complete a reconciliation record
 export async function createReconciliationRecord(
-  dto: CreateReconciliationDto
+  dto: CreateReconciliationDto,
 ): Promise<ApiResponse<ReconciliationResponseDto>> {
   return apiRequest("/api/reconciliation", {
     method: "POST",
@@ -1997,7 +2171,7 @@ export async function createReconciliationRecord(
 export async function getReconciliationHistory(
   accountType?: AccountType,
   page: number = 1,
-  pageSize: number = 20
+  pageSize: number = 20,
 ): Promise<ApiResponse<PagedResult<ReconciliationResponseDto>>> {
   const params = new URLSearchParams();
   if (accountType !== undefined)
@@ -2010,7 +2184,7 @@ export async function getReconciliationHistory(
 
 // Complete a reconciliation (mark as finalized)
 export async function completeReconciliation(
-  reconciliationId: string
+  reconciliationId: string,
 ): Promise<ApiResponse<ReconciliationResponseDto>> {
   return apiRequest(`/api/reconciliation/${reconciliationId}/complete`, {
     method: "POST",
@@ -2020,14 +2194,14 @@ export async function completeReconciliation(
 // Legacy function - kept for backwards compatibility
 export async function getReconciliations(
   page: number = 1,
-  pageSize: number = 10
+  pageSize: number = 10,
 ): Promise<ApiResponse<PagedResult<ReconciliationDto>>> {
   return apiRequest(`/api/reconciliation?page=${page}&pageSize=${pageSize}`);
 }
 
 // Legacy function - kept for backwards compatibility
 export async function createReconciliation(
-  dto: any
+  dto: any,
 ): Promise<ApiResponse<ReconciliationDto>> {
   return apiRequest("/api/reconciliation", {
     method: "POST",
@@ -2055,7 +2229,7 @@ export async function getClientProfile(): Promise<
 }
 
 export async function updateClientProfile(
-  dto: UpdateClientProfileDto
+  dto: UpdateClientProfileDto,
 ): Promise<ApiResponse<ClientProfileDto>> {
   return apiRequest(`${PORTAL_BASE}/profile`, {
     method: "PUT",
@@ -2067,7 +2241,7 @@ export async function updateClientProfile(
 export async function getClientTransactions(
   page: number = 1,
   pageSize: number = 20,
-  filters?: Partial<PortalTransactionFilters>
+  filters?: Partial<PortalTransactionFilters>,
 ): Promise<ApiResponse<PagedResult<ClientTransactionDto>>> {
   const params = new URLSearchParams();
   params.append("page", page.toString());
@@ -2083,31 +2257,32 @@ export async function getClientTransactions(
 }
 
 export async function getClientTransactionById(
-  transactionId: string
+  transactionId: string,
 ): Promise<ApiResponse<ClientTransactionDto>> {
   return apiRequest(`${PORTAL_BASE}/transactions/${transactionId}`);
 }
 
 export async function downloadTransactionReceipt(
-  transactionId: string
+  transactionId: string,
 ): Promise<Blob> {
   const auth = getStoredAuth();
   const headers: Record<string, string> = {};
   if (auth?.token) headers["Authorization"] = `Bearer ${auth.token}`;
-  if (auth?.user?.companyId) headers["X-Company-Id"] = auth.user.companyId;
-  if (auth?.user?.id) headers["X-User-Id"] = auth.user.id;
 
   const response = await fetch(
     `${API_BASE_URL}${PORTAL_BASE}/transactions/${transactionId}/receipt`,
-    { headers }
+    { headers },
   );
+  if (!response.ok) {
+    throw new Error(`Failed to download receipt (${response.status})`);
+  }
   return response.blob();
 }
 
 export async function exportTransactionsCsv(
   startDate?: string,
   endDate?: string,
-  currency?: Currency
+  currency?: Currency,
 ): Promise<Blob> {
   const params = new URLSearchParams();
   if (startDate) params.append("startDate", startDate);
@@ -2117,13 +2292,15 @@ export async function exportTransactionsCsv(
   const auth = getStoredAuth();
   const headers: Record<string, string> = {};
   if (auth?.token) headers["Authorization"] = `Bearer ${auth.token}`;
-  if (auth?.user?.companyId) headers["X-Company-Id"] = auth.user.companyId;
-  if (auth?.user?.id) headers["X-User-Id"] = auth.user.id;
+  // Auth headers extracted from JWT by backend
 
   const response = await fetch(
     `${API_BASE_URL}${PORTAL_BASE}/transactions/export?${params}`,
-    { headers }
+    { headers },
   );
+  if (!response.ok) {
+    throw new Error(`Failed to export transactions (${response.status})`);
+  }
   return response.blob();
 }
 
@@ -2131,7 +2308,7 @@ export async function exportTransactionsCsv(
 export async function getClientPortalStatement(
   startDate: string,
   endDate: string,
-  currency?: Currency
+  currency?: Currency,
 ): Promise<ApiResponse<ClientStatementDto>> {
   const params = new URLSearchParams();
   params.append("startDate", startDate);
@@ -2143,7 +2320,7 @@ export async function getClientPortalStatement(
 export async function downloadStatementPdf(
   startDate: string,
   endDate: string,
-  currency?: Currency
+  currency?: Currency,
 ): Promise<Blob> {
   const params = new URLSearchParams();
   params.append("startDate", startDate);
@@ -2153,13 +2330,15 @@ export async function downloadStatementPdf(
   const auth = getStoredAuth();
   const headers: Record<string, string> = {};
   if (auth?.token) headers["Authorization"] = `Bearer ${auth.token}`;
-  if (auth?.user?.companyId) headers["X-Company-Id"] = auth.user.companyId;
-  if (auth?.user?.id) headers["X-User-Id"] = auth.user.id;
+  // Auth headers extracted from JWT by backend
 
   const response = await fetch(
     `${API_BASE_URL}${PORTAL_BASE}/statement/pdf?${params}`,
-    { headers }
+    { headers },
   );
+  if (!response.ok) {
+    throw new Error(`Failed to download statement PDF (${response.status})`);
+  }
   return response.blob();
 }
 
@@ -2167,7 +2346,7 @@ export async function downloadStatementPdf(
 export async function getClientAlerts(
   page: number = 1,
   pageSize: number = 20,
-  unreadOnly: boolean = false
+  unreadOnly: boolean = false,
 ): Promise<ApiResponse<PagedResult<ClientAlertDto>>> {
   const params = new URLSearchParams();
   params.append("page", page.toString());
@@ -2181,7 +2360,7 @@ export async function getUnreadAlertsCount(): Promise<ApiResponse<number>> {
 }
 
 export async function markAlertAsRead(
-  alertId: string
+  alertId: string,
 ): Promise<ApiResponse<boolean>> {
   return apiRequest(`${PORTAL_BASE}/alerts/${alertId}/read`, {
     method: "POST",
@@ -2194,7 +2373,7 @@ export async function markAllAlertsAsRead(): Promise<ApiResponse<boolean>> {
 
 // Analytics
 export async function getClientAnalytics(
-  months: number = 6
+  months: number = 6,
 ): Promise<ApiResponse<ClientAnalyticsDto>> {
   return apiRequest(`${PORTAL_BASE}/analytics?months=${months}`);
 }
@@ -2212,7 +2391,7 @@ export interface ResetClientPasswordDto {
 // Endpoint: POST /api/client/{id}/reset-password
 export async function resetClientPassword(
   clientId: string,
-  newPassword: string
+  newPassword: string,
 ): Promise<ApiResponse<boolean>> {
   return apiRequest<boolean>(`/api/client/${clientId}/reset-password`, {
     method: "POST",
@@ -2221,7 +2400,7 @@ export async function resetClientPassword(
 }
 // Security
 export async function changeClientPassword(
-  dto: ChangePasswordDto
+  dto: ChangePasswordDto,
 ): Promise<ApiResponse<boolean>> {
   return apiRequest(`${PORTAL_BASE}/change-password`, {
     method: "POST",
@@ -2239,18 +2418,25 @@ export async function getDailyReport(date: string): Promise<ApiResponse<any>> {
 
 export async function getMonthlyReport(
   year: number,
-  month: number
+  month: number,
 ): Promise<ApiResponse<any>> {
-  return apiRequest(`/api/report/monthly?year=${year}&month=${month}`);
+  // Backend has no monthly endpoint. Use transaction report with month date range.
+  const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const endDate = `${year}-${String(month).padStart(2, "0")}-${lastDay}`;
+  return apiRequest(
+    `/api/report/transactions?startDate=${startDate}&endDate=${endDate}`,
+  );
 }
 
 export async function getClientStatementReport(
   clientId: string,
   startDate: string,
-  endDate: string
+  endDate: string,
 ): Promise<ApiResponse<any>> {
+  // Backend has no /api/report/client-statement. Use the client statement endpoint.
   return apiRequest(
-    `/api/report/client-statement?clientId=${clientId}&startDate=${startDate}&endDate=${endDate}`
+    `/api/client/${clientId}/statement?startDate=${startDate}&endDate=${endDate}`,
   );
 }
 
@@ -2261,7 +2447,7 @@ export async function getClientStatementReport(
 export async function getCompanies(
   page: number = 1,
   pageSize: number = 10,
-  search?: string
+  search?: string,
 ): Promise<ApiResponse<PagedResult<CompanyDto>>> {
   let url = `/api/company?page=${page}&pageSize=${pageSize}`;
   if (search) url += `&search=${encodeURIComponent(search)}`;
@@ -2269,13 +2455,13 @@ export async function getCompanies(
 }
 
 export async function getCompanyById(
-  id: string
+  id: string,
 ): Promise<ApiResponse<CompanyDto>> {
   return apiRequest(`/api/company/${id}`);
 }
 
 export async function createCompany(
-  dto: any
+  dto: any,
 ): Promise<ApiResponse<CompanyDto>> {
   return apiRequest("/api/company", {
     method: "POST",
@@ -2285,7 +2471,7 @@ export async function createCompany(
 
 export async function updateCompany(
   id: string,
-  dto: any
+  dto: any,
 ): Promise<ApiResponse<CompanyDto>> {
   return apiRequest(`/api/company/${id}`, {
     method: "PUT",
@@ -2294,19 +2480,19 @@ export async function updateCompany(
 }
 
 export async function activateCompany(
-  id: string
+  id: string,
 ): Promise<ApiResponse<boolean>> {
   return apiRequest(`/api/company/${id}/activate`, { method: "POST" });
 }
 
 export async function deactivateCompany(
-  id: string
+  id: string,
 ): Promise<ApiResponse<boolean>> {
   return apiRequest(`/api/company/${id}/deactivate`, { method: "POST" });
 }
 
 export async function getCompanySummary(
-  id: string
+  id: string,
 ): Promise<ApiResponse<CompanySummaryDto>> {
   return apiRequest(`/api/company/${id}/summary`);
 }
@@ -2324,7 +2510,7 @@ export async function getAllCompanySummaries(): Promise<
 export async function getAuditLogs(
   page: number = 1,
   pageSize: number = 50,
-  companyId?: string
+  companyId?: string,
 ): Promise<ApiResponse<PagedResult<AuditLogDto>>> {
   let url = `/api/audit?page=${page}&pageSize=${pageSize}`;
   if (companyId) url += `&companyId=${companyId}`;
@@ -2335,7 +2521,7 @@ export async function getLoginHistory(
   page: number = 1,
   pageSize: number = 50,
   companyId?: string,
-  userId?: string
+  userId?: string,
 ): Promise<ApiResponse<PagedResult<LoginHistoryDto>>> {
   let url = `/api/audit/login-history?page=${page}&pageSize=${pageSize}`;
   if (companyId) url += `&companyId=${companyId}`;
@@ -2349,7 +2535,7 @@ export async function getLoginHistory(
 
 export function formatCurrency(
   amount: number,
-  currency: Currency | string
+  currency: Currency | string,
 ): string {
   const currencyCode =
     typeof currency === "number"
@@ -2412,7 +2598,7 @@ export function getClientTypeLabel(type: ClientType): string {
 }
 
 export function getReconciliationStatusLabel(
-  status: ReconciliationStatus
+  status: ReconciliationStatus,
 ): string {
   const labels: Record<ReconciliationStatus, string> = {
     [ReconciliationStatus.Pending]: "Pending",
@@ -2427,7 +2613,49 @@ export function getExchangeTypeLabel(type: ExchangeType): string {
 }
 
 export function getExchangeDirectionLabel(
-  direction: ExchangeDirection
+  direction: ExchangeDirection,
 ): string {
   return direction === ExchangeDirection.UsdToKes ? "USD → KES" : "KES → USD";
+}
+
+// ==================== BALANCE ALERTS ====================
+export async function getBalanceAlerts(clientId?: string) {
+  return apiRequest<any>(
+    `/api/balance-alerts${clientId ? `?clientId=${clientId}` : ""}`,
+  );
+}
+
+export async function createBalanceAlert(dto: {
+  clientId?: string;
+  currency: number;
+  direction: number;
+  threshold: number;
+  notifyAllOfficeUsers?: boolean;
+}) {
+  return apiRequest<any>("/api/balance-alerts", {
+    method: "POST",
+    body: JSON.stringify(dto),
+  });
+}
+
+export async function toggleBalanceAlert(id: string) {
+  return apiRequest<any>(`/api/balance-alerts/${id}/toggle`, { method: "PUT" });
+}
+
+export async function deleteBalanceAlert(id: string) {
+  return apiRequest<any>(`/api/balance-alerts/${id}`, { method: "DELETE" });
+}
+
+// ==================== TRANSACTION PIN (for PinModal) ====================
+export async function getTransactionPinStatus() {
+  return apiRequest<{ isEnabled: boolean; hasPin: boolean }>(
+    "/api/transaction-pin/status",
+  );
+}
+
+export async function verifyTransactionPin(pin: string) {
+  return apiRequest<boolean>("/api/transaction-pin/verify", {
+    method: "POST",
+    body: JSON.stringify({ pin }),
+  });
 }

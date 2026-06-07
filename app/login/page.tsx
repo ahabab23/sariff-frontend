@@ -75,16 +75,16 @@ export default function LoginPage() {
     const errors: typeof validationErrors = {};
 
     if (userId && userId.length > 0) {
-      const userIdPattern = /^(SA|CO|CL|OU)[-]?\d{4}[-]?\d{0,4}$/i;
-      if (!userIdPattern.test(userId) && userId.length > 3) {
-        errors.userId = "Format: SA-2026-001, CO-2026-001, or CL-2026-001";
+      const userIdPattern = /^[A-Z]{2,4}(-CL)?-\d{4}-\d{1,6}$/i;
+      if (!userIdPattern.test(userId) && userId.length > 5) {
+        errors.userId = "Format: SA-2026-001, AFB-2026-001, or AFB-CL-2026-001";
       }
     }
 
     if (telephone && telephone.length > 0) {
-      const phonePattern = /^\+254\d{9}$/;
+      const phonePattern = /^\+[1-9]\d{9,14}$/;
       if (!phonePattern.test(telephone)) {
-        errors.phone = "Format: +254XXXXXXXXX";
+        errors.phone = "Format: +254XXXXXXXXX (international format)";
       }
     }
 
@@ -126,7 +126,7 @@ export default function LoginPage() {
     // ALL users need code, phone, and password
     if (!userId || !telephone || !password) {
       toast.error(
-        "Please fill in all fields (User ID, Phone Number, and Password)"
+        "Please fill in all fields (User ID, Phone Number, and Password)",
       );
       return;
     }
@@ -149,7 +149,7 @@ export default function LoginPage() {
           toast.success("OTP sent to your WhatsApp!");
         } else {
           // Client login successful
-          toast.success("Welcome back!");
+          toast.success(`Welcome back ${result.userName || ""}!`.trim());
         }
       } else {
         toast.error(result.message);
@@ -181,7 +181,7 @@ export default function LoginPage() {
       toast.dismiss(loadingToast);
 
       if (result.success) {
-        toast.success("Welcome back!");
+        toast.success(`Welcome back ${result.userName || ""}!`.trim());
       } else {
         toast.error(result.message);
       }
@@ -456,8 +456,8 @@ export default function LoginPage() {
                       isSuperAdminPreview
                         ? "bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500"
                         : isOfficeUserPreview
-                        ? "bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500"
-                        : "bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500"
+                          ? "bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500"
+                          : "bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500"
                     }`}
                     animate={{
                       scale: [1, 1.2, 1],
@@ -520,8 +520,8 @@ export default function LoginPage() {
                         isSuperAdminPreview
                           ? "bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600"
                           : isOfficeUserPreview
-                          ? "bg-gradient-to-br from-blue-600 via-cyan-600 to-teal-600"
-                          : "bg-gradient-to-br from-violet-600 to-purple-600"
+                            ? "bg-gradient-to-br from-blue-600 via-cyan-600 to-teal-600"
+                            : "bg-gradient-to-br from-violet-600 to-purple-600"
                       } shadow-2xl`}
                       initial={{ scale: 0, rotate: -180 }}
                       animate={{ scale: 1, rotate: 0 }}
@@ -538,8 +538,8 @@ export default function LoginPage() {
                           isSuperAdminPreview
                             ? "bg-gradient-to-br from-violet-400 via-purple-400 to-fuchsia-400"
                             : isOfficeUserPreview
-                            ? "bg-gradient-to-br from-blue-400 via-cyan-400 to-teal-400"
-                            : "bg-gradient-to-br from-violet-400 to-purple-400"
+                              ? "bg-gradient-to-br from-blue-400 via-cyan-400 to-teal-400"
+                              : "bg-gradient-to-br from-violet-400 to-purple-400"
                         } blur-xl opacity-50`}
                         animate={{
                           scale: [1, 1.2, 1],
@@ -567,8 +567,8 @@ export default function LoginPage() {
                       {isSuperAdminPreview
                         ? "Super Admin Access"
                         : isOfficeUserPreview
-                        ? "Office Portal"
-                        : "Secure Login"}
+                          ? "Office Portal"
+                          : "Secure Login"}
                     </motion.h2>
                     <motion.p
                       className="text-slate-600"
@@ -579,8 +579,8 @@ export default function LoginPage() {
                       {isSuperAdminPreview
                         ? "Premium platform management portal"
                         : isOfficeUserPreview
-                        ? "Transaction & client management"
-                        : "Enter your credentials to access your account"}
+                          ? "Transaction & client management"
+                          : "Enter your credentials to access your account"}
                     </motion.p>
                   </div>
 
@@ -620,12 +620,12 @@ export default function LoginPage() {
                             validationErrors.userId
                               ? "border-red-300 focus:border-red-500"
                               : isSuperAdminPreview
-                              ? "border-violet-300 focus:border-violet-600 focus:shadow-lg focus:shadow-violet-200/50"
-                              : isOfficeUserPreview
-                              ? "border-blue-300 focus:border-blue-600 focus:shadow-lg focus:shadow-blue-200/50"
-                              : "border-slate-200 focus:border-violet-500 focus:shadow-lg focus:shadow-violet-100/50"
+                                ? "border-violet-300 focus:border-violet-600 focus:shadow-lg focus:shadow-violet-200/50"
+                                : isOfficeUserPreview
+                                  ? "border-blue-300 focus:border-blue-600 focus:shadow-lg focus:shadow-blue-200/50"
+                                  : "border-slate-200 focus:border-violet-500 focus:shadow-lg focus:shadow-violet-100/50"
                           }`}
-                          placeholder="CO-2026-001"
+                          placeholder="AFB-2026-001"
                           required
                           disabled={isLoading}
                         />
@@ -679,17 +679,17 @@ export default function LoginPage() {
                             isSuperAdminPreview
                               ? "text-violet-600"
                               : isOfficeUserPreview
-                              ? "text-blue-600"
-                              : "text-slate-500"
+                                ? "text-blue-600"
+                                : "text-slate-500"
                           }`}
                         >
                           {isSuperAdminPreview
                             ? "✨ Super Admin detected - Enhanced security enabled"
                             : isOfficeUserPreview
-                            ? "🏢 Office User - Standard OTP verification"
-                            : isClientPreview
-                            ? "👤 Client - Direct access (No OTP required)"
-                            : "Examples: SA001 (Super Admin), OU001 (Office), CL001 (Client)"}
+                              ? "🏢 Office User - Standard OTP verification"
+                              : isClientPreview
+                                ? "👤 Client - Direct access (No OTP required)"
+                                : "Examples: SA001 (Super Admin), OU001 (Office), CL001 (Client)"}
                         </p>
                       )}
                     </motion.div>
@@ -714,10 +714,10 @@ export default function LoginPage() {
                             validationErrors.phone
                               ? "border-red-300 focus:border-red-500"
                               : isSuperAdminPreview
-                              ? "border-violet-300 focus:border-violet-600 focus:shadow-lg focus:shadow-violet-200/50"
-                              : isOfficeUserPreview
-                              ? "border-blue-300 focus:border-blue-600 focus:shadow-lg focus:shadow-blue-200/50"
-                              : "border-slate-200 focus:border-violet-500 focus:shadow-lg focus:shadow-violet-100/50"
+                                ? "border-violet-300 focus:border-violet-600 focus:shadow-lg focus:shadow-violet-200/50"
+                                : isOfficeUserPreview
+                                  ? "border-blue-300 focus:border-blue-600 focus:shadow-lg focus:shadow-blue-200/50"
+                                  : "border-slate-200 focus:border-violet-500 focus:shadow-lg focus:shadow-violet-100/50"
                           }`}
                           placeholder="+254712345678"
                           required
@@ -771,8 +771,8 @@ export default function LoginPage() {
                               passwordStrength < 40
                                 ? "bg-red-100 text-red-700"
                                 : passwordStrength < 70
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-emerald-100 text-emerald-700"
+                                  ? "bg-yellow-100 text-yellow-700"
+                                  : "bg-emerald-100 text-emerald-700"
                             }`}
                           >
                             {getPasswordStrengthText()}
@@ -789,8 +789,8 @@ export default function LoginPage() {
                             isSuperAdminPreview
                               ? "border-violet-300 focus:border-violet-600 focus:shadow-lg focus:shadow-violet-200/50"
                               : isOfficeUserPreview
-                              ? "border-blue-300 focus:border-blue-600 focus:shadow-lg focus:shadow-blue-200/50"
-                              : "border-slate-200 focus:border-violet-500 focus:shadow-lg focus:shadow-violet-100/50"
+                                ? "border-blue-300 focus:border-blue-600 focus:shadow-lg focus:shadow-blue-200/50"
+                                : "border-slate-200 focus:border-violet-500 focus:shadow-lg focus:shadow-violet-100/50"
                           }`}
                           placeholder="Enter your password"
                           required
@@ -863,8 +863,8 @@ export default function LoginPage() {
                         isSuperAdminPreview
                           ? "bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600"
                           : isOfficeUserPreview
-                          ? "bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600"
-                          : "bg-gradient-to-r from-violet-600 to-purple-600"
+                            ? "bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600"
+                            : "bg-gradient-to-r from-violet-600 to-purple-600"
                       } ${
                         isSubmitting ||
                         validationErrors.userId ||
@@ -925,8 +925,8 @@ export default function LoginPage() {
                       isSuperAdminPreview
                         ? "bg-gradient-to-br from-violet-50/80 to-purple-50/80 border-violet-200/50"
                         : isOfficeUserPreview
-                        ? "bg-gradient-to-br from-blue-50/80 to-cyan-50/80 border-blue-200/50"
-                        : "bg-slate-50/80 border-slate-200/50"
+                          ? "bg-gradient-to-br from-blue-50/80 to-cyan-50/80 border-blue-200/50"
+                          : "bg-slate-50/80 border-slate-200/50"
                     }`}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -938,8 +938,8 @@ export default function LoginPage() {
                           isSuperAdminPreview
                             ? "bg-violet-100"
                             : isOfficeUserPreview
-                            ? "bg-blue-100"
-                            : "bg-slate-200"
+                              ? "bg-blue-100"
+                              : "bg-slate-200"
                         }`}
                       >
                         <Shield
@@ -947,8 +947,8 @@ export default function LoginPage() {
                             isSuperAdminPreview
                               ? "text-violet-600"
                               : isOfficeUserPreview
-                              ? "text-blue-600"
-                              : "text-slate-600"
+                                ? "text-blue-600"
+                                : "text-slate-600"
                           }`}
                         />
                       </div>
@@ -962,18 +962,18 @@ export default function LoginPage() {
                             isSuperAdminPreview
                               ? "text-violet-700"
                               : isOfficeUserPreview
-                              ? "text-blue-700"
-                              : "text-violet-600"
+                                ? "text-blue-700"
+                                : "text-violet-600"
                           }`}
                         >
                           <Fingerprint className="w-4 h-4" />
                           {isSuperAdminPreview
                             ? "Enhanced Super Admin Security: Biometric + OTP verification"
                             : isOfficeUserPreview
-                            ? "Office Security: SMS OTP verification required"
-                            : isClientPreview
-                            ? "Client Access: Direct login (No OTP required)"
-                            : "Super Admin & Office Users: OTP verification required"}
+                              ? "Office Security: SMS OTP verification required"
+                              : isClientPreview
+                                ? "Client Access: Direct login (No OTP required)"
+                                : "Super Admin & Office Users: OTP verification required"}
                         </p>
                       </div>
                     </div>
@@ -1109,7 +1109,7 @@ export default function LoginPage() {
                             onChange={(e) =>
                               handleOtpChange(
                                 index,
-                                e.target.value.replace(/\D/g, "")
+                                e.target.value.replace(/\D/g, ""),
                               )
                             }
                             onKeyDown={(e) => handleOtpKeyDown(index, e)}

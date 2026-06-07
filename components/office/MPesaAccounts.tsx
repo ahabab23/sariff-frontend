@@ -31,6 +31,7 @@ import {
   RefreshCw,
   ArrowRight,
   Loader2,
+  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -204,7 +205,7 @@ export function MPesaAccounts() {
       agentName: dto.agentName,
       phoneNumber: dto.phoneNumber,
       agentNumber: dto.agentNumber,
-      storeNumber: dto.storeNumber || dto.tillNumber || "",
+      storeNumber: dto.storeNumber || "",
       agentType: dto.agentType || 0,
       balance: dto.balance,
       openingBalance: dto.openingBalance,
@@ -284,6 +285,7 @@ export function MPesaAccounts() {
       }
     } catch (error) {
       console.error("Error fetching M-Pesa stats:", error);
+      toast.error("Failed to load data. Please refresh.");
     }
   }, []);
 
@@ -362,6 +364,8 @@ export function MPesaAccounts() {
         agentName: formData.agentName,
         phoneNumber: formData.phoneNumber,
         agentNumber: formData.agentNumber,
+        storeNumber: formData.storeNumber || undefined,
+        agentType: formData.agentType,
         openingBalance: formData.openingBalance,
       };
 
@@ -750,8 +754,9 @@ export function MPesaAccounts() {
           margin: { left: 14, right: 14 },
           didParseCell: (data: any) => {
             if (data.section === "body" && data.column.index === 3) {
+              // Asset account: DR = money IN (green), CR = money OUT (red)
               data.cell.styles.textColor =
-                data.cell.raw === "CR" ? [22, 163, 74] : [220, 38, 38];
+                data.cell.raw === "DR" ? [22, 163, 74] : [220, 38, 38];
               data.cell.styles.fontStyle = "bold";
             }
             if (data.section === "body" && data.column.index === 5) {
@@ -834,8 +839,8 @@ export function MPesaAccounts() {
           tr:nth-child(even) { background: #f9fafb; }
           .text-right { text-align: right; }
           .text-center { text-align: center; }
-          .cr { color: #16a34a; font-weight: 600; }
-          .dr { color: #dc2626; font-weight: 600; }
+          .cr { color: #dc2626; font-weight: 600; }
+          .dr { color: #16a34a; font-weight: 600; }
           .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #9ca3af; font-size: 10px; }
           @media print { body { padding: 20px; } }
         </style>
@@ -1680,7 +1685,7 @@ export function MPesaAccounts() {
                         <thead className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white border-b border-slate-300">
                           <tr>
                             <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                              Date & Time
+                              Date
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                               Description
@@ -1697,9 +1702,6 @@ export function MPesaAccounts() {
                             <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider">
                               Balance
                             </th>
-                            <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                              Reference
-                            </th>
                             <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">
                               Actions
                             </th>
@@ -1709,7 +1711,7 @@ export function MPesaAccounts() {
                           {currentTransactions.length === 0 ? (
                             <tr>
                               <td
-                                colSpan={8}
+                                colSpan={7}
                                 className="px-4 py-8 text-center text-slate-500"
                               >
                                 No transactions found.
@@ -1724,14 +1726,22 @@ export function MPesaAccounts() {
                                 transition={{ delay: idx * 0.03 }}
                                 className="hover:bg-cyan-50/50 transition-colors group"
                               >
-                                <td className="px-4 py-4 text-sm text-slate-600 whitespace-nowrap font-medium">
-                                  <div className="flex items-center gap-2">
-                                    <Calendar className="w-4 h-4 text-slate-400" />
-                                    {new Date(txn.date).toLocaleString()}
+                                <td className="px-4 py-4 text-sm text-slate-600">
+                                  <div className="font-semibold text-slate-900">
+                                    {new Date(txn.date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                                  </div>
+                                  <div className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                                    <Clock className="w-3 h-3" />
+                                    {new Date(txn.date).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
                                   </div>
                                 </td>
                                 <td className="px-4 py-4 text-sm text-slate-900 font-semibold">
-                                  {txn.description}
+                                  <div>{txn.description}</div>
+                                  {(txn.reference || txn.code) && (
+                                    <div className="text-xs text-cyan-500 font-mono font-normal mt-0.5">
+                                      {txn.reference || txn.code}
+                                    </div>
+                                  )}
                                 </td>
                                 <td className="px-4 py-4 whitespace-nowrap">
                                   <span
@@ -1769,9 +1779,6 @@ export function MPesaAccounts() {
                                 </td>
                                 <td className="px-4 py-4 text-base font-bold text-slate-900 whitespace-nowrap text-right">
                                   KES {txn.balanceAfter.toLocaleString()}
-                                </td>
-                                <td className="px-4 py-4 text-sm text-cyan-600 font-mono whitespace-nowrap">
-                                  {txn.reference || txn.code}
                                 </td>
                                 <td className="px-4 py-4 whitespace-nowrap">
                                   <div className="flex items-center justify-center gap-1">

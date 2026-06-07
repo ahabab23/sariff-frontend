@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { buildExchangeMessage } from "@/lib/whatsapp";
+import { SuccessShareModal } from "@/components/ui/SuccessShareModal";
+import { PinModal, checkPinStatus } from "@/components/ui/PinModal";
 import {
   ArrowLeftRight,
   TrendingUp,
@@ -38,13 +41,12 @@ import {
   Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
-import { shareViaWhatsApp, buildExchangeMessage } from "@/lib/whatsapp";
 import {
   Currency,
   AccountType,
   ExchangeType,
   ExchangeDirection,
-  ClientDto,
+  ClientLookupDto,
   ExchangeRateDto,
   ExchangeFloatDto,
   ExchangeResponseDto,
@@ -69,12 +71,13 @@ import {
   getExchangeById,
   voidExchange,
   getExchangeTodaySummary,
+  getExchangeDailySummaries,
   recordOpeningFloat,
   recordClosingFloat,
   getUsdPosition,
   getExchangeAlerts,
   calculateExchange,
-  getClients,
+  getClientLookup,
   getBankAccounts,
   getMpesaAgents,
   getCashAccounts,
@@ -130,16 +133,18 @@ export function ExchangeSection() {
   const [currentRate, setCurrentRate] = useState<ExchangeRateDto | null>(null);
   const [rateHistory, setRateHistory] = useState<ExchangeRateDto[]>([]);
   const [exchangeFloat, setExchangeFloat] = useState<ExchangeFloatDto | null>(
-    null
+    null,
   );
   const [transactions, setTransactions] = useState<ExchangeResponseDto[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [todaySummary, setTodaySummary] = useState<DailySummaryDto | null>(
-    null
+    null,
   );
+  const [floatHistory, setFloatHistory] = useState<DailySummaryDto[]>([]);
+  const [showFloatHistory, setShowFloatHistory] = useState(false);
   const [usdPosition, setUsdPosition] = useState<UsdPositionDto | null>(null);
   const [alerts, setAlerts] = useState<FloatAlertDto[]>([]);
-  const [clients, setClients] = useState<ClientDto[]>([]);
+  const [clients, setClients] = useState<ClientLookupDto[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
 
   // UI states
@@ -153,12 +158,22 @@ export function ExchangeSection() {
   // Modal states
   const [showSetRateModal, setShowSetRateModal] = useState(false);
   const [showNewExchangeModal, setShowNewExchangeModal] = useState(false);
+  const [exchShareModal, setExchShareModal] = useState<{
+    show: boolean;
+    title: string;
+    details: { label: string; value: string }[];
+    phone: string;
+    message: string;
+  }>({ show: false, title: "", details: [], phone: "", message: "" });
+  const [showPin, setShowPin] = useState(false);
+  const [pendingExchange, setPendingExchange] = useState<any>(null);
   const [showFundFloatModal, setShowFundFloatModal] = useState(false);
   const [showWithdrawFloatModal, setShowWithdrawFloatModal] = useState(false);
   const [showSettleProfitModal, setShowSettleProfitModal] = useState(false);
   const [showUsdPositionModal, setShowUsdPositionModal] = useState(false);
   const [showCalculatorModal, setShowCalculatorModal] = useState(false);
   const [showDayCloseModal, setShowDayCloseModal] = useState(false);
+  const [showRateHistoryModal, setShowRateHistoryModal] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] =
     useState<ExchangeResponseDto | null>(null);
@@ -189,7 +204,7 @@ export function ExchangeSection() {
         getExchangeTodaySummary(),
         getUsdPosition(),
         getExchangeAlerts(),
-        getClients(1, 1000),
+        getClientLookup(),
         getBankAccounts(),
         getMpesaAgents(),
         getCashAccounts(),
@@ -204,8 +219,7 @@ export function ExchangeSection() {
       if (positionRes.success && positionRes.data)
         setUsdPosition(positionRes.data);
       if (alertsRes.success && alertsRes.data) setAlerts(alertsRes.data);
-      if (clientsRes.success && clientsRes.data)
-        setClients(clientsRes.data.items);
+      if (clientsRes.success && clientsRes.data) setClients(clientsRes.data);
 
       // Build accounts list
       const allAccounts: Account[] = [];
@@ -279,7 +293,7 @@ export function ExchangeSection() {
         searchTerm || undefined,
         undefined,
         from,
-        to
+        to,
       );
       if (res.success && res.data) {
         setTransactions(res.data.items);
@@ -287,6 +301,7 @@ export function ExchangeSection() {
       }
     } catch (error) {
       console.error("Error loading transactions:", error);
+      toast.error("Failed to load data. Please refresh.");
     }
   }, [page, pageSize, searchTerm, dateFilter]);
 
@@ -321,7 +336,6 @@ export function ExchangeSection() {
     }
   };
 
-  // UPDATED: handleNewExchange now accepts optional clientId and clientName
   const handleNewExchange = async (data: {
     clientId?: string;
     clientName?: string;
@@ -333,43 +347,88 @@ export function ExchangeSection() {
   }) => {
     setActionLoading(true);
     try {
-      const res = await createExchange({
-        ...data,
-        clientId: data.clientId || "",
-      });
-        if (res.success && res.data) {
-        const exchCode = res.data.code || '';
-        const dirLabel = data.direction === 0 ? 'USD → KES' : 'KES → USD';
-        // Check if client involved for WhatsApp share
-        let whatsAppAction = undefined;
-        if (data.clientId && clients.length > 0) {
-          const client = clients.find((c: any) => c.id === data.clientId);
-          if (client?.whatsAppNumber) {
-            const msg = buildExchangeMessage({
-              clientName: client.fullName || client.name || 'Client',
-              direction: dirLabel,
-              amountGiven: res.data.amountGiven?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || String(data.amount),
-              currencyGiven: data.direction === 0 ? 'USD' : 'KES',
-              amountReceived: res.data.amountReceived?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '—',
-              currencyReceived: data.direction === 0 ? 'KES' : 'USD',
-              rate: String(res.data.exchangeRate || data.customRate || '—'),
-              code: exchCode,
-              date: new Date().toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
-            });
-            whatsAppAction = { label: '📱 Share via WhatsApp', onClick: () => shareViaWhatsApp(client.whatsAppNumber, msg) };
-          }
-        }
-        toast.success(`Exchange completed! Profit: KES ${formatNumber(res.data.profit)}`, {
-          duration: whatsAppAction ? 8000 : 4000,
-          ...(whatsAppAction ? { action: whatsAppAction } : {}),
-        });
+      // Ensure clientId is properly formatted — send undefined instead of null/empty
+      const dto: any = {
+        exchangeType: data.exchangeType,
+        direction: data.direction,
+        amount: data.amount,
+        clientIdNumber: data.clientIdNumber || undefined,
+        notes: data.notes || undefined,
+      };
+
+      // Only include clientId if it's a real GUID, otherwise send clientName for walk-ins
+      if (data.clientId && data.clientId.length > 10) {
+        dto.clientId = data.clientId;
+      } else if (data.clientName) {
+        dto.clientName = data.clientName;
+      }
+
+      const res = await createExchange(dto);
+      if (res.success && res.data) {
+        const exchCode = res.data.code || "";
+        const dirLabel =
+          data.direction === ExchangeDirection.UsdToKes
+            ? "USD → KES"
+            : "KES → USD";
+        toast.success(`Exchange completed! Code: ${exchCode}`);
         setShowNewExchangeModal(false);
         loadData();
+
+        // WhatsApp share if client was involved
+        if (data.clientId && clients.length > 0) {
+          const client = clients.find((c) => c.id === data.clientId);
+          if (client?.whatsAppNumber) {
+            setExchShareModal({
+              show: true,
+              title: "Exchange Completed",
+              details: [
+                { label: "Reference", value: exchCode },
+                {
+                  label: "Client",
+                  value: client.fullName || client.name || "",
+                },
+                { label: "Direction", value: dirLabel },
+                {
+                  label: "Given",
+                  value: `${data.direction === 0 ? "USD" : "KES"} ${formatNumber(res.data.amountGiven || data.amount)}`,
+                },
+                {
+                  label: "Received",
+                  value: `${data.direction === 0 ? "KES" : "USD"} ${formatNumber(res.data.amountReceived || 0)}`,
+                },
+                { label: "Rate", value: String(res.data.exchangeRate || "") },
+                {
+                  label: "Profit",
+                  value: `KES ${formatNumber(res.data.profit || 0)}`,
+                },
+              ],
+              phone: client.whatsAppNumber,
+              message: buildExchangeMessage({
+                clientName: client.fullName || client.name || "Client",
+                direction: dirLabel,
+                amountGiven: formatNumber(res.data.amountGiven || data.amount),
+                currencyGiven: data.direction === 0 ? "USD" : "KES",
+                amountReceived: formatNumber(res.data.amountReceived || 0),
+                currencyReceived: data.direction === 0 ? "KES" : "USD",
+                rate: String(res.data.exchangeRate || ""),
+                code: exchCode,
+                date: new Date().toLocaleString("en-GB", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }),
+              }),
+            });
+          }
+        }
       } else {
         toast.error(res.message || "Failed to create exchange");
       }
-    } catch (error) {
-      toast.error("Failed to create exchange");
+    } catch (error: any) {
+      console.error("Exchange error:", error);
+      toast.error(error?.message || "Failed to create exchange");
     } finally {
       setActionLoading(false);
     }
@@ -451,10 +510,32 @@ export function ExchangeSection() {
     }
   };
 
+  const handleRecordOpening = async (
+    kesCount: number,
+    usdCount: number,
+    notes?: string,
+  ) => {
+    setActionLoading(true);
+    try {
+      const res = await recordOpeningFloat({ kesCount, usdCount, notes });
+      if (res.success) {
+        toast.success("Opening float recorded successfully");
+        setShowDayCloseModal(false);
+        loadData();
+      } else {
+        toast.error(res.message || "Failed to record opening");
+      }
+    } catch {
+      toast.error("Failed to record opening");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleRecordClosing = async (
     kesCount: number,
     usdCount: number,
-    notes?: string
+    notes?: string,
   ) => {
     setActionLoading(true);
     try {
@@ -475,6 +556,22 @@ export function ExchangeSection() {
   };
 
   const handleVoidTransaction = async (id: string, reason: string) => {
+    // Check PIN first
+    const status = await checkPinStatus();
+    if (status.isEnabled && status.hasPin) {
+      setPendingVoid({ id, reason });
+      setShowPin(true);
+      return;
+    }
+    executeVoid(id, reason);
+  };
+
+  const [pendingVoid, setPendingVoid] = useState<{
+    id: string;
+    reason: string;
+  } | null>(null);
+
+  const executeVoid = async (id: string, reason: string) => {
     setActionLoading(true);
     try {
       const res = await voidExchange(id, reason);
@@ -543,6 +640,29 @@ export function ExchangeSection() {
             >
               <Calculator className="w-4 h-4" />
               Calculator
+            </button>
+            <button
+              onClick={() => setShowRateHistoryModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium"
+            >
+              <TrendingUp className="w-4 h-4" />
+              Rate History
+            </button>
+            <button
+              onClick={async () => {
+                const now = new Date();
+                const from = new Date(now.getFullYear(), now.getMonth(), 1)
+                  .toISOString()
+                  .split("T")[0];
+                const to = now.toISOString().split("T")[0];
+                const res = await getExchangeDailySummaries(from, to);
+                if (res.success) setFloatHistory(res.data || []);
+                setShowFloatHistory(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium"
+            >
+              <Calendar className="w-4 h-4" />
+              Float History
             </button>
             <button
               onClick={() => setShowDayCloseModal(true)}
@@ -667,17 +787,37 @@ export function ExchangeSection() {
         {/* Today's Stats */}
         <div className="bg-white border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-gray-500 text-sm font-medium">
-              Today's Profit
+            <span className="text-gray-500 text-sm font-medium">Today</span>
+            <span
+              className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
+                todaySummary?.isClosed
+                  ? "bg-emerald-100 text-emerald-700"
+                  : todaySummary?.openingKes
+                    ? "bg-amber-100 text-amber-700"
+                    : "bg-gray-100 text-gray-500"
+              }`}
+            >
+              {todaySummary?.isClosed
+                ? "✅ Closed"
+                : todaySummary?.openingKes
+                  ? "☀️ Open"
+                  : "⏳ Not Started"}
             </span>
-            <TrendingUp className="w-5 h-5 text-emerald-500" />
           </div>
           <p className="text-2xl font-bold text-emerald-600 mb-1">
             {formatCurrency(todaySummary?.kesProfit || 0, Currency.KES)}
           </p>
-          <p className="text-xs text-gray-500">
-            {todaySummary?.exchangeCount || 0} transactions
+          <p className="text-xs text-gray-500 mb-1">
+            {todaySummary?.exchangeCount || 0} exchanges | $
+            {formatNumber(todaySummary?.usdProfit || 0)} USD profit
           </p>
+          {todaySummary?.kesVariance != null &&
+            todaySummary.kesVariance !== 0 && (
+              <p className="text-xs text-amber-600 flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" />
+                Variance: KES {formatNumber(todaySummary.kesVariance)}
+              </p>
+            )}
         </div>
       </div>
 
@@ -939,7 +1079,15 @@ export function ExchangeSection() {
             currentRate={currentRate}
             clients={clients}
             onClose={() => setShowNewExchangeModal(false)}
-            onSubmit={handleNewExchange}
+            onSubmit={async (data: any) => {
+              const status = await checkPinStatus();
+              if (status.isEnabled && status.hasPin) {
+                setPendingExchange(data);
+                setShowPin(true);
+              } else {
+                handleNewExchange(data);
+              }
+            }}
             loading={actionLoading}
           />
         )}
@@ -992,13 +1140,233 @@ export function ExchangeSection() {
           />
         )}
 
+        {/* Float History Modal */}
+        {showFloatHistory && (
+          <ModalWrapper onClose={() => setShowFloatHistory(false)}>
+            <div className="bg-white w-full max-w-2xl">
+              <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  📅 Float History — This Month
+                </h3>
+                <button
+                  onClick={() => setShowFloatHistory(false)}
+                  className="p-1 hover:bg-gray-100"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+              <div className="p-4 max-h-96 overflow-y-auto">
+                {floatHistory.length === 0 ? (
+                  <p className="text-center text-gray-400 py-8">
+                    No daily records this month. Start by recording an opening
+                    float.
+                  </p>
+                ) : (
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200 text-left">
+                        <th className="py-2 px-2 font-medium text-gray-600">
+                          Date
+                        </th>
+                        <th className="py-2 px-2 font-medium text-gray-600 text-center">
+                          Status
+                        </th>
+                        <th className="py-2 px-2 font-medium text-gray-600 text-right">
+                          Exchanges
+                        </th>
+                        <th className="py-2 px-2 font-medium text-emerald-600 text-right">
+                          KES Profit
+                        </th>
+                        <th className="py-2 px-2 font-medium text-blue-600 text-right">
+                          USD Profit
+                        </th>
+                        <th className="py-2 px-2 font-medium text-gray-600 text-right">
+                          KES Var
+                        </th>
+                        <th className="py-2 px-2 font-medium text-gray-600 text-right">
+                          USD Var
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {floatHistory.map((day: any, i: number) => (
+                        <tr
+                          key={i}
+                          className={`border-b border-gray-100 ${i === 0 ? "bg-indigo-50" : ""}`}
+                        >
+                          <td className="py-2 px-2 text-gray-700 font-medium">
+                            {new Date(day.date).toLocaleDateString("en-GB", {
+                              weekday: "short",
+                              day: "numeric",
+                              month: "short",
+                            })}
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            <span
+                              className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
+                                day.isClosed
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-amber-100 text-amber-700"
+                              }`}
+                            >
+                              {day.isClosed ? "Closed" : "Open"}
+                            </span>
+                          </td>
+                          <td className="py-2 px-2 text-right text-gray-700">
+                            {day.exchangeCount || 0}
+                          </td>
+                          <td className="py-2 px-2 text-right text-emerald-700 font-medium">
+                            {formatNumber(day.kesProfit || 0)}
+                          </td>
+                          <td className="py-2 px-2 text-right text-blue-700 font-medium">
+                            ${formatNumber(day.usdProfit || 0)}
+                          </td>
+                          <td
+                            className={`py-2 px-2 text-right font-medium ${(day.kesVariance || 0) === 0 ? "text-gray-400" : (day.kesVariance || 0) > 0 ? "text-blue-600" : "text-red-600"}`}
+                          >
+                            {(day.kesVariance || 0) === 0
+                              ? "—"
+                              : formatNumber(day.kesVariance)}
+                          </td>
+                          <td
+                            className={`py-2 px-2 text-right font-medium ${(day.usdVariance || 0) === 0 ? "text-gray-400" : (day.usdVariance || 0) > 0 ? "text-blue-600" : "text-red-600"}`}
+                          >
+                            {(day.usdVariance || 0) === 0
+                              ? "—"
+                              : formatNumber(day.usdVariance)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t-2 border-gray-300 font-semibold bg-gray-50">
+                        <td className="py-2 px-2 text-gray-700">Total</td>
+                        <td className="py-2 px-2 text-center text-gray-500 text-xs">
+                          {floatHistory.filter((d: any) => d.isClosed).length}/
+                          {floatHistory.length} closed
+                        </td>
+                        <td className="py-2 px-2 text-right text-gray-700">
+                          {floatHistory.reduce(
+                            (s: number, d: any) => s + (d.exchangeCount || 0),
+                            0,
+                          )}
+                        </td>
+                        <td className="py-2 px-2 text-right text-emerald-700">
+                          {formatNumber(
+                            floatHistory.reduce(
+                              (s: number, d: any) => s + (d.kesProfit || 0),
+                              0,
+                            ),
+                          )}
+                        </td>
+                        <td className="py-2 px-2 text-right text-blue-700">
+                          $
+                          {formatNumber(
+                            floatHistory.reduce(
+                              (s: number, d: any) => s + (d.usdProfit || 0),
+                              0,
+                            ),
+                          )}
+                        </td>
+                        <td className="py-2 px-2"></td>
+                        <td className="py-2 px-2"></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                )}
+              </div>
+            </div>
+          </ModalWrapper>
+        )}
+
+        {/* Rate History Modal */}
+        {showRateHistoryModal && (
+          <ModalWrapper onClose={() => setShowRateHistoryModal(false)}>
+            <div className="bg-white w-full max-w-lg">
+              <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Exchange Rate History
+                </h3>
+                <button
+                  onClick={() => setShowRateHistoryModal(false)}
+                  className="p-1 hover:bg-gray-100"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+              <div className="p-4 max-h-96 overflow-y-auto">
+                {rateHistory.length === 0 ? (
+                  <p className="text-center text-gray-400 py-8">
+                    No rate history available
+                  </p>
+                ) : (
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-2 px-2 font-medium text-gray-600">
+                          Date
+                        </th>
+                        <th className="text-right py-2 px-2 font-medium text-emerald-600">
+                          Buy Rate
+                        </th>
+                        <th className="text-right py-2 px-2 font-medium text-blue-600">
+                          Sell Rate
+                        </th>
+                        <th className="text-right py-2 px-2 font-medium text-purple-600">
+                          Spread
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rateHistory.slice(0, 30).map((r: any, i: number) => (
+                        <tr
+                          key={i}
+                          className={`border-b border-gray-100 ${i === 0 ? "bg-indigo-50 font-semibold" : ""}`}
+                        >
+                          <td className="py-2 px-2 text-gray-700">
+                            {new Date(
+                              r.effectiveFrom || r.createdAt,
+                            ).toLocaleDateString("en-GB", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                            <span className="text-xs text-gray-400 ml-1">
+                              {new Date(
+                                r.effectiveFrom || r.createdAt,
+                              ).toLocaleTimeString("en-GB", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </td>
+                          <td className="py-2 px-2 text-right text-emerald-700">
+                            {(r.buyRate || 0).toFixed(2)}
+                          </td>
+                          <td className="py-2 px-2 text-right text-blue-700">
+                            {(r.sellRate || 0).toFixed(2)}
+                          </td>
+                          <td className="py-2 px-2 text-right text-purple-700">
+                            {((r.sellRate || 0) - (r.buyRate || 0)).toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </ModalWrapper>
+        )}
+
         {/* Day Close Modal */}
         {showDayCloseModal && (
           <DayCloseModal
             exchangeFloat={exchangeFloat}
             todaySummary={todaySummary}
             onClose={() => setShowDayCloseModal(false)}
-            onSubmit={handleRecordClosing}
+            onOpening={handleRecordOpening}
+            onClosing={handleRecordClosing}
             loading={actionLoading}
           />
         )}
@@ -1016,6 +1384,32 @@ export function ExchangeSection() {
           />
         )}
       </AnimatePresence>
+      <SuccessShareModal
+        isOpen={exchShareModal.show}
+        onClose={() => setExchShareModal((s) => ({ ...s, show: false }))}
+        title={exchShareModal.title}
+        details={exchShareModal.details}
+        whatsappPhone={exchShareModal.phone}
+        whatsappMessage={exchShareModal.message}
+      />
+      <PinModal
+        isOpen={showPin}
+        onClose={() => {
+          setShowPin(false);
+          setPendingExchange(null);
+        }}
+        onVerified={() => {
+          setShowPin(false);
+          if (pendingVoid) {
+            executeVoid(pendingVoid.id, pendingVoid.reason);
+            setPendingVoid(null);
+          } else if (pendingExchange) {
+            handleNewExchange(pendingExchange);
+            setPendingExchange(null);
+          }
+        }}
+        title="Enter Transaction PIN"
+      />
     </div>
   );
 }
@@ -1037,10 +1431,10 @@ function SetRateModal({
   loading: boolean;
 }) {
   const [buyRate, setBuyRate] = useState(
-    currentRate?.buyRate?.toString() || "130"
+    currentRate?.buyRate?.toString() || "130",
   );
   const [sellRate, setSellRate] = useState(
-    currentRate?.sellRate?.toString() || "140"
+    currentRate?.sellRate?.toString() || "140",
   );
 
   const spread = parseFloat(sellRate || "0") - parseFloat(buyRate || "0");
@@ -1135,7 +1529,7 @@ function NewExchangeModal({
   loading,
 }: {
   currentRate: ExchangeRateDto | null;
-  clients: ClientDto[];
+  clients: ClientLookupDto[];
   onClose: () => void;
   onSubmit: (data: any) => void;
   loading: boolean;
@@ -1143,10 +1537,10 @@ function NewExchangeModal({
   const [clientId, setClientId] = useState("");
   const [clientName, setClientName] = useState(""); // NEW: For walk-in clients
   const [exchangeType, setExchangeType] = useState<ExchangeType>(
-    ExchangeType.Cash
+    ExchangeType.Cash,
   );
   const [direction, setDirection] = useState<ExchangeDirection>(
-    ExchangeDirection.UsdToKes
+    ExchangeDirection.UsdToKes,
   );
   const [amount, setAmount] = useState("");
   const [clientIdNumber, setClientIdNumber] = useState("");
@@ -1429,9 +1823,9 @@ function FundFloatModal({
   const [purchaseRate, setPurchaseRate] = useState("");
   const [notes, setNotes] = useState("");
 
-  const filteredAccounts = accounts.filter(
-    (a) => currency === Currency.USD || a.currency === Currency.KES
-  );
+  // Funding always pays in KES (a USD float is bought with KES at the purchase rate),
+  // so the source account must be a KES account regardless of the float currency.
+  const filteredAccounts = accounts.filter((a) => a.currency === Currency.KES);
   const selectedAccount = accounts.find((a) => a.id === sourceAccountId);
 
   const amountNum = parseFloat(amount) || 0;
@@ -2067,7 +2461,7 @@ function CalculatorModal({
   onClose: () => void;
 }) {
   const [direction, setDirection] = useState<ExchangeDirection>(
-    ExchangeDirection.UsdToKes
+    ExchangeDirection.UsdToKes,
   );
   const [amount, setAmount] = useState("");
 
@@ -2177,15 +2571,18 @@ function DayCloseModal({
   exchangeFloat,
   todaySummary,
   onClose,
-  onSubmit,
+  onOpening,
+  onClosing,
   loading,
 }: {
   exchangeFloat: ExchangeFloatDto | null;
   todaySummary: DailySummaryDto | null;
   onClose: () => void;
-  onSubmit: (kesCount: number, usdCount: number, notes?: string) => void;
+  onOpening: (kesCount: number, usdCount: number, notes?: string) => void;
+  onClosing: (kesCount: number, usdCount: number, notes?: string) => void;
   loading: boolean;
 }) {
+  const [mode, setMode] = useState<"opening" | "closing">("opening");
   const [kesCount, setKesCount] = useState("");
   const [usdCount, setUsdCount] = useState("");
   const [notes, setNotes] = useState("");
@@ -2205,21 +2602,53 @@ function DayCloseModal({
     <ModalWrapper onClose={onClose}>
       <div className="bg-white w-full max-w-lg">
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Day Close</h3>
+          <h3 className="text-lg font-semibold text-gray-900">
+            Daily Float Verification
+          </h3>
           <button onClick={onClose} className="p-1 hover:bg-gray-100">
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
         <div className="p-4 space-y-4">
-          {/* Today's Summary */}
-          {todaySummary && (
+          {/* Opening / Closing Toggle */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setMode("opening")}
+              className={`flex items-center justify-center gap-2 px-4 py-3 border text-sm font-medium transition-colors ${
+                mode === "opening"
+                  ? "border-amber-500 bg-amber-50 text-amber-700"
+                  : "border-gray-200 text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              ☀️ Record Opening
+            </button>
+            <button
+              onClick={() => setMode("closing")}
+              className={`flex items-center justify-center gap-2 px-4 py-3 border text-sm font-medium transition-colors ${
+                mode === "closing"
+                  ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+                  : "border-gray-200 text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              🌙 Record Closing
+            </button>
+          </div>
+
+          <p className="text-xs text-gray-500">
+            {mode === "opening"
+              ? "Count physical cash at the start of the day to verify overnight integrity."
+              : "Count physical cash at end of day and compare with system balances."}
+          </p>
+
+          {/* Today's Summary — only show for closing */}
+          {mode === "closing" && todaySummary && (
             <div className="bg-indigo-50 p-4 space-y-2">
               <h4 className="text-sm font-medium text-indigo-900">
                 Today's Activity
               </h4>
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
-                  <p className="text-indigo-600">Transactions</p>
+                  <p className="text-indigo-600">Exchanges</p>
                   <p className="font-semibold text-indigo-900">
                     {todaySummary.exchangeCount}
                   </p>
@@ -2244,57 +2673,47 @@ function DayCloseModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Actual KES Count
+                KES Physical Count *
               </label>
               <input
                 type="number"
                 value={kesCount}
                 onChange={(e) => setKesCount(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Count physical cash"
+                placeholder="Count physical KES"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Expected: KES {formatNumber(expectedKes)}
+                System: KES {formatNumber(expectedKes)}
               </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Actual USD Count
+                USD Physical Count *
               </label>
               <input
                 type="number"
                 value={usdCount}
                 onChange={(e) => setUsdCount(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Count physical cash"
+                placeholder="Count physical USD"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Expected: ${formatNumber(expectedUsd)}
+                System: ${formatNumber(expectedUsd)}
               </p>
             </div>
           </div>
 
-          {/* Variance */}
-          {kesCount !== "" && usdCount !== "" && (
+          {/* Variance — show for closing mode */}
+          {mode === "closing" && kesCount !== "" && usdCount !== "" && (
             <div
-              className={`p-4 ${
-                kesVariance === 0 && usdVariance === 0
-                  ? "bg-emerald-50"
-                  : "bg-amber-50"
-              }`}
+              className={`p-4 ${kesVariance === 0 && usdVariance === 0 ? "bg-emerald-50" : "bg-amber-50"}`}
             >
               <h4 className="text-sm font-medium mb-2">Variance</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex justify-between">
                   <span className="text-sm">KES:</span>
                   <span
-                    className={`font-medium ${
-                      kesVariance === 0
-                        ? "text-emerald-600"
-                        : kesVariance > 0
-                        ? "text-blue-600"
-                        : "text-red-600"
-                    }`}
+                    className={`font-medium ${kesVariance === 0 ? "text-emerald-600" : kesVariance > 0 ? "text-blue-600" : "text-red-600"}`}
                   >
                     {kesVariance > 0 ? "+" : ""}
                     {formatNumber(kesVariance)}
@@ -2303,13 +2722,7 @@ function DayCloseModal({
                 <div className="flex justify-between">
                   <span className="text-sm">USD:</span>
                   <span
-                    className={`font-medium ${
-                      usdVariance === 0
-                        ? "text-emerald-600"
-                        : usdVariance > 0
-                        ? "text-blue-600"
-                        : "text-red-600"
-                    }`}
+                    className={`font-medium ${usdVariance === 0 ? "text-emerald-600" : usdVariance > 0 ? "text-blue-600" : "text-red-600"}`}
                   >
                     {usdVariance > 0 ? "+" : ""}
                     {formatNumber(usdVariance)}
@@ -2334,7 +2747,11 @@ function DayCloseModal({
               onChange={(e) => setNotes(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               rows={2}
-              placeholder="Any notes about discrepancies..."
+              placeholder={
+                mode === "opening"
+                  ? "Opening notes..."
+                  : "Closing notes, discrepancies..."
+              }
             />
           </div>
         </div>
@@ -2347,13 +2764,19 @@ function DayCloseModal({
           </button>
           <button
             onClick={() =>
-              onSubmit(kesCountNum, usdCountNum, notes || undefined)
+              mode === "opening"
+                ? onOpening(kesCountNum, usdCountNum, notes || undefined)
+                : onClosing(kesCountNum, usdCountNum, notes || undefined)
             }
             disabled={!isValid || loading}
-            className="px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center gap-2"
+            className={`px-6 py-2 text-white disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center gap-2 ${
+              mode === "opening"
+                ? "bg-amber-600 hover:bg-amber-700"
+                : "bg-indigo-600 hover:bg-indigo-700"
+            }`}
           >
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-            Close Day
+            {loading && <RefreshCw className="w-4 h-4 animate-spin" />}
+            {mode === "opening" ? "☀️ Record Opening" : "🌙 Record Closing"}
           </button>
         </div>
       </div>
@@ -2378,16 +2801,16 @@ function TransactionDetailModal({
 
   const handleCopy = () => {
     const text = `Exchange: ${transaction.code}\nDate: ${formatDateTime(
-      transaction.date
+      transaction.date,
     )}\nClient: ${transaction.clientName}\nGiven: ${formatCurrency(
       transaction.amountGiven,
-      transaction.currencyGiven
+      transaction.currencyGiven,
     )}\nReceived: ${formatCurrency(
       transaction.amountReceived,
-      transaction.currencyReceived
+      transaction.currencyReceived,
     )}\nRate: ${transaction.exchangeRate}\nProfit: ${formatCurrency(
       transaction.profit,
-      transaction.profitCurrency
+      transaction.profitCurrency,
     )}`;
     navigator.clipboard.writeText(text);
     toast.success("Copied to clipboard");
@@ -2454,7 +2877,7 @@ function TransactionDetailModal({
                 +
                 {formatCurrency(
                   transaction.amountGiven,
-                  transaction.currencyGiven
+                  transaction.currencyGiven,
                 )}
               </span>
             </div>
@@ -2464,7 +2887,7 @@ function TransactionDetailModal({
                 -
                 {formatCurrency(
                   transaction.amountReceived,
-                  transaction.currencyReceived
+                  transaction.currencyReceived,
                 )}
               </span>
             </div>

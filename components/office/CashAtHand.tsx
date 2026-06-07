@@ -142,7 +142,7 @@ export function CashAtHand() {
   // Modal states
   const [modalType, setModalType] = useState<ModalType>(null);
   const [selectedAccount, setSelectedAccount] = useState<CashAccount | null>(
-    null
+    null,
   );
 
   // Form states
@@ -219,6 +219,7 @@ export function CashAtHand() {
       }
     } catch (error) {
       console.error("Error fetching cash accounts:", error);
+      toast.error("Failed to load data. Please refresh.");
     }
   }, []);
 
@@ -242,6 +243,7 @@ export function CashAtHand() {
       }
     } catch (error) {
       console.error("Error fetching cash stats:", error);
+      toast.error("Failed to load data. Please refresh.");
     }
   }, []);
 
@@ -256,20 +258,20 @@ export function CashAtHand() {
 
       if (kesResponse.success && kesResponse.data?.transactions) {
         const kesTxns = kesResponse.data.transactions.map((txn: any) =>
-          mapTransactionToDisplay(txn, 0)
+          mapTransactionToDisplay(txn, 0),
         );
         transactions.push(...kesTxns);
       }
 
       if (usdResponse.success && usdResponse.data?.transactions) {
         const usdTxns = usdResponse.data.transactions.map((txn: any) =>
-          mapTransactionToDisplay(txn, 1)
+          mapTransactionToDisplay(txn, 1),
         );
         transactions.push(...usdTxns);
       }
 
       transactions.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
       );
       setAllTransactions(transactions);
     } catch (error) {
@@ -363,8 +365,8 @@ export function CashAtHand() {
       if (response.success) {
         toast.success(
           `Cash account for ${getCurrencyName(
-            formData.currency
-          )} created successfully!`
+            formData.currency,
+          )} created successfully!`,
         );
         closeModal();
         await Promise.all([fetchCashAccounts(), fetchStats()]);
@@ -480,10 +482,10 @@ export function CashAtHand() {
   const indexOfFirstTransaction = indexOfLastTransaction - transactionsPerPage;
   const currentTransactions = filteredTransactions.slice(
     indexOfFirstTransaction,
-    indexOfLastTransaction
+    indexOfLastTransaction,
   );
   const totalTransactionPages = Math.ceil(
-    filteredTransactions.length / transactionsPerPage
+    filteredTransactions.length / transactionsPerPage,
   );
 
   const handleExport = () => {
@@ -537,7 +539,7 @@ export function CashAtHand() {
         }),
         pageWidth - 14,
         21,
-        { align: "right" }
+        { align: "right" },
       );
 
       doc.setDrawColor(229, 231, 235);
@@ -568,14 +570,14 @@ export function CashAtHand() {
       doc.setTextColor(
         kesPositive ? 22 : 185,
         kesPositive ? 163 : 28,
-        kesPositive ? 74 : 28
+        kesPositive ? 74 : 28,
       );
       doc.text(
         `${kesPositive ? "" : "-"}KES ${Math.abs(
-          stats.balanceKES
+          stats.balanceKES,
         ).toLocaleString()}`,
         18,
-        yPos + 18
+        yPos + 18,
       );
 
       doc.setFontSize(7);
@@ -583,7 +585,7 @@ export function CashAtHand() {
       doc.text(
         `In: ${stats.totalCreditKES.toLocaleString()} | Out: ${stats.totalDebitKES.toLocaleString()}`,
         18,
-        yPos + 24
+        yPos + 24,
       );
 
       // USD Card
@@ -599,14 +601,14 @@ export function CashAtHand() {
       doc.setTextColor(
         usdPositive ? 22 : 185,
         usdPositive ? 163 : 28,
-        usdPositive ? 74 : 28
+        usdPositive ? 74 : 28,
       );
       doc.text(
         `${usdPositive ? "" : "-"}USD ${Math.abs(
-          stats.balanceUSD
+          stats.balanceUSD,
         ).toLocaleString()}`,
         22 + cardWidth,
-        yPos + 18
+        yPos + 18,
       );
 
       doc.setFontSize(7);
@@ -614,7 +616,7 @@ export function CashAtHand() {
       doc.text(
         `In: ${stats.totalCreditUSD.toLocaleString()} | Out: ${stats.totalDebitUSD.toLocaleString()}`,
         22 + cardWidth,
-        yPos + 24
+        yPos + 24,
       );
 
       // ========== TRANSACTION HISTORY ==========
@@ -632,7 +634,7 @@ export function CashAtHand() {
           `${filteredTransactions.length} transactions`,
           pageWidth - 14,
           yPos,
-          { align: "right" }
+          { align: "right" },
         );
 
         const txnTableData = filteredTransactions.map((txn) => {
@@ -651,7 +653,7 @@ export function CashAtHand() {
             currencyLabel,
             txn.amount.toLocaleString(),
             `${txn.balanceAfter >= 0 ? "" : "-"}${Math.abs(
-              txn.balanceAfter
+              txn.balanceAfter,
             ).toLocaleString()}`,
           ];
         });
@@ -693,8 +695,9 @@ export function CashAtHand() {
           margin: { left: 14, right: 14 },
           didParseCell: (data: any) => {
             if (data.section === "body" && data.column.index === 3) {
+              // Asset account: DR = money IN (green), CR = money OUT (red)
               data.cell.styles.textColor =
-                data.cell.raw === "CR" ? [22, 163, 74] : [220, 38, 38];
+                data.cell.raw === "DR" ? [22, 163, 74] : [220, 38, 38];
               data.cell.styles.fontStyle = "bold";
             }
             if (data.section === "body" && data.column.index === 6) {
@@ -715,13 +718,13 @@ export function CashAtHand() {
               `Page ${data.pageNumber}`,
               pageWidth / 2,
               pageHeight - 12,
-              { align: "center" }
+              { align: "center" },
             );
             doc.text(
               "Computer-generated report",
               pageWidth - 14,
               pageHeight - 12,
-              { align: "right" }
+              { align: "right" },
             );
           },
         });
@@ -764,8 +767,8 @@ export function CashAtHand() {
           th { background: #f9fafb; color: #4b5563; font-weight: 600; text-align: left; padding: 10px 8px; border-bottom: 1px solid #e5e7eb; }
           td { padding: 10px 8px; border-bottom: 1px solid #f3f4f6; }
           tr:nth-child(even) { background: #f9fafb; }
-          .cr { color: #16a34a; font-weight: 600; }
-          .dr { color: #dc2626; font-weight: 600; }
+          .cr { color: #dc2626; font-weight: 600; }
+          .dr { color: #16a34a; font-weight: 600; }
           .text-right { text-align: right; }
           .text-center { text-align: center; }
           .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #9ca3af; font-size: 10px; }
@@ -776,7 +779,7 @@ export function CashAtHand() {
           <div class="company-name">${companyName}</div>
           <div class="doc-title">Cash at Hand Report • ${new Date().toLocaleDateString(
             "en-GB",
-            { day: "2-digit", month: "long", year: "numeric" }
+            { day: "2-digit", month: "long", year: "numeric" },
           )}</div>
         </div>
 
@@ -786,8 +789,8 @@ export function CashAtHand() {
             <div class="value ${
               stats.balanceKES >= 0 ? "positive" : "negative"
             }">${stats.balanceKES >= 0 ? "" : "-"}KES ${Math.abs(
-      stats.balanceKES
-    ).toLocaleString()}</div>
+              stats.balanceKES,
+            ).toLocaleString()}</div>
             <div class="meta">In: ${stats.totalCreditKES.toLocaleString()} | Out: ${stats.totalDebitKES.toLocaleString()}</div>
           </div>
           <div class="summary-card">
@@ -795,8 +798,8 @@ export function CashAtHand() {
             <div class="value ${
               stats.balanceUSD >= 0 ? "positive" : "negative"
             }">${stats.balanceUSD >= 0 ? "" : "-"}USD ${Math.abs(
-      stats.balanceUSD
-    ).toLocaleString()}</div>
+              stats.balanceUSD,
+            ).toLocaleString()}</div>
             <div class="meta">In: ${stats.totalCreditUSD.toLocaleString()} | Out: ${stats.totalDebitUSD.toLocaleString()}</div>
           </div>
         </div>
@@ -830,10 +833,10 @@ export function CashAtHand() {
                 <td class="text-right ${
                   txn.balanceAfter >= 0 ? "positive" : "negative"
                 }">${txn.balanceAfter >= 0 ? "" : "-"}${Math.abs(
-                  txn.balanceAfter
+                  txn.balanceAfter,
                 ).toLocaleString()}</td>
               </tr>
-            `
+            `,
               )
               .join("")}
           </tbody>
@@ -1449,7 +1452,7 @@ export function CashAtHand() {
                                 <div className="text-slate-600">
                                   {getAccountTypeLabel(
                                     txn.relatedAccount
-                                      .accountType as import("@/lib/api").AccountType
+                                      .accountType as import("@/lib/api").AccountType,
                                   )}{" "}
                                   • {txn.relatedAccount.action}
                                 </div>
@@ -1479,7 +1482,7 @@ export function CashAtHand() {
                     Showing {indexOfFirstTransaction + 1} to{" "}
                     {Math.min(
                       indexOfLastTransaction,
-                      filteredTransactions.length
+                      filteredTransactions.length,
                     )}{" "}
                     of {filteredTransactions.length} transactions
                   </div>
@@ -1487,7 +1490,7 @@ export function CashAtHand() {
                     <button
                       onClick={() =>
                         setTransactionsCurrentPage((prev) =>
-                          Math.max(1, prev - 1)
+                          Math.max(1, prev - 1),
                         )
                       }
                       disabled={transactionsCurrentPage === 1}
@@ -1527,13 +1530,13 @@ export function CashAtHand() {
                               {pageNum}
                             </button>
                           );
-                        }
+                        },
                       )}
                     </div>
                     <button
                       onClick={() =>
                         setTransactionsCurrentPage((prev) =>
-                          Math.min(totalTransactionPages, prev + 1)
+                          Math.min(totalTransactionPages, prev + 1),
                         )
                       }
                       disabled={
@@ -2072,7 +2075,7 @@ export function CashAtHand() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white w-full max-w-lg shadow-2xl rounded-lg overflow-hidden max-h-[90vh] flex flex-col"
+              className="bg-white w-full max-w-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
             >
               {/* Card Header */}
               <div
@@ -2170,7 +2173,7 @@ export function CashAtHand() {
                     >
                       {selectedTransaction.debit !== null
                         ? `+${getCurrencySymbol(
-                            selectedTransaction.currency
+                            selectedTransaction.currency,
                           )} ${selectedTransaction.debit.toLocaleString()}`
                         : "-"}
                     </p>
@@ -2194,7 +2197,7 @@ export function CashAtHand() {
                     >
                       {selectedTransaction.credit !== null
                         ? `-${getCurrencySymbol(
-                            selectedTransaction.currency
+                            selectedTransaction.currency,
                           )} ${selectedTransaction.credit.toLocaleString()}`
                         : "-"}
                     </p>
@@ -2283,7 +2286,7 @@ export function CashAtHand() {
                         <p className="font-bold text-slate-900 truncate">
                           {getAccountTypeLabel(
                             selectedTransaction.relatedAccount
-                              .accountType as import("@/lib/api").AccountType
+                              .accountType as import("@/lib/api").AccountType,
                           )}
                         </p>
                       </div>
@@ -2316,7 +2319,7 @@ export function CashAtHand() {
                         <p className="text-slate-500">Amount</p>
                         <p className="font-bold text-slate-900">
                           {getCurrencySymbol(
-                            selectedTransaction.relatedAccount.currency
+                            selectedTransaction.relatedAccount.currency,
                           )}{" "}
                           {selectedTransaction.relatedAccount.amount.toLocaleString()}
                         </p>
@@ -2340,7 +2343,7 @@ export function CashAtHand() {
               <div className="border-t border-slate-200 bg-slate-50 p-3 flex-shrink-0">
                 <button
                   onClick={() => setSelectedTransaction(null)}
-                  className="w-full px-4 py-2 bg-slate-700 text-white hover:bg-slate-800 transition-all font-semibold text-sm rounded-lg"
+                  className="w-full px-6 py-2 bg-slate-700 text-white hover:bg-slate-800 transition-all font-semibold text-sm "
                 >
                   Close
                 </button>
