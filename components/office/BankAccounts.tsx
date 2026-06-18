@@ -31,7 +31,6 @@ import {
   RefreshCw,
   ArrowRight,
   Loader2,
-  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -174,7 +173,7 @@ export function BankAccounts() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(
-    null
+    null,
   );
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
@@ -185,14 +184,14 @@ export function BankAccounts() {
   const [showEditAccount, setShowEditAccount] = useState(false);
   const [showDeleteAccount, setShowDeleteAccount] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<BankAccount | null>(
-    null
+    null,
   );
   const [transactionSearch, setTransactionSearch] = useState("");
   const [transactionFilter, setTransactionFilter] = useState<
     "all" | "credit" | "debit"
   >("all");
   const [currencyFilter, setCurrencyFilter] = useState<"all" | "KES" | "USD">(
-    "all"
+    "all",
   );
   const [accountsCurrentPage, setAccountsCurrentPage] = useState(1);
   const [accountsPerPage] = useState(10);
@@ -322,7 +321,6 @@ export function BankAccounts() {
       }
     } catch (error) {
       console.error("Error fetching bank stats:", error);
-      toast.error("Failed to load data. Please refresh.");
     }
   }, []);
 
@@ -377,7 +375,7 @@ export function BankAccounts() {
 
   // Filtered accounts based on tab - accounts with outstanding balances
   const accountsWithOutstanding = allAccounts.filter(
-    (acc) => acc.balance !== 0
+    (acc) => acc.balance !== 0,
   );
 
   const displayedAccounts =
@@ -389,7 +387,7 @@ export function BankAccounts() {
       account.bankName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       account.accountName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       account.accountNumber.includes(searchTerm) ||
-      account.code.toLowerCase().includes(searchTerm.toLowerCase())
+      account.code.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   // Pagination for accounts
@@ -397,10 +395,10 @@ export function BankAccounts() {
   const indexOfFirstAccount = indexOfLastAccount - accountsPerPage;
   const currentAccounts = filteredAccounts.slice(
     indexOfFirstAccount,
-    indexOfLastAccount
+    indexOfLastAccount,
   );
   const totalAccountPages = Math.ceil(
-    filteredAccounts.length / accountsPerPage
+    filteredAccounts.length / accountsPerPage,
   );
 
   // Transaction filtering - use thisAccountAction for type filtering
@@ -429,10 +427,10 @@ export function BankAccounts() {
   const indexOfFirstTransaction = indexOfLastTransaction - transactionsPerPage;
   const currentTransactions = filteredTransactions.slice(
     indexOfFirstTransaction,
-    indexOfLastTransaction
+    indexOfLastTransaction,
   );
   const totalTransactionPages = Math.ceil(
-    filteredTransactions.length / transactionsPerPage
+    filteredTransactions.length / transactionsPerPage,
   );
 
   // Reset form data
@@ -542,7 +540,7 @@ export function BankAccounts() {
       const response = await deleteBankAccount(accountToDelete.id);
       if (response.success) {
         toast.success(
-          `Bank account ${accountToDelete.code} deleted successfully!`
+          `Bank account ${accountToDelete.code} deleted successfully!`,
         );
         setShowDeleteAccount(false);
         setAccountToDelete(null);
@@ -622,7 +620,7 @@ export function BankAccounts() {
         }),
         pageWidth - 14,
         21,
-        { align: "right" }
+        { align: "right" },
       );
 
       doc.setTextColor(107, 114, 128);
@@ -665,27 +663,27 @@ export function BankAccounts() {
       doc.text(
         `Account Code: ${selectedAccount.code} | Currency: ${currencyLabel}`,
         18,
-        yPos + 21
+        yPos + 21,
       );
 
       // Status badge
       doc.setFillColor(
         selectedAccount.isActive ? 220 : 254,
         selectedAccount.isActive ? 252 : 226,
-        selectedAccount.isActive ? 231 : 226
+        selectedAccount.isActive ? 231 : 226,
       );
       doc.rect(pageWidth - 40, yPos + 6, 22, 6, "F");
       doc.setFontSize(7);
       doc.setTextColor(
         selectedAccount.isActive ? 22 : 153,
         selectedAccount.isActive ? 101 : 27,
-        selectedAccount.isActive ? 52 : 27
+        selectedAccount.isActive ? 52 : 27,
       );
       doc.text(
         selectedAccount.isActive ? "ACTIVE" : "INACTIVE",
         pageWidth - 29,
         yPos + 10,
-        { align: "center" }
+        { align: "center" },
       );
 
       // ========== BALANCE SUMMARY ==========
@@ -713,7 +711,7 @@ export function BankAccounts() {
           selectedAccount.openingBalance || 0
         ).toLocaleString()}`,
         16,
-        yPos + 14
+        yPos + 14,
       );
 
       // Net Movement
@@ -728,15 +726,15 @@ export function BankAccounts() {
       doc.setTextColor(
         netPositive ? 22 : 185,
         netPositive ? 163 : 28,
-        netPositive ? 74 : 28
+        netPositive ? 74 : 28,
       );
       doc.setFont("helvetica", "bold");
       doc.text(
         `${netPositive ? "+" : "-"}${currencyLabel} ${Math.abs(
-          netMovement
+          netMovement,
         ).toLocaleString()}`,
         18 + cardWidth + 5,
-        yPos + 14
+        yPos + 14,
       );
 
       // Current Balance
@@ -751,13 +749,13 @@ export function BankAccounts() {
       doc.setTextColor(
         balancePositive ? 22 : 185,
         balancePositive ? 163 : 28,
-        balancePositive ? 74 : 28
+        balancePositive ? 74 : 28,
       );
       doc.setFont("helvetica", "bold");
       doc.text(
         `${currencyLabel} ${Math.abs(balance).toLocaleString()}`,
         18 + (cardWidth + 5) * 2,
-        yPos + 14
+        yPos + 14,
       );
 
       // ========== TRANSACTION HISTORY ==========
@@ -775,7 +773,7 @@ export function BankAccounts() {
           `${filteredTransactions.length} transactions`,
           pageWidth - 14,
           yPos,
-          { align: "right" }
+          { align: "right" },
         );
 
         const txnTableData = filteredTransactions.map((txn) => {
@@ -824,9 +822,8 @@ export function BankAccounts() {
           margin: { left: 14, right: 14 },
           didParseCell: (data: any) => {
             if (data.section === "body" && data.column.index === 3) {
-              // Asset account: DR = money IN (green), CR = money OUT (red)
               data.cell.styles.textColor =
-                data.cell.raw === "DR" ? [22, 163, 74] : [220, 38, 38];
+                data.cell.raw === "CR" ? [22, 163, 74] : [220, 38, 38];
               data.cell.styles.fontStyle = "bold";
             }
             if (data.section === "body" && data.column.index === 5) {
@@ -847,13 +844,13 @@ export function BankAccounts() {
               `Page ${data.pageNumber}`,
               pageWidth / 2,
               pageHeight - 12,
-              { align: "center" }
+              { align: "center" },
             );
             doc.text(
               "Computer-generated statement",
               pageWidth - 14,
               pageHeight - 12,
-              { align: "right" }
+              { align: "right" },
             );
           },
         });
@@ -910,8 +907,8 @@ export function BankAccounts() {
           tr:nth-child(even) { background: #f9fafb; }
           .text-right { text-align: right; }
           .text-center { text-align: center; }
-          .cr { color: #dc2626; font-weight: 600; }
-          .dr { color: #16a34a; font-weight: 600; }
+          .cr { color: #16a34a; font-weight: 600; }
+          .dr { color: #dc2626; font-weight: 600; }
           .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #9ca3af; font-size: 10px; }
           @media print { body { padding: 20px; } }
         </style>
@@ -941,8 +938,8 @@ export function BankAccounts() {
           <div class="account-name">${selectedAccount.bankName}</div>
           <div class="account-details">
             Account Name: ${selectedAccount.accountName} | Code: ${
-      selectedAccount.code
-    } | Currency: ${currencyLabel}
+              selectedAccount.code
+            } | Currency: ${currencyLabel}
           </div>
         </div>
 
@@ -950,26 +947,26 @@ export function BankAccounts() {
           <div class="summary-card">
             <label>Opening Balance</label>
             <div class="value">${currencyLabel} ${(
-      selectedAccount.openingBalance || 0
-    ).toLocaleString()}</div>
+              selectedAccount.openingBalance || 0
+            ).toLocaleString()}</div>
           </div>
           <div class="summary-card">
             <label>Net Movement</label>
             <div class="value ${
               (selectedAccount.netMovement || 0) >= 0 ? "positive" : "negative"
             }">${
-      (selectedAccount.netMovement || 0) >= 0 ? "+" : "-"
-    }${currencyLabel} ${Math.abs(
-      selectedAccount.netMovement || 0
-    ).toLocaleString()}</div>
+              (selectedAccount.netMovement || 0) >= 0 ? "+" : "-"
+            }${currencyLabel} ${Math.abs(
+              selectedAccount.netMovement || 0,
+            ).toLocaleString()}</div>
           </div>
           <div class="summary-card">
             <label>Closing Balance</label>
             <div class="value ${
               (selectedAccount.balance || 0) >= 0 ? "positive" : "negative"
             }">${currencyLabel} ${Math.abs(
-      selectedAccount.balance || 0
-    ).toLocaleString()}</div>
+              selectedAccount.balance || 0,
+            ).toLocaleString()}</div>
           </div>
         </div>
 
@@ -1008,10 +1005,10 @@ export function BankAccounts() {
                 <td class="text-right ${
                   (txn.balanceAfter || 0) >= 0 ? "positive" : "negative"
                 }">${(txn.balanceAfter || 0) >= 0 ? "" : "-"}${Math.abs(
-                  txn.balanceAfter || 0
+                  txn.balanceAfter || 0,
                 ).toLocaleString()}</td>
               </tr>
-            `
+            `,
               )
               .join("")}
           </tbody>
@@ -1060,14 +1057,14 @@ export function BankAccounts() {
         {
           method: "DELETE",
           body: JSON.stringify({ reason: "User requested deletion" }),
-        }
+        },
       );
 
       if (result.success) {
         toast.success(
           `Transaction ${
             selectedTransaction.reference || selectedTransaction.code
-          } deleted successfully!`
+          } deleted successfully!`,
         );
         setShowDeleteTransaction(false);
         setSelectedTransaction(null);
@@ -1536,7 +1533,7 @@ export function BankAccounts() {
               <button
                 onClick={() =>
                   setAccountsCurrentPage((prev) =>
-                    Math.min(prev + 1, totalAccountPages)
+                    Math.min(prev + 1, totalAccountPages),
                   )
                 }
                 disabled={accountsCurrentPage === totalAccountPages}
@@ -1636,7 +1633,7 @@ export function BankAccounts() {
                             <p className="text-blue-200 text-xs">Opened</p>
                             <p className="font-semibold">
                               {new Date(
-                                selectedAccount.createdAt
+                                selectedAccount.createdAt,
                               ).toLocaleDateString()}
                             </p>
                           </div>
@@ -1646,7 +1643,7 @@ export function BankAccounts() {
                   </div>
 
                   {/* Balance Card */}
-                  <div className="mt-6 grid grid-cols-4 gap-4">
+                  <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div className="bg-white/10 backdrop-blur-sm p-4 border border-white/20">
                       <p className="text-xs text-blue-200 mb-1">
                         Opening Balance
@@ -1718,7 +1715,7 @@ export function BankAccounts() {
                           value={transactionFilter}
                           onChange={(e) =>
                             setTransactionFilter(
-                              e.target.value as "all" | "credit" | "debit"
+                              e.target.value as "all" | "credit" | "debit",
                             )
                           }
                           className="w-full pl-12 pr-4 py-3 bg-white border border-slate-300 text-slate-400 text-sm font-medium focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer"
@@ -1737,7 +1734,7 @@ export function BankAccounts() {
                           value={currencyFilter}
                           onChange={(e) =>
                             setCurrencyFilter(
-                              e.target.value as "all" | "KES" | "USD"
+                              e.target.value as "all" | "KES" | "USD",
                             )
                           }
                           className="w-full pl-12 pr-4 py-3 bg-white border text-slate-400 border-slate-300 text-sm font-medium focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer"
@@ -1783,7 +1780,7 @@ export function BankAccounts() {
                         <thead className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-b border-slate-300">
                           <tr>
                             <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                              Date
+                              Date & Time
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                               Description
@@ -1800,6 +1797,9 @@ export function BankAccounts() {
                             <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider">
                               Balance
                             </th>
+                            <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                              Reference
+                            </th>
                             <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">
                               Actions
                             </th>
@@ -1809,7 +1809,7 @@ export function BankAccounts() {
                           {currentTransactions.length === 0 ? (
                             <tr>
                               <td
-                                colSpan={7}
+                                colSpan={8}
                                 className="px-4 py-8 text-center text-slate-500"
                               >
                                 No transactions found for this account.
@@ -1824,22 +1824,14 @@ export function BankAccounts() {
                                 transition={{ delay: idx * 0.03 }}
                                 className="hover:bg-blue-50/50 transition-colors group"
                               >
-                                <td className="px-4 py-4 text-sm text-slate-600">
-                                  <div className="font-semibold text-slate-900">
-                                    {new Date(txn.date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
-                                  </div>
-                                  <div className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                                    <Clock className="w-3 h-3" />
-                                    {new Date(txn.date).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+                                <td className="px-4 py-4 text-sm text-slate-600 whitespace-nowrap font-medium">
+                                  <div className="flex items-center gap-2">
+                                    <Calendar className="w-4 h-4 text-slate-400" />
+                                    {new Date(txn.date).toLocaleString()}
                                   </div>
                                 </td>
                                 <td className="px-4 py-4 text-sm text-slate-900 font-semibold">
-                                  <div>{txn.description}</div>
-                                  {(txn.reference || txn.code) && (
-                                    <div className="text-xs text-blue-500 font-mono font-normal mt-0.5">
-                                      {txn.reference || txn.code}
-                                    </div>
-                                  )}
+                                  {txn.description}
                                 </td>
                                 <td className="px-4 py-4 whitespace-nowrap">
                                   <span
@@ -1880,6 +1872,9 @@ export function BankAccounts() {
                                 <td className="px-4 py-4 text-base font-bold text-slate-900 whitespace-nowrap text-right">
                                   {getCurrencySymbol(txn.currency)}
                                   {txn.balanceAfter.toLocaleString()}
+                                </td>
+                                <td className="px-4 py-4 text-sm text-blue-600 font-mono whitespace-nowrap">
+                                  {txn.reference || txn.code}
                                 </td>
                                 <td className="px-4 py-4 whitespace-nowrap">
                                   <div className="flex items-center justify-center gap-1">
@@ -1924,7 +1919,7 @@ export function BankAccounts() {
                       Showing {indexOfFirstTransaction + 1} to{" "}
                       {Math.min(
                         indexOfLastTransaction,
-                        filteredTransactions.length
+                        filteredTransactions.length,
                       )}{" "}
                       of {filteredTransactions.length} transactions
                     </p>
@@ -1932,7 +1927,7 @@ export function BankAccounts() {
                       <button
                         onClick={() =>
                           setTransactionsCurrentPage((prev) =>
-                            Math.max(prev - 1, 1)
+                            Math.max(prev - 1, 1),
                           )
                         }
                         disabled={transactionsCurrentPage === 1}
@@ -1943,7 +1938,7 @@ export function BankAccounts() {
                       <button
                         onClick={() =>
                           setTransactionsCurrentPage((prev) =>
-                            Math.min(prev + 1, totalTransactionPages)
+                            Math.min(prev + 1, totalTransactionPages),
                           )
                         }
                         disabled={
@@ -2618,7 +2613,7 @@ export function BankAccounts() {
                       >
                         {selectedTransaction.debit !== null
                           ? `+${getCurrencySymbol(
-                              selectedTransaction.currency
+                              selectedTransaction.currency,
                             )}${selectedTransaction.debit.toLocaleString()}`
                           : "-"}
                       </p>
@@ -2642,7 +2637,7 @@ export function BankAccounts() {
                       >
                         {selectedTransaction.credit !== null
                           ? `-${getCurrencySymbol(
-                              selectedTransaction.currency
+                              selectedTransaction.currency,
                             )}${selectedTransaction.credit.toLocaleString()}`
                           : "-"}
                       </p>
@@ -2824,7 +2819,7 @@ export function BankAccounts() {
                                 <p className="text-lg font-bold text-slate-900">
                                   {getAccountTypeLabel(
                                     selectedTransaction.relatedAccount!
-                                      .accountType as import("@/lib/api").AccountType
+                                      .accountType as import("@/lib/api").AccountType,
                                   )}
                                 </p>
                                 <p className="text-xs text-slate-600">
@@ -2855,7 +2850,7 @@ export function BankAccounts() {
                               </p>
                               <p className="text-sm font-bold text-slate-900">
                                 {getCurrencyName(
-                                  selectedTransaction.relatedAccount!.currency
+                                  selectedTransaction.relatedAccount!.currency,
                                 )}
                               </p>
                             </div>
@@ -2889,7 +2884,8 @@ export function BankAccounts() {
                                 <p className="text-xl font-bold">
                                   {isPositive ? "+" : "-"}
                                   {getCurrencySymbol(
-                                    selectedTransaction.relatedAccount!.currency
+                                    selectedTransaction.relatedAccount!
+                                      .currency,
                                   )}
                                   {selectedTransaction.relatedAccount!.amount.toLocaleString()}
                                 </p>
@@ -2900,7 +2896,8 @@ export function BankAccounts() {
                                 </p>
                                 <p className="text-xl font-bold">
                                   {getCurrencySymbol(
-                                    selectedTransaction.relatedAccount!.currency
+                                    selectedTransaction.relatedAccount!
+                                      .currency,
                                   )}
                                   {selectedTransaction.relatedAccount!.balanceAfter.toLocaleString()}
                                 </p>
@@ -2982,7 +2979,7 @@ export function BankAccounts() {
                                 </div>
                                 <p className="text-[10px] text-center text-slate-600 mt-1 font-semibold">
                                   {getCurrencySymbol(
-                                    selectedTransaction.currency
+                                    selectedTransaction.currency,
                                   )}
                                   {selectedTransaction.amount.toLocaleString()}
                                 </p>
@@ -3003,7 +3000,7 @@ export function BankAccounts() {
                                 <p className="text-xs font-bold text-slate-900">
                                   {getAccountTypeLabel(
                                     selectedTransaction.relatedAccount!
-                                      .accountType as import("@/lib/api").AccountType
+                                      .accountType as import("@/lib/api").AccountType,
                                   )}
                                 </p>
                                 <p
@@ -3131,7 +3128,7 @@ export function BankAccounts() {
                       </label>
                       <select
                         defaultValue={getCurrencyName(
-                          selectedTransaction.currency
+                          selectedTransaction.currency,
                         )}
                         className="w-full px-4 py-3 bg-white border-2 border-slate-200 text-slate-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none cursor-pointer"
                       >
@@ -3169,7 +3166,7 @@ export function BankAccounts() {
                   onClick={(e) => {
                     e.preventDefault();
                     toast.success(
-                      `Transaction ${selectedTransaction.reference} updated successfully!`
+                      `Transaction ${selectedTransaction.reference} updated successfully!`,
                     );
                     setShowEditTransaction(false);
                     setSelectedTransaction(null);

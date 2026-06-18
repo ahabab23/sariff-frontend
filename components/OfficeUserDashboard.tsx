@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
@@ -29,14 +28,6 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
-// Reusable loading spinner for dynamic imports
-const TabLoadingSpinner = () => (
-  <div className="flex flex-col items-center justify-center h-64 gap-3">
-    <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
-    <p className="text-slate-400 text-sm font-medium">Loading...</p>
-  </div>
-);
-
 // Lazy-loaded office sub-components (only loaded when the tab is first visited)
 const ClientManagement = dynamic(
   () =>
@@ -45,15 +36,19 @@ const ClientManagement = dynamic(
     })),
   {
     ssr: false,
-    loading: TabLoadingSpinner,
-  }
+    loading: () => (
+      <div className="flex items-center justify-center h-64 text-slate-400">
+        Loading...
+      </div>
+    ),
+  },
 );
 const TransactionForm = dynamic(
   () =>
     import("./office/TransactionForm").then((m) => ({
       default: m.TransactionForm,
     })),
-  { ssr: false, loading: TabLoadingSpinner }
+  { ssr: false },
 );
 const Reconciliation = dynamic(
   () =>
@@ -62,27 +57,43 @@ const Reconciliation = dynamic(
     })),
   {
     ssr: false,
-    loading: TabLoadingSpinner,
-  }
+    loading: () => (
+      <div className="flex items-center justify-center h-64 text-slate-400">
+        Loading...
+      </div>
+    ),
+  },
 );
 const InvoiceManagement = dynamic(() => import("./office/InvoiceManagement"), {
   ssr: false,
-  loading: TabLoadingSpinner,
+  loading: () => (
+    <div className="flex items-center justify-center h-64 text-slate-400">
+      Loading...
+    </div>
+  ),
 });
 const Reports = dynamic(
   () => import("./office/Reports").then((m) => ({ default: m.Reports })),
   {
     ssr: false,
-    loading: TabLoadingSpinner,
-  }
+    loading: () => (
+      <div className="flex items-center justify-center h-64 text-slate-400">
+        Loading...
+      </div>
+    ),
+  },
 );
 const BankAccounts = dynamic(
   () =>
     import("./office/BankAccounts").then((m) => ({ default: m.BankAccounts })),
   {
     ssr: false,
-    loading: TabLoadingSpinner,
-  }
+    loading: () => (
+      <div className="flex items-center justify-center h-64 text-slate-400">
+        Loading...
+      </div>
+    ),
+  },
 );
 const MPesaAccounts = dynamic(
   () =>
@@ -91,8 +102,12 @@ const MPesaAccounts = dynamic(
     })),
   {
     ssr: false,
-    loading: TabLoadingSpinner,
-  }
+    loading: () => (
+      <div className="flex items-center justify-center h-64 text-slate-400">
+        Loading...
+      </div>
+    ),
+  },
 );
 const ExchangeSection = dynamic(
   () =>
@@ -101,8 +116,12 @@ const ExchangeSection = dynamic(
     })),
   {
     ssr: false,
-    loading: TabLoadingSpinner,
-  }
+    loading: () => (
+      <div className="flex items-center justify-center h-64 text-slate-400">
+        Loading...
+      </div>
+    ),
+  },
 );
 const OfficeSettings = dynamic(
   () =>
@@ -111,15 +130,23 @@ const OfficeSettings = dynamic(
     })),
   {
     ssr: false,
-    loading: TabLoadingSpinner,
-  }
+    loading: () => (
+      <div className="flex items-center justify-center h-64 text-slate-400">
+        Loading...
+      </div>
+    ),
+  },
 );
 const CashAtHand = dynamic(
   () => import("./office/CashAtHand").then((m) => ({ default: m.CashAtHand })),
   {
     ssr: false,
-    loading: TabLoadingSpinner,
-  }
+    loading: () => (
+      <div className="flex items-center justify-center h-64 text-slate-400">
+        Loading...
+      </div>
+    ),
+  },
 );
 const ExpensesAccount = dynamic(
   () =>
@@ -128,13 +155,16 @@ const ExpensesAccount = dynamic(
     })),
   {
     ssr: false,
-    loading: TabLoadingSpinner,
-  }
+    loading: () => (
+      <div className="flex items-center justify-center h-64 text-slate-400">
+        Loading...
+      </div>
+    ),
+  },
 );
 import {
   getDashboardStats,
   getRecentTransactions,
-  getTransactions,
   getCurrentExchangeRate,
   DashboardStatsDto,
   TransactionDto,
@@ -193,19 +223,13 @@ export function OfficeUserDashboard({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // NEW: for mobile drawer
   const [showTransactionForm, setShowTransactionForm] = useState(false);
-
-  // Instant tab switching — updates state + URL without full page reload
-  const switchTab = useCallback((tabId: string, href: string) => {
-    setActiveTab(tabId);
-    window.history.replaceState(null, "", href);
-  }, []);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>(
-    []
+    [],
   );
   const [loading, setLoading] = useState(true);
   const [conversionCurrency, setConversionCurrency] = useState<"KES" | "USD">(
-    "USD"
+    "USD",
   );
   const [exchangeRate, setExchangeRate] = useState(137.5);
   const [profileImage, setProfileImage] = useState<string | null>(null);
@@ -220,6 +244,7 @@ export function OfficeUserDashboard({
 
       // Fetch dashboard stats from .NET backend
       const statsResult = await getDashboardStats();
+      console.log(statsResult);
 
       if (statsResult.success && statsResult.data) {
         setStats(statsResult.data);
@@ -247,17 +272,11 @@ export function OfficeUserDashboard({
         });
       }
 
-      // Fetch today's transactions
-      // Use recent with high count + client-side date filter (avoids UTC timezone mismatch)
-      const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD in local timezone
-      const transactionsResult = await getRecentTransactions(200);
+      // Fetch recent transactions
+      const transactionsResult = await getRecentTransactions();
       if (transactionsResult.success && transactionsResult.data) {
-        const todayItems = transactionsResult.data.filter((t: TransactionDto) => {
-          const txnDate = new Date(t.transactionDate || t.createdAt).toLocaleDateString("en-CA");
-          return txnDate === today;
-        });
         // Map backend transaction format to component format
-        const mappedTransactions = todayItems.map(
+        const mappedTransactions = transactionsResult.data.map(
           (t: TransactionDto) => ({
             id: t.code,
             type: getTransactionTypeLabel(t.transactionType),
@@ -270,7 +289,7 @@ export function OfficeUserDashboard({
             primaryAccountName: t.sourceAccountName || "N/A",
             primaryAccountType: t.sourceAccountType ?? 0,
             secondaryName: t.destAccountName || "N/A",
-          })
+          }),
         );
         setRecentTransactions(mappedTransactions);
       }
@@ -322,6 +341,7 @@ export function OfficeUserDashboard({
   const handleTransactionSuccess = () => {
     fetchDashboardData();
   };
+  // console.log(user);
   // Get time-based greeting
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -409,6 +429,8 @@ export function OfficeUserDashboard({
       href: "/office/settings",
     },
   ];
+  console.log(recentTransactions);
+  console.log(user);
   const renderContent = () => {
     switch (activeTab) {
       case "clients":
@@ -750,7 +772,7 @@ export function OfficeUserDashboard({
                   <div className="text-xl lg:text-2xl font-bold text-emerald-700">
                     {(stats.daily?.byCurrency?.kes?.debits || 0).toLocaleString(
                       "en-US",
-                      { minimumFractionDigits: 0 }
+                      { minimumFractionDigits: 0 },
                     )}
                   </div>
                 </div>
@@ -791,7 +813,7 @@ export function OfficeUserDashboard({
                     {(stats.daily?.byCurrency?.kes?.net || 0) >= 0 ? "+" : ""}
                     {(stats.daily?.byCurrency?.kes?.net || 0).toLocaleString(
                       "en-US",
-                      { minimumFractionDigits: 0 }
+                      { minimumFractionDigits: 0 },
                     )}
                   </div>
                 </div>
@@ -818,7 +840,7 @@ export function OfficeUserDashboard({
                   <div className="text-xl lg:text-2xl font-bold text-blue-700">
                     {(stats.daily?.byCurrency?.usd?.debits || 0).toLocaleString(
                       "en-US",
-                      { minimumFractionDigits: 2 }
+                      { minimumFractionDigits: 2 },
                     )}
                   </div>
                 </div>
@@ -859,7 +881,7 @@ export function OfficeUserDashboard({
                     {(stats.daily?.byCurrency?.usd?.net || 0) >= 0 ? "+" : ""}
                     {(stats.daily?.byCurrency?.usd?.net || 0).toLocaleString(
                       "en-US",
-                      { minimumFractionDigits: 2 }
+                      { minimumFractionDigits: 2 },
                     )}
                   </div>
                 </div>
@@ -963,7 +985,7 @@ export function OfficeUserDashboard({
           <div className="p-6 border-b-2 border-slate-200 flex items-center justify-between">
             <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <Clock className="w-5 h-5 text-blue-600" />
-              Today's Transactions
+              Recent Transactions
             </h3>
             <button
               onClick={() => setActiveTab("transactions")}
@@ -1005,7 +1027,7 @@ export function OfficeUserDashboard({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-100">
-                {recentTransactions?.map((txn) => {
+                {recentTransactions?.slice(0, 10).map((txn) => {
                   // For Client accounts (accountType === 3): Credit = positive (green), Debit = negative (red)
                   // For Asset accounts: Debit = positive (green), Credit = negative (red)
                   const isClientAccount = txn.primaryAccountType === 3;
@@ -1077,7 +1099,7 @@ export function OfficeUserDashboard({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-cyan-50/30">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-slate-50 via-blue-50/30 to-cyan-50/30">
       {/* Desktop Sidebar - Hidden on Mobile */}
       <motion.aside
         initial={false}
@@ -1136,10 +1158,6 @@ export function OfficeUserDashboard({
             <Link
               key={item.id}
               href={item.href}
-              onClick={(e) => {
-                e.preventDefault();
-                switchTab(item.id, item.href);
-              }}
               className={`w-full flex items-center gap-3 px-6 py-3 transition-all ${
                 activeTab === item.id
                   ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg border-l-4 border-cyan-400"
@@ -1271,9 +1289,8 @@ export function OfficeUserDashboard({
                   <Link
                     key={item.id}
                     href={item.href}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      switchTab(item.id, item.href);
+                    onClick={() => {
+                      setActiveTab(item.id);
                       setMobileMenuOpen(false);
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-3.5 font-semibold transition-all relative overflow-hidden ${
@@ -1310,7 +1327,7 @@ export function OfficeUserDashboard({
         transition={{ duration: 0.3, ease: "easeInOut" }}
         className="min-h-screen lg:block hidden"
       >
-        <div className="max-w-[1600px] mx-auto p-4 sm:p-8">
+        <div className="max-w-[1600px] min-w-0 w-full mx-auto p-4 sm:p-8 overflow-x-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}

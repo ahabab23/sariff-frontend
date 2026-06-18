@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import {
   LayoutDashboard,
   FileText,
@@ -38,8 +37,10 @@ import {
   Shield,
   Star,
   Target,
+  Sparkles,
   Globe,
   ChevronRight,
+  ExternalLink,
   Lock,
   CircleDollarSign,
   Banknote,
@@ -47,6 +48,7 @@ import {
   ChevronLeft,
   Loader2,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -193,7 +195,7 @@ const getAlertBorderClass = (type: string): string => {
 };
 
 const getClientTypeLabel = (type: ClientType): string => {
-  return type === ClientType.Permanent ? "Permanent Client" : "Standard Client";
+  return type === ClientType.Permanent ? "Premium Client" : "Standard Client";
 };
 
 // ============ MAIN COMPONENT ============
@@ -204,23 +206,7 @@ export function ClientUserDashboard({
 }: ClientUserDashboardProps) {
   // View State
   const [activeView, setActiveView] = useState<ClientView>("dashboard");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(true);
-
-  // Track desktop/mobile for sidebar margin
-  useEffect(() => {
-    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // Instant tab switching — updates state + URL without full page reload
-  const switchTab = useCallback((tabId: ClientView, href: string) => {
-    setActiveView(tabId);
-    window.history.replaceState(null, "", href);
-  }, []);
 
   // Data State
   const [dashboard, setDashboard] = useState<ClientDashboardDto | null>(null);
@@ -248,10 +234,10 @@ export function ClientUserDashboard({
 
   // Filter State
   const [currencyFilter, setCurrencyFilter] = useState<Currency | undefined>(
-    undefined
+    undefined,
   );
   const [typeFilter, setTypeFilter] = useState<TransactionType | undefined>(
-    undefined
+    undefined,
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [filterPeriod, setFilterPeriod] = useState("all");
@@ -265,7 +251,7 @@ export function ClientUserDashboard({
   const [selectedTransaction, setSelectedTransaction] =
     useState<ClientTransactionDto | null>(null);
   const [selectedAlert, setSelectedAlert] = useState<ClientAlertDto | null>(
-    null
+    null,
   );
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordForm, setPasswordForm] = useState<ChangePasswordDto>({
@@ -282,14 +268,12 @@ export function ClientUserDashboard({
       label: "Dashboard",
       icon: LayoutDashboard,
       gradient: "from-blue-500 to-cyan-500",
-      href: "/client/dashboard",
     },
     {
       id: "statements" as ClientView,
       label: "Statements",
       icon: FileText,
       gradient: "from-violet-500 to-purple-500",
-      href: "/client/statements",
     },
     {
       id: "alerts" as ClientView,
@@ -297,33 +281,20 @@ export function ClientUserDashboard({
       icon: Bell,
       gradient: "from-amber-500 to-orange-500",
       badge: quickStats?.unreadAlerts,
-      href: "/client/alerts",
     },
     {
       id: "analytics" as ClientView,
       label: "Analytics",
       icon: PieChart,
       gradient: "from-emerald-500 to-teal-500",
-      href: "/client/analytics",
     },
     {
       id: "profile" as ClientView,
       label: "Profile",
       icon: User,
       gradient: "from-pink-500 to-rose-500",
-      href: "/client/profile",
     },
   ];
-
-  // ============ HELPERS ============
-
-  // Get time-based greeting
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good Morning";
-    if (hour < 18) return "Good Afternoon";
-    return "Good Evening";
-  };
 
   // ============ DATA FETCHING ============
 
@@ -373,7 +344,7 @@ export function ClientUserDashboard({
       const result = await getClientTransactions(
         currentPage,
         pageSize,
-        filters
+        filters,
       );
       if (result.success && result.data) {
         setTransactions(result.data.items);
@@ -398,7 +369,6 @@ export function ClientUserDashboard({
       }
     } catch (err) {
       console.error("Failed to fetch alerts", err);
-      toast.error("Failed to load data. Please refresh.");
     } finally {
       setLoadingAlerts(false);
     }
@@ -413,7 +383,6 @@ export function ClientUserDashboard({
       }
     } catch (err) {
       console.error("Failed to fetch analytics", err);
-      toast.error("Failed to load data. Please refresh.");
     } finally {
       setLoadingAnalytics(false);
     }
@@ -461,7 +430,7 @@ export function ClientUserDashboard({
       const result = await markAlertAsRead(alertId);
       if (result.success) {
         setAlerts((prev) =>
-          prev.map((a) => (a.id === alertId ? { ...a, isRead: true } : a))
+          prev.map((a) => (a.id === alertId ? { ...a, isRead: true } : a)),
         );
         if (quickStats) {
           setQuickStats({
@@ -541,7 +510,7 @@ export function ClientUserDashboard({
       // Safe profile data
       const clientName = profile.fullName || userName || "Client";
       const clientCode = profile.code || "N/A";
-      const clientPhone = profile.phoneNumber || "N/A";
+      const clientPhone = profile.whatsAppNumber || "N/A";
       const clientEmail = profile.email || "N/A";
       const kesBalance = profile.balanceKES ?? 0;
       const usdBalance = profile.balanceUSD ?? 0;
@@ -586,7 +555,7 @@ export function ClientUserDashboard({
         }),
         pageWidth - 14,
         21,
-        { align: "right" }
+        { align: "right" },
       );
 
       doc.setTextColor(107, 114, 128);
@@ -651,12 +620,12 @@ export function ClientUserDashboard({
       doc.setTextColor(
         kesPositive ? 22 : 185,
         kesPositive ? 163 : 28,
-        kesPositive ? 74 : 28
+        kesPositive ? 74 : 28,
       );
       doc.text(
         `${kesPositive ? "" : "-"}KES ${Math.abs(kesBalance).toLocaleString()}`,
         18,
-        yPos + 16
+        yPos + 16,
       );
 
       // USD Balance Box
@@ -673,12 +642,12 @@ export function ClientUserDashboard({
       doc.setTextColor(
         usdPositive ? 22 : 185,
         usdPositive ? 163 : 28,
-        usdPositive ? 74 : 28
+        usdPositive ? 74 : 28,
       );
       doc.text(
         `${usdPositive ? "" : "-"}USD ${Math.abs(usdBalance).toLocaleString()}`,
         22 + balanceWidth,
-        yPos + 16
+        yPos + 16,
       );
 
       // ========== TRANSACTION HISTORY ==========
@@ -697,7 +666,7 @@ export function ClientUserDashboard({
         });
 
         const txnTableData = transactions.slice(0, 50).map((txn) => {
-          const isCredit = txn.type === "Credit";
+          const isCredit = txn.type === TransactionType.Credit;
           const currency = txn.currency === Currency.KES ? "KES" : "USD";
           const runningBalance = txn.balanceAfter ?? 0;
           const desc = txn.description || "";
@@ -715,7 +684,7 @@ export function ClientUserDashboard({
             currency,
             (txn.amount ?? 0).toLocaleString(),
             `${runningBalance >= 0 ? "" : "-"}${Math.abs(
-              runningBalance
+              runningBalance,
             ).toLocaleString()}`,
           ];
         });
@@ -780,13 +749,13 @@ export function ClientUserDashboard({
               `Page ${data.pageNumber}`,
               pageWidth / 2,
               pageHeight - 12,
-              { align: "center" }
+              { align: "center" },
             );
             doc.text(
               "Computer-generated statement",
               pageWidth - 14,
               pageHeight - 12,
-              { align: "right" }
+              { align: "right" },
             );
           },
         });
@@ -794,7 +763,7 @@ export function ClientUserDashboard({
 
       const fileName = `${companyName.replace(
         /\s+/g,
-        "_"
+        "_",
       )}_Statement_${clientCode}_${new Date().toISOString().split("T")[0]}.pdf`;
       doc.save(fileName);
       toast.success("Statement exported successfully!");
@@ -845,7 +814,7 @@ export function ClientUserDashboard({
     const companyName = auth?.user?.companyName || "Money Exchange";
     const clientName = profile.fullName || userName || "Client";
     const clientCode = profile.code || "N/A";
-    const clientPhone = profile.phoneNumber || "N/A";
+    const clientPhone = profile.whatsAppNumber || "N/A";
     const clientEmail = profile.email || "N/A";
     const kesBalance = profile.balanceKES ?? 0;
     const usdBalance = profile.balanceUSD ?? 0;
@@ -918,14 +887,14 @@ export function ClientUserDashboard({
           <div class="summary-card">
             <label>KES Balance</label>
             <div class="value ${kesBalance >= 0 ? "positive" : "negative"}">${
-      kesBalance >= 0 ? "" : "-"
-    }KES ${Math.abs(kesBalance).toLocaleString()}</div>
+              kesBalance >= 0 ? "" : "-"
+            }KES ${Math.abs(kesBalance).toLocaleString()}</div>
           </div>
           <div class="summary-card">
             <label>USD Balance</label>
             <div class="value ${usdBalance >= 0 ? "positive" : "negative"}">${
-      usdBalance >= 0 ? "" : "-"
-    }USD ${Math.abs(usdBalance).toLocaleString()}</div>
+              usdBalance >= 0 ? "" : "-"
+            }USD ${Math.abs(usdBalance).toLocaleString()}</div>
           </div>
         </div>
 
@@ -946,14 +915,14 @@ export function ClientUserDashboard({
             ${transactions
               .slice(0, 50)
               .map((txn) => {
-                const isCredit = txn.type === "Credit";
+                const isCredit = txn.type === TransactionType.Credit;
                 const currency = txn.currency === Currency.KES ? "KES" : "USD";
                 const bal = txn.balanceAfter ?? 0;
                 return `
               <tr>
                 <td>${new Date(txn.date || new Date()).toLocaleDateString(
                   "en-GB",
-                  { day: "2-digit", month: "short", year: "2-digit" }
+                  { day: "2-digit", month: "short", year: "2-digit" },
                 )}</td>
                 <td>${txn.reference || txn.code || "-"}</td>
                 <td>${(txn.description || "").substring(0, 35)}${
@@ -1106,285 +1075,297 @@ export function ClientUserDashboard({
 
   // ============ RENDER ============
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-cyan-50/30">
-      {/* Desktop Sidebar - Hidden on Mobile */}
-      <aside
-        style={{ width: sidebarOpen ? 280 : 80 }}
-        className="hidden lg:block bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl border-r border-slate-700/50 fixed left-0 top-0 h-screen z-50 overflow-hidden transition-all duration-300"
-      >
-        {/* Decorative gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-cyan-600/10 pointer-events-none"></div>
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-slate-50 via-blue-50/30 to-cyan-50/30">
+      {/* Animated Background Gradient Orbs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl animate-pulse" />
+        <div
+          className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-400/20 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "1s" }}
+        />
+      </div>
 
-        {/* Logo */}
-        <div className="relative p-6 border-b border-slate-700/50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center font-bold text-lg shadow-lg">
-              {(profile?.fullName || userName).charAt(0).toUpperCase()}
-            </div>
-            {sidebarOpen && (
-              <div>
-                <h1 className="font-bold text-xl">
-                  {(profile?.fullName || userName).trim().split(" ")[0]}
-                </h1>
-                <p className="text-xs text-slate-400">
-                  {(profile?.fullName || userName)
-                    .trim()
-                    .split(" ")
-                    .slice(1)
-                    .join(" ")}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* User Greeting */}
-        <div className="relative p-6 border-b border-slate-700/50">
-          {sidebarOpen ? (
-            <div>
-              <p className="text-xs text-cyan-400 font-medium mb-1">
-                {getGreeting()}
-              </p>
-              <div className="font-bold text-lg text-white">
-                {profile?.fullName || userName}
-              </div>
-              <p className="text-xs text-slate-400 mt-1">
-                {getClientTypeLabel(
-                  profile?.clientType ?? ClientType.Temporary
-                )}
-              </p>
-            </div>
-          ) : (
-            <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center font-bold text-sm mx-auto">
-              {(profile?.fullName || userName)
-                .split(" ")
-                .map((n: string) => n[0])
-                .join("")}
-            </div>
-          )}
-        </div>
-
-        {/* Navigation */}
-        <nav
-          className="relative flex-1 overflow-y-auto py-4"
-          style={{ maxHeight: "calc(100vh - 340px)" }}
-        >
-          {menuItems.map((item) => (
-            <Link
-              key={item.id}
-              href={item.href}
-              onClick={(e) => {
-                e.preventDefault();
-                switchTab(item.id, item.href);
-              }}
-              className={`w-full flex items-center gap-3 px-6 py-3 transition-all ${
-                activeView === item.id
-                  ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg border-l-4 border-cyan-400"
-                  : "text-slate-300 hover:bg-slate-700/50 hover:text-white"
-              }`}
-            >
-              <item.icon className="w-5 h-5 flex-shrink-0" />
-              {sidebarOpen && (
-                <span className="text-sm font-medium">{item.label}</span>
-              )}
-              {sidebarOpen && item.badge && item.badge > 0 && (
-                <span className="ml-auto w-6 h-6 bg-red-500 rounded-full text-white text-xs font-bold flex items-center justify-center">
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Sidebar Toggle & Logout - Fixed at Bottom */}
-        <div className="relative p-4 border-t border-slate-700/50 space-y-2">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="w-full flex items-center gap-3 px-4 py-3 bg-slate-700/50 hover:bg-slate-600/50 transition-all"
-          >
-            <Menu className="w-5 h-5" />
-            {sidebarOpen && (
-              <span className="text-sm font-medium">Collapse</span>
-            )}
-          </button>
-          <button
-            onClick={onLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 bg-red-600/80 hover:bg-red-600 transition-all"
-          >
-            <LogOut className="w-5 h-5" />
-            {sidebarOpen && <span className="text-sm font-medium">Logout</span>}
-          </button>
-        </div>
-      </aside>
-
-      {/* Mobile Top Header - Only visible on mobile */}
-      <header className="lg:hidden sticky top-0 z-40 backdrop-blur-xl bg-white/95 border-b-2 border-slate-200 shadow-lg">
-        <div className="flex items-center justify-between h-16 px-4">
-          <div className="flex items-center gap-3">
+      {/* Top Navigation - Fixed */}
+      <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-white/80 border-b-2 border-slate-200/50 shadow-lg shadow-slate-200/50">
+        <div className="flex items-center justify-between h-16 px-4 lg:px-6">
+          {/* Left */}
+          <div className="flex items-center gap-4">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 hover:bg-gradient-to-br hover:from-blue-50 hover:to-cyan-50 transition-all"
+              className="lg:hidden p-2 hover:bg-gradient-to-br hover:from-blue-50 hover:to-cyan-50 transition-all group"
             >
-              <Menu className="w-6 h-6 text-slate-700" />
+              {mobileMenuOpen ? (
+                <X className="w-5 h-5 text-slate-700 group-hover:text-blue-600 transition-colors" />
+              ) : (
+                <Menu className="w-5 h-5 text-slate-700 group-hover:text-blue-600 transition-colors" />
+              )}
             </button>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center font-bold shadow-lg">
-                S
+
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-gradient-to-br from-blue-500 via-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/40">
+                <Sparkles className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-lg bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                <span className="font-bold text-lg bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 bg-clip-text text-transparent">
                   Sarif
-                </h1>
+                </span>
+                <p className="text-xs font-medium text-slate-500 hidden lg:block">
+                  {getClientTypeLabel(
+                    profile?.clientType ?? ClientType.Temporary,
+                  )}
+                </p>
               </div>
             </div>
           </div>
 
+          {/* Center - Client ID */}
+          <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200/50 shadow-inner">
+            <Shield className="w-4 h-4 text-blue-600" />
+            <p className="text-sm font-bold text-transparent bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text">
+              ID: {profile?.code || "Loading..."}
+            </p>
+            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+          </div>
+
+          {/* Right */}
           <div className="flex items-center gap-2">
             <button
               onClick={handleRefresh}
-              className="p-2 hover:bg-blue-50 transition-all"
+              className="p-2 hover:bg-gradient-to-br hover:from-blue-50 hover:to-cyan-50 transition-all group"
+              title="Refresh"
             >
-              <RefreshCw className="w-5 h-5 text-slate-600" />
+              <RefreshCw className="w-5 h-5 text-slate-600 group-hover:text-blue-600 group-hover:rotate-180 transition-all duration-500" />
             </button>
+
             <button
-              onClick={() => switchTab("alerts", "/client/alerts")}
-              className="p-2 hover:bg-amber-50 transition-all relative"
+              onClick={() => setActiveView("alerts")}
+              className="p-2 hover:bg-gradient-to-br hover:from-amber-50 hover:to-orange-50 transition-all relative group"
             >
-              <Bell className="w-5 h-5 text-slate-600" />
+              <Bell className="w-5 h-5 text-slate-600 group-hover:text-amber-600 transition-colors" />
               {(quickStats?.unreadAlerts ?? 0) > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-red-500 to-rose-500 rounded-full text-white text-xs font-bold flex items-center justify-center">
                   {quickStats?.unreadAlerts}
                 </span>
               )}
             </button>
+
+            <div className="hidden sm:flex items-center gap-3 pl-3 ml-2 border-l-2 border-slate-200/50">
+              <div className="text-right">
+                <p className="text-sm font-bold text-slate-900">
+                  {profile?.fullName || userName}
+                </p>
+                <p className="text-xs font-semibold text-transparent bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text">
+                  {getClientTypeLabel(
+                    profile?.clientType ?? ClientType.Temporary,
+                  )}
+                </p>
+              </div>
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 via-cyan-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-blue-500/40">
+                {(profile?.fullName || userName).charAt(0).toUpperCase()}
+              </div>
+            </div>
+
+            <button
+              onClick={onLogout}
+              className="p-2 hover:bg-gradient-to-br hover:from-red-50 hover:to-rose-50 transition-all text-slate-700 hover:text-red-600 ml-2"
+              title="Logout"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </header>
 
-      {/* Mobile Sidebar Drawer */}
+      {/* Main layout with padding-top for fixed header */}
+      <div className="flex pt-16">
+        {/* Sidebar - Fixed */}
+        <aside className="hidden lg:flex lg:flex-col lg:fixed lg:top-16 lg:left-0 lg:bottom-0 w-72 border-r-2 border-slate-200/50 bg-white/60 backdrop-blur-xl z-30 overflow-y-auto">
+          <div className="absolute inset-0 bg-gradient-to-b from-blue-50/30 via-transparent to-cyan-50/30 pointer-events-none" />
 
-      {mobileMenuOpen && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          <aside className="fixed left-0 top-0 bottom-0 w-80 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white z-50 lg:hidden shadow-2xl overflow-y-auto">
-            {/* Decorative gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-cyan-600/10 pointer-events-none"></div>
-
-            {/* Mobile Header */}
-            <div className="relative p-6 border-b border-slate-700/50">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center font-bold text-lg shadow-lg">
-                    S
-                  </div>
-                  <div>
-                    <h1 className="font-bold text-xl">Sarif</h1>
-                    <p className="text-xs text-slate-400">Client Portal</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="p-2 hover:bg-slate-700/50 transition-all"
-                >
-                  <Menu className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* User Info */}
-              <div className="mt-4">
-                <p className="text-xs text-cyan-400 font-medium mb-1">
-                  {getGreeting()}
-                </p>
-                <div className="font-bold text-lg text-white">
-                  {profile?.fullName || userName}
-                </div>
-                <p className="text-xs text-slate-400 mt-1">
-                  {getClientTypeLabel(
-                    profile?.clientType ?? ClientType.Temporary
-                  )}
-                </p>
-              </div>
-            </div>
-
-            {/* Mobile Navigation */}
-            <nav className="relative p-4 space-y-2">
-              {menuItems.map((item) => (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    switchTab(item.id, item.href);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full flex items-center gap-3 px-4 py-3.5 font-semibold transition-all relative overflow-hidden ${
-                    activeView === item.id
-                      ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg"
-                      : "text-slate-300 hover:bg-slate-700/50 hover:text-white"
-                  }`}
-                >
-                  <item.icon className="w-5 h-5 relative z-10" />
-                  <span className="relative z-10">{item.label}</span>
-                  {item.badge && item.badge > 0 && (
-                    <span className="ml-auto relative z-10 w-6 h-6 bg-red-500 rounded-full text-white text-xs font-bold flex items-center justify-center">
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              ))}
-            </nav>
-
-            {/* Mobile Footer */}
-            <div className="relative p-4 mt-auto border-t border-slate-700/50">
+          <nav className="p-4 space-y-2 relative z-10">
+            {menuItems.map((item) => (
               <button
-                onClick={onLogout}
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-red-600/90 hover:bg-red-600 transition-all font-semibold"
+                key={item.id}
+                onClick={() => setActiveView(item.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 font-semibold transition-all relative overflow-hidden group ${
+                  activeView === item.id
+                    ? "text-white shadow-lg"
+                    : "text-slate-700 hover:text-blue-700"
+                }`}
               >
-                <LogOut className="w-5 h-5" />
-                <span>Logout</span>
+                {activeView === item.id ? (
+                  <>
+                    <div
+                      className={`absolute inset-0 bg-gradient-to-r ${item.gradient} opacity-100`}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-50" />
+                  </>
+                ) : (
+                  <div
+                    className={`absolute inset-0 bg-gradient-to-r ${item.gradient} opacity-0 group-hover:opacity-10 transition-opacity`}
+                  />
+                )}
+                <item.icon
+                  className={`w-5 h-5 relative z-10 ${
+                    activeView === item.id ? "animate-pulse" : ""
+                  }`}
+                />
+                <span className="relative z-10">{item.label}</span>
+                {item.badge && item.badge > 0 && (
+                  <span className="ml-auto relative z-10 w-6 h-6 bg-red-500 rounded-full text-white text-xs font-bold flex items-center justify-center">
+                    {item.badge}
+                  </span>
+                )}
+                {activeView === item.id && (
+                  <ChevronRight className="w-4 h-4 ml-auto relative z-10" />
+                )}
               </button>
-            </div>
-          </aside>
-        </>
-      )}
+            ))}
+          </nav>
 
-      {/* Main Content - With responsive left margin */}
-      <main
-        style={{ marginLeft: isDesktop ? (sidebarOpen ? 296 : 96) : 0 }}
-        className="min-h-screen transition-all duration-300"
-      >
-        <div className="max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8">
-          <div key={activeView}>
+          {/* Quick Stats in Sidebar */}
+          {quickStats && (
+            <div className="p-4 mt-4 relative z-10">
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider px-2 mb-3">
+                Quick Stats
+              </p>
+              <div className="space-y-3">
+                <div className="p-4 bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200/50 hover:border-emerald-400/50 transition-all">
+                  <div className="flex items-center justify-between mb-2">
+                    <TrendingUp className="w-5 h-5 text-emerald-600" />
+                    <span className="text-xs font-bold text-emerald-600">
+                      This Month
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 mb-1">Income</p>
+                  <p className="text-lg font-bold text-transparent bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text">
+                    {formatCurrency(quickStats.thisMonthInKES, Currency.KES)}
+                  </p>
+                </div>
+
+                <div className="p-4 bg-gradient-to-br from-violet-50 to-purple-50 border-2 border-violet-200/50 hover:border-violet-400/50 transition-all">
+                  <div className="flex items-center justify-between mb-2">
+                    <Activity className="w-5 h-5 text-violet-600" />
+                    <span className="text-xs font-bold text-violet-600">
+                      Active
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 mb-1">Transactions</p>
+                  <p className="text-lg font-bold text-transparent bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text">
+                    {quickStats.transactionCount} Total
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Support Section - pushed to bottom */}
+          <div className="p-4 mt-auto relative z-10">
+            <button
+              onClick={handleContactSupport}
+              className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-50 border-2 border-blue-300/50 hover:border-blue-500/50 hover:shadow-lg transition-all text-left group"
+            >
+              <MessageCircle className="w-5 h-5 text-blue-600 group-hover:scale-110 transition-transform" />
+              <div>
+                <p className="text-sm font-bold text-blue-900">24/7 Support</p>
+                <p className="text-xs text-blue-700">We're here to help</p>
+              </div>
+              <ExternalLink className="w-4 h-4 ml-auto text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
+          </div>
+        </aside>
+
+        {/* Sidebar spacer for fixed sidebar */}
+        <div className="hidden lg:block w-72 flex-shrink-0" />
+
+        {/* Mobile Sidebar */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden"
+                onClick={() => setMobileMenuOpen(false)}
+              />
+              <motion.aside
+                initial={{ x: -320 }}
+                animate={{ x: 0 }}
+                exit={{ x: -320 }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="fixed left-0 top-16 bottom-0 w-72 bg-white/95 backdrop-blur-xl border-r-2 border-slate-200/50 z-50 lg:hidden shadow-2xl"
+              >
+                <nav className="p-4 space-y-2">
+                  {menuItems.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveView(item.id);
+                        setMobileMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-4 py-3.5 font-semibold transition-all relative overflow-hidden ${
+                        activeView === item.id
+                          ? "text-white shadow-lg"
+                          : "text-slate-700"
+                      }`}
+                    >
+                      {activeView === item.id && (
+                        <div
+                          className={`absolute inset-0 bg-gradient-to-r ${item.gradient}`}
+                        />
+                      )}
+                      <item.icon className="w-5 h-5 relative z-10" />
+                      <span className="relative z-10">{item.label}</span>
+                      {item.badge && item.badge > 0 && (
+                        <span className="ml-auto relative z-10 w-6 h-6 bg-red-500 rounded-full text-white text-xs font-bold flex items-center justify-center">
+                          {item.badge}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </nav>
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* Main Content */}
+        <main className="flex-1 p-4 lg:p-8 max-w-7xl mx-auto w-full relative z-10">
+          <AnimatePresence mode="wait">
             {/* ============ DASHBOARD VIEW ============ */}
             {activeView === "dashboard" && (
-              <div key="dashboard" className="space-y-8">
+              <motion.div
+                key="dashboard"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-8"
+              >
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-2xl font-bold text-slate-900">
+                    <h1 className="text-4xl font-black text-transparent bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 bg-clip-text">
                       Account Overview
-                    </h2>
-                    <p className="text-sm text-slate-600 mt-1">
-                      Welcome back, {profile?.fullName || userName}
-                      {profile?.lastLoginAt
-                        ? ` • Last login: ${formatDate(profile.lastLoginAt)}`
-                        : ""}
+                    </h1>
+                    <p className="text-slate-600 mt-2 flex items-center gap-2">
+                      <span className="font-medium">
+                        Welcome back, {profile?.fullName || userName}
+                      </span>
+                      <span className="text-slate-400">•</span>
+                      <span className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5" />
+                        {profile?.lastLoginAt
+                          ? `Last login: ${formatDate(profile.lastLoginAt)}`
+                          : "Welcome!"}
+                      </span>
                     </p>
                   </div>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={handleRefresh}
-                      className="px-4 py-2 bg-white border-2 border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 transition-all flex items-center gap-2 text-sm font-semibold text-slate-700"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                      Refresh
-                    </button>
+                  <div className="flex gap-2">
                     <button
                       onClick={handleExportCsv}
-                      className="px-6 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold text-sm hover:shadow-lg hover:shadow-blue-500/30 transition-all flex items-center gap-2"
+                      className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-slate-700 bg-white hover:bg-gradient-to-br hover:from-slate-50 hover:to-slate-100 border-2 border-slate-300 hover:border-slate-400 shadow-lg hover:shadow-xl transition-all"
                     >
                       <Download className="w-4 h-4" />
                       Export
@@ -1403,7 +1384,7 @@ export function ClientUserDashboard({
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <button
                     onClick={handleDownloadStatement}
-                    className="bg-white/80 backdrop-blur-xl border-2 border-blue-200 hover:border-blue-400 hover:bg-gradient-to-br hover:from-blue-50 hover:to-cyan-50 p-6 text-left transition-all group shadow-lg hover:shadow-xl"
+                    className="bg-white/70 backdrop-blur-sm border-2 border-blue-200 hover:border-blue-400 hover:bg-gradient-to-br hover:from-blue-50 hover:to-cyan-50 p-6 text-left transition-all group shadow-lg hover:shadow-xl"
                   >
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-blue-500/30">
                       <Download className="w-6 h-6 text-white" />
@@ -1417,10 +1398,8 @@ export function ClientUserDashboard({
                   </button>
 
                   <button
-                    onClick={() =>
-                      switchTab("statements", "/client/statements")
-                    }
-                    className="bg-white/80 backdrop-blur-xl border-2 border-violet-200 hover:border-violet-400 hover:bg-gradient-to-br hover:from-violet-50 hover:to-purple-50 p-6 text-left transition-all group shadow-lg hover:shadow-xl"
+                    onClick={() => setActiveView("statements")}
+                    className="bg-white/70 backdrop-blur-sm border-2 border-violet-200 hover:border-violet-400 hover:bg-gradient-to-br hover:from-violet-50 hover:to-purple-50 p-6 text-left transition-all group shadow-lg hover:shadow-xl"
                   >
                     <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-violet-500/30">
                       <Eye className="w-6 h-6 text-white" />
@@ -1433,7 +1412,7 @@ export function ClientUserDashboard({
 
                   <button
                     onClick={handleShareStatement}
-                    className="bg-white/80 backdrop-blur-xl border-2 border-emerald-200 hover:border-emerald-400 hover:bg-gradient-to-br hover:from-emerald-50 hover:to-teal-50 p-6 text-left transition-all group shadow-lg hover:shadow-xl"
+                    className="bg-white/70 backdrop-blur-sm border-2 border-emerald-200 hover:border-emerald-400 hover:bg-gradient-to-br hover:from-emerald-50 hover:to-teal-50 p-6 text-left transition-all group shadow-lg hover:shadow-xl"
                   >
                     <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/30">
                       <Share2 className="w-6 h-6 text-white" />
@@ -1445,8 +1424,8 @@ export function ClientUserDashboard({
                   </button>
 
                   <button
-                    onClick={() => switchTab("analytics", "/client/analytics")}
-                    className="bg-white/80 backdrop-blur-xl border-2 border-pink-200 hover:border-pink-400 hover:bg-gradient-to-br hover:from-pink-50 hover:to-rose-50 p-6 text-left transition-all group shadow-lg hover:shadow-xl"
+                    onClick={() => setActiveView("analytics")}
+                    className="bg-white/70 backdrop-blur-sm border-2 border-pink-200 hover:border-pink-400 hover:bg-gradient-to-br hover:from-pink-50 hover:to-rose-50 p-6 text-left transition-all group shadow-lg hover:shadow-xl"
                   >
                     <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-pink-500/30">
                       <BarChart3 className="w-6 h-6 text-white" />
@@ -1459,21 +1438,25 @@ export function ClientUserDashboard({
                 </div>
 
                 {/* Recent Transactions */}
-                <div className="bg-white/80 backdrop-blur-xl border-2 border-slate-200 shadow-lg overflow-hidden">
-                  <div className="p-6 border-b-2 border-slate-200 flex items-center justify-between">
-                    <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-blue-600" />
-                      Recent Transactions
-                    </h3>
-                    <button
-                      onClick={() =>
-                        switchTab("statements", "/client/statements")
-                      }
-                      className="text-sm font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                    >
-                      View All
-                      <Eye className="w-4 h-4" />
-                    </button>
+                <div className="bg-white/70 backdrop-blur-sm border-2 border-slate-200 hover:border-blue-200 transition-all shadow-xl">
+                  <div className="p-6 border-b-2 border-slate-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-xl font-black text-slate-900">
+                          Recent Transactions
+                        </h3>
+                        <p className="text-sm text-slate-600 mt-1">
+                          Your latest activity
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setActiveView("statements")}
+                        className="flex items-center gap-2 text-sm font-bold text-transparent bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text hover:underline group"
+                      >
+                        View All
+                        <ChevronRight className="w-4 h-4 text-blue-600 group-hover:translate-x-1 transition-transform" />
+                      </button>
+                    </div>
                   </div>
 
                   {recentTransactions.length === 0 ? (
@@ -1484,7 +1467,7 @@ export function ClientUserDashboard({
                   ) : (
                     <>
                       {/* Mobile Cards */}
-                      <div className="lg:hidden bg-white divide-y divide-slate-100">
+                      <div className="lg:hidden divide-y-2 divide-slate-200">
                         {recentTransactions.slice(0, 5).map((txn) => (
                           <button
                             key={txn.id}
@@ -1513,10 +1496,10 @@ export function ClientUserDashboard({
                             </div>
                             <div className="flex items-center justify-between pt-3 border-t border-slate-200">
                               <span
-                                className={`text-xl font-bold font-mono ${
+                                className={`text-xl font-black font-mono ${
                                   txn.type === "Debit"
-                                    ? "text-red-700"
-                                    : "text-blue-700"
+                                    ? "text-transparent bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text"
+                                    : "text-transparent bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text"
                                 }`}
                               >
                                 {txn.type === "Debit" ? "-" : "+"}
@@ -1527,7 +1510,7 @@ export function ClientUserDashboard({
                                 <span className="text-slate-900">
                                   {formatCurrency(
                                     txn.balanceAfter,
-                                    txn.currency
+                                    txn.currency,
                                   )}
                                 </span>
                               </span>
@@ -1539,33 +1522,33 @@ export function ClientUserDashboard({
                       {/* Desktop Table */}
                       <div className="hidden lg:block overflow-x-auto">
                         <table className="w-full">
-                          <thead className="bg-slate-50 border-b-2 border-slate-200">
+                          <thead className="bg-gradient-to-r from-slate-50 to-blue-50/30 border-b-2 border-slate-200">
                             <tr>
-                              <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                              <th className="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-wider">
                                 Date
                               </th>
-                              <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                              <th className="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-wider">
                                 Type
                               </th>
-                              <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                              <th className="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-wider">
                                 Description
                               </th>
-                              <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                              <th className="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-wider">
                                 Amount
                               </th>
-                              <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                              <th className="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-wider">
                                 Balance
                               </th>
-                              <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                              <th className="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-wider">
                                 Status
                               </th>
                             </tr>
                           </thead>
-                          <tbody className="bg-white divide-y divide-slate-100">
+                          <tbody className="divide-y-2 divide-slate-200">
                             {recentTransactions.slice(0, 5).map((txn) => (
                               <tr
                                 key={txn.id}
-                                className="hover:bg-slate-50 transition-colors group cursor-pointer"
+                                className="hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-cyan-50/30 transition-all group cursor-pointer"
                                 onClick={() => setSelectedTransaction(txn)}
                               >
                                 <td className="px-6 py-4 text-sm">
@@ -1597,10 +1580,10 @@ export function ClientUserDashboard({
                                   </div>
                                 </td>
                                 <td
-                                  className={`px-6 py-4 text-base font-bold font-mono ${
+                                  className={`px-6 py-4 text-base font-black font-mono ${
                                     txn.type === "Debit"
-                                      ? "text-red-700"
-                                      : "text-blue-700"
+                                      ? "text-transparent bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text"
+                                      : "text-transparent bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text"
                                   }`}
                                 >
                                   {txn.type === "Debit" ? "-" : "+"}
@@ -1609,13 +1592,13 @@ export function ClientUserDashboard({
                                 <td className="px-6 py-4 text-sm font-bold text-slate-900 font-mono">
                                   {formatCurrency(
                                     txn.balanceAfter,
-                                    txn.currency
+                                    txn.currency,
                                   )}
                                 </td>
                                 <td className="px-6 py-4">
                                   <span
                                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border-2 ${getStatusBadgeClass(
-                                      txn.status
+                                      txn.status,
                                     )}`}
                                   >
                                     <CheckCircle className="w-3 h-3" />
@@ -1635,11 +1618,11 @@ export function ClientUserDashboard({
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Weekly Activity Preview */}
                   {analytics && (
-                    <div className="bg-white/80 backdrop-blur-xl border-2 border-violet-200 hover:border-violet-300 transition-all shadow-xl">
+                    <div className="bg-white/70 backdrop-blur-sm border-2 border-violet-200 hover:border-violet-300 transition-all shadow-xl">
                       <div className="p-6 border-b-2 border-slate-200">
                         <div className="flex items-center justify-between">
                           <div>
-                            <h3 className="text-lg font-bold text-slate-900">
+                            <h3 className="text-lg font-black text-transparent bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text">
                               Weekly Activity
                             </h3>
                             <p className="text-sm text-slate-600 mt-1">
@@ -1685,11 +1668,11 @@ export function ClientUserDashboard({
                   )}
 
                   {/* Alerts Preview */}
-                  <div className="bg-white/80 backdrop-blur-xl border-2 border-amber-200 hover:border-amber-300 transition-all shadow-xl">
+                  <div className="bg-white/70 backdrop-blur-sm border-2 border-amber-200 hover:border-amber-300 transition-all shadow-xl">
                     <div className="p-6 border-b-2 border-slate-200">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="text-lg font-bold text-slate-900">
+                          <h3 className="text-lg font-black text-transparent bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text">
                             Recent Alerts
                           </h3>
                           <p className="text-sm text-slate-600 mt-1">
@@ -1697,7 +1680,7 @@ export function ClientUserDashboard({
                           </p>
                         </div>
                         <button
-                          onClick={() => switchTab("alerts", "/client/alerts")}
+                          onClick={() => setActiveView("alerts")}
                           className="flex items-center gap-2 text-sm font-bold text-amber-600 hover:text-amber-700 hover:underline group"
                         >
                           View All
@@ -1722,10 +1705,10 @@ export function ClientUserDashboard({
                                 alert.type === "success"
                                   ? "from-emerald-50 to-teal-50 border-emerald-300"
                                   : alert.type === "warning"
-                                  ? "from-amber-50 to-orange-50 border-amber-300"
-                                  : alert.type === "error"
-                                  ? "from-red-50 to-rose-50 border-red-300"
-                                  : "from-blue-50 to-cyan-50 border-blue-300"
+                                    ? "from-amber-50 to-orange-50 border-amber-300"
+                                    : alert.type === "error"
+                                      ? "from-red-50 to-rose-50 border-red-300"
+                                      : "from-blue-50 to-cyan-50 border-blue-300"
                               } hover:shadow-lg border-2 transition-all text-left group ${
                                 alert.isRead ? "opacity-60" : ""
                               }`}
@@ -1735,10 +1718,10 @@ export function ClientUserDashboard({
                                   alert.type === "success"
                                     ? "text-emerald-600"
                                     : alert.type === "warning"
-                                    ? "text-amber-600"
-                                    : alert.type === "error"
-                                    ? "text-red-600"
-                                    : "text-blue-600"
+                                      ? "text-amber-600"
+                                      : alert.type === "error"
+                                        ? "text-red-600"
+                                        : "text-blue-600"
                                 }`}
                               />
                               <div className="flex-1 min-w-0">
@@ -1760,17 +1743,24 @@ export function ClientUserDashboard({
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
             {/* ============ STATEMENTS VIEW ============ */}
             {activeView === "statements" && (
-              <div key="statements" className="space-y-8">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <motion.div
+                key="statements"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-8"
+              >
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-2xl font-bold text-slate-900">
+                    <h1 className="text-4xl font-black text-transparent bg-gradient-to-r from-violet-600 via-purple-600 to-violet-700 bg-clip-text">
                       Account Statements
-                    </h2>
-                    <p className="text-sm text-slate-600 mt-1">
+                    </h1>
+                    <p className="text-slate-600 mt-2">
                       View and download your complete transaction history (
                       {totalCount} total)
                     </p>
@@ -1801,7 +1791,7 @@ export function ClientUserDashboard({
                 </div>
 
                 {/* Search and Filters */}
-                <div className="bg-white/80 backdrop-blur-xl border-2 border-slate-200 p-6 shadow-lg">
+                <div className="bg-white/70 backdrop-blur-sm border-2 border-slate-200 p-6 shadow-xl">
                   <div className="flex flex-col gap-4">
                     <div className="flex flex-col lg:flex-row gap-4">
                       <div className="flex-1 relative">
@@ -1828,8 +1818,8 @@ export function ClientUserDashboard({
                             {period === "all"
                               ? "All Time"
                               : period === "month"
-                              ? "This Month"
-                              : "This Week"}
+                                ? "This Month"
+                                : "This Week"}
                           </button>
                         ))}
                       </div>
@@ -1920,7 +1910,7 @@ export function ClientUserDashboard({
                 </div>
 
                 {/* Transactions Table */}
-                <div className="bg-white/80 backdrop-blur-xl border-2 border-slate-200 shadow-lg">
+                <div className="bg-white/70 backdrop-blur-sm border-2 border-slate-200 shadow-xl">
                   {loadingTransactions ? (
                     <div className="p-12 text-center">
                       <Loader2 className="w-10 h-10 text-blue-600 animate-spin mx-auto mb-4" />
@@ -1934,7 +1924,7 @@ export function ClientUserDashboard({
                   ) : (
                     <>
                       {/* Mobile Cards */}
-                      <div className="lg:hidden bg-white divide-y divide-slate-100">
+                      <div className="lg:hidden divide-y-2 divide-slate-200">
                         {transactions.map((txn) => (
                           <button
                             key={txn.id}
@@ -1970,10 +1960,10 @@ export function ClientUserDashboard({
                                   Amount
                                 </p>
                                 <p
-                                  className={`text-lg font-bold font-mono ${
+                                  className={`text-lg font-black font-mono ${
                                     txn.type === "Debit"
-                                      ? "text-red-700"
-                                      : "text-blue-700"
+                                      ? "text-transparent bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text"
+                                      : "text-transparent bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text"
                                   }`}
                                 >
                                   {txn.type === "Debit" ? "-" : "+"}
@@ -1987,7 +1977,7 @@ export function ClientUserDashboard({
                                 <p className="text-sm font-bold text-slate-900">
                                   {formatCurrency(
                                     txn.balanceAfter,
-                                    txn.currency
+                                    txn.currency,
                                   )}
                                 </p>
                               </div>
@@ -1999,36 +1989,36 @@ export function ClientUserDashboard({
                       {/* Desktop Table */}
                       <div className="hidden lg:block overflow-x-auto">
                         <table className="w-full">
-                          <thead className="bg-slate-50 border-b-2 border-slate-200">
+                          <thead className="bg-gradient-to-r from-slate-50 to-violet-50/30 border-b-2 border-slate-200">
                             <tr>
-                              <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                              <th className="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-wider">
                                 Reference
                               </th>
-                              <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                              <th className="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-wider">
                                 Date & Time
                               </th>
-                              <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                              <th className="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-wider">
                                 Type
                               </th>
-                              <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                              <th className="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-wider">
                                 Description
                               </th>
-                              <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                              <th className="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-wider">
                                 Amount
                               </th>
-                              <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                              <th className="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-wider">
                                 Balance
                               </th>
-                              <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                              <th className="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-wider">
                                 Status
                               </th>
                             </tr>
                           </thead>
-                          <tbody className="bg-white divide-y divide-slate-100">
+                          <tbody className="divide-y-2 divide-slate-200">
                             {transactions.map((txn) => (
                               <tr
                                 key={txn.id}
-                                className="hover:bg-slate-50 transition-colors cursor-pointer group"
+                                className="hover:bg-gradient-to-r hover:from-violet-50/30 hover:to-purple-50/30 transition-all cursor-pointer group"
                                 onClick={() => setSelectedTransaction(txn)}
                               >
                                 <td className="px-6 py-4 text-sm font-bold text-slate-900">
@@ -2058,10 +2048,10 @@ export function ClientUserDashboard({
                                   {txn.description}
                                 </td>
                                 <td
-                                  className={`px-6 py-4 text-base font-bold font-mono ${
+                                  className={`px-6 py-4 text-base font-black font-mono ${
                                     txn.type === "Debit"
-                                      ? "text-red-700"
-                                      : "text-blue-700"
+                                      ? "text-transparent bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text"
+                                      : "text-transparent bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text"
                                   }`}
                                 >
                                   {txn.type === "Debit" ? "-" : "+"}
@@ -2070,13 +2060,13 @@ export function ClientUserDashboard({
                                 <td className="px-6 py-4 text-sm font-bold text-slate-900 font-mono">
                                   {formatCurrency(
                                     txn.balanceAfter,
-                                    txn.currency
+                                    txn.currency,
                                   )}
                                 </td>
                                 <td className="px-6 py-4">
                                   <span
                                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border-2 ${getStatusBadgeClass(
-                                      txn.status
+                                      txn.status,
                                     )}`}
                                   >
                                     <CheckCircle className="w-3 h-3" />
@@ -2110,7 +2100,7 @@ export function ClientUserDashboard({
                             <button
                               onClick={() =>
                                 setCurrentPage((p) =>
-                                  Math.min(totalPages, p + 1)
+                                  Math.min(totalPages, p + 1),
                                 )
                               }
                               disabled={currentPage === totalPages}
@@ -2125,18 +2115,25 @@ export function ClientUserDashboard({
                     </>
                   )}
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* ============ ALERTS VIEW ============ */}
             {activeView === "alerts" && (
-              <div key="alerts" className="space-y-8">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <motion.div
+                key="alerts"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-8"
+              >
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-2xl font-bold text-slate-900">
+                    <h1 className="text-4xl font-black text-transparent bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 bg-clip-text">
                       Notifications & Alerts
-                    </h2>
-                    <p className="text-sm text-slate-600 mt-1">
+                    </h1>
+                    <p className="text-slate-600 mt-2">
                       Stay updated with your account activity
                     </p>
                   </div>
@@ -2166,7 +2163,7 @@ export function ClientUserDashboard({
                     <p className="text-slate-500">Loading alerts...</p>
                   </div>
                 ) : alerts.length === 0 ? (
-                  <div className="bg-white/80 backdrop-blur-xl border-2 border-slate-200 p-12 text-center shadow-xl">
+                  <div className="bg-white/70 backdrop-blur-sm border-2 border-slate-200 p-12 text-center shadow-xl">
                     <Bell className="w-16 h-16 text-slate-300 mx-auto mb-4" />
                     <h3 className="text-xl font-bold text-slate-700 mb-2">
                       No Alerts
@@ -2184,7 +2181,7 @@ export function ClientUserDashboard({
                         <button
                           key={alert.id}
                           onClick={() => setSelectedAlert(alert)}
-                          className={`w-full bg-white/80 backdrop-blur-xl border-2 hover:shadow-2xl p-6 transition-all text-left group relative overflow-hidden ${borderClass} ${
+                          className={`w-full bg-white/70 backdrop-blur-sm border-2 hover:shadow-2xl p-6 transition-all text-left group relative overflow-hidden ${borderClass} ${
                             alert.isRead ? "opacity-60" : ""
                           }`}
                         >
@@ -2199,7 +2196,7 @@ export function ClientUserDashboard({
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
-                                <h4 className="font-bold text-slate-900 text-lg group-hover:text-blue-600 transition-colors">
+                                <h4 className="font-black text-slate-900 text-lg group-hover:text-blue-600 transition-colors">
                                   {alert.title}
                                 </h4>
                                 {!alert.isRead && (
@@ -2238,7 +2235,7 @@ export function ClientUserDashboard({
                         <button
                           onClick={() =>
                             setAlertPage((p) =>
-                              Math.min(alertTotalPages, p + 1)
+                              Math.min(alertTotalPages, p + 1),
                             )
                           }
                           disabled={alertPage === alertTotalPages}
@@ -2250,17 +2247,24 @@ export function ClientUserDashboard({
                     )}
                   </div>
                 )}
-              </div>
+              </motion.div>
             )}
 
             {/* ============ ANALYTICS VIEW ============ */}
             {activeView === "analytics" && (
-              <div key="analytics" className="space-y-8">
+              <motion.div
+                key="analytics"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-8"
+              >
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900">
+                  <h1 className="text-4xl font-black text-transparent bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 bg-clip-text">
                     Account Analytics
-                  </h2>
-                  <p className="text-sm text-slate-600 mt-1">
+                  </h1>
+                  <p className="text-slate-600 mt-2">
                     Deep insights into your financial performance
                   </p>
                 </div>
@@ -2271,7 +2275,7 @@ export function ClientUserDashboard({
                     <p className="text-slate-500">Loading analytics...</p>
                   </div>
                 ) : !analytics ? (
-                  <div className="bg-white/80 backdrop-blur-xl border-2 border-slate-200 p-12 text-center shadow-xl">
+                  <div className="bg-white/70 backdrop-blur-sm border-2 border-slate-200 p-12 text-center shadow-xl">
                     <BarChart3 className="w-16 h-16 text-slate-300 mx-auto mb-4" />
                     <h3 className="text-xl font-bold text-slate-700 mb-2">
                       No Analytics Data
@@ -2284,7 +2288,7 @@ export function ClientUserDashboard({
                   <>
                     {/* KPI Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                      <div className="bg-white/80 backdrop-blur-xl border-2 border-blue-200 hover:border-blue-400 p-6 transition-all shadow-xl">
+                      <div className="bg-white/70 backdrop-blur-sm border-2 border-blue-200 hover:border-blue-400 p-6 transition-all shadow-xl">
                         <div className="flex items-center justify-between mb-4">
                           <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
                             <TrendingUp className="w-6 h-6 text-white" />
@@ -2297,15 +2301,15 @@ export function ClientUserDashboard({
                         <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                           Growth
                         </p>
-                        <p className="text-2xl font-bold text-cyan-600">
+                        <p className="text-2xl font-black text-transparent bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text">
                           {formatCurrency(
                             analytics.totals.netIncomeKES,
-                            Currency.KES
+                            Currency.KES,
                           )}
                         </p>
                       </div>
 
-                      <div className="bg-white/80 backdrop-blur-xl border-2 border-violet-200 hover:border-violet-400 p-6 transition-all shadow-xl">
+                      <div className="bg-white/70 backdrop-blur-sm border-2 border-violet-200 hover:border-violet-400 p-6 transition-all shadow-xl">
                         <div className="flex items-center justify-between mb-4">
                           <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center shadow-lg">
                             <Activity className="w-6 h-6 text-white" />
@@ -2317,12 +2321,12 @@ export function ClientUserDashboard({
                         <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                           Total Transactions
                         </p>
-                        <p className="text-2xl font-bold text-indigo-600">
+                        <p className="text-2xl font-black text-transparent bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text">
                           {analytics.totals.totalTransactions}
                         </p>
                       </div>
 
-                      <div className="bg-white/80 backdrop-blur-xl border-2 border-emerald-200 hover:border-emerald-400 p-6 transition-all shadow-xl">
+                      <div className="bg-white/70 backdrop-blur-sm border-2 border-emerald-200 hover:border-emerald-400 p-6 transition-all shadow-xl">
                         <div className="flex items-center justify-between mb-4">
                           <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
                             <CircleDollarSign className="w-6 h-6 text-white" />
@@ -2331,15 +2335,15 @@ export function ClientUserDashboard({
                         <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                           Net Income (KES)
                         </p>
-                        <p className="text-2xl font-bold text-emerald-600">
+                        <p className="text-2xl font-black text-transparent bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text">
                           {formatCurrency(
                             analytics.totals.netIncomeKES,
-                            Currency.KES
+                            Currency.KES,
                           )}
                         </p>
                       </div>
 
-                      <div className="bg-white/80 backdrop-blur-xl border-2 border-pink-200 hover:border-pink-400 p-6 transition-all shadow-xl">
+                      <div className="bg-white/70 backdrop-blur-sm border-2 border-pink-200 hover:border-pink-400 p-6 transition-all shadow-xl">
                         <div className="flex items-center justify-between mb-4">
                           <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center shadow-lg">
                             <Banknote className="w-6 h-6 text-white" />
@@ -2348,10 +2352,10 @@ export function ClientUserDashboard({
                         <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
                           Avg Transaction
                         </p>
-                        <p className="text-2xl font-bold text-pink-600">
+                        <p className="text-2xl font-black text-transparent bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text">
                           {formatCurrency(
                             analytics.totals.avgTransactionKES,
-                            Currency.KES
+                            Currency.KES,
                           )}
                         </p>
                       </div>
@@ -2360,9 +2364,9 @@ export function ClientUserDashboard({
                     {/* Charts Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       {/* Monthly Performance */}
-                      <div className="bg-white/80 backdrop-blur-xl border-2 border-blue-200 hover:border-blue-300 transition-all shadow-xl">
+                      <div className="bg-white/70 backdrop-blur-sm border-2 border-blue-200 hover:border-blue-300 transition-all shadow-xl">
                         <div className="p-6 border-b-2 border-slate-200">
-                          <h3 className="text-lg font-bold text-slate-900">
+                          <h3 className="text-lg font-black text-transparent bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text">
                             Monthly Performance
                           </h3>
                           <p className="text-sm text-slate-600 mt-1">
@@ -2449,9 +2453,9 @@ export function ClientUserDashboard({
                       </div>
 
                       {/* Category Breakdown */}
-                      <div className="bg-white/80 backdrop-blur-xl border-2 border-violet-200 hover:border-violet-300 transition-all shadow-xl">
+                      <div className="bg-white/70 backdrop-blur-sm border-2 border-violet-200 hover:border-violet-300 transition-all shadow-xl">
                         <div className="p-6 border-b-2 border-slate-200">
-                          <h3 className="text-lg font-bold text-slate-900">
+                          <h3 className="text-lg font-black text-transparent bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text">
                             Transaction Breakdown
                           </h3>
                           <p className="text-sm text-slate-600 mt-1">
@@ -2487,9 +2491,9 @@ export function ClientUserDashboard({
                       </div>
 
                       {/* Balance Growth */}
-                      <div className="bg-white/80 backdrop-blur-xl border-2 border-emerald-200 hover:border-emerald-300 transition-all shadow-xl">
+                      <div className="bg-white/70 backdrop-blur-sm border-2 border-emerald-200 hover:border-emerald-300 transition-all shadow-xl">
                         <div className="p-6 border-b-2 border-slate-200">
-                          <h3 className="text-lg font-bold text-slate-900">
+                          <h3 className="text-lg font-black text-transparent bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text">
                             Balance Growth
                           </h3>
                           <p className="text-sm text-slate-600 mt-1">
@@ -2523,9 +2527,9 @@ export function ClientUserDashboard({
                       </div>
 
                       {/* Weekly Activity */}
-                      <div className="bg-white/80 backdrop-blur-xl border-2 border-pink-200 hover:border-pink-300 transition-all shadow-xl">
+                      <div className="bg-white/70 backdrop-blur-sm border-2 border-pink-200 hover:border-pink-300 transition-all shadow-xl">
                         <div className="p-6 border-b-2 border-slate-200">
-                          <h3 className="text-lg font-bold text-slate-900">
+                          <h3 className="text-lg font-black text-transparent bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text">
                             Weekly Activity
                           </h3>
                           <p className="text-sm text-slate-600 mt-1">
@@ -2572,13 +2576,13 @@ export function ClientUserDashboard({
                           <div className="w-12 h-12 bg-white/90 flex items-center justify-center mb-4">
                             <Zap className="w-6 h-6 text-blue-600" />
                           </div>
-                          <h3 className="text-xl font-bold text-white mb-2">
+                          <h3 className="text-xl font-black text-white mb-2">
                             Smart Insight
                           </h3>
                           <p className="text-blue-50 leading-relaxed">
                             {analytics.totals.growthPercentage > 0
                               ? `Your account is growing! ${analytics.totals.growthPercentage.toFixed(
-                                  1
+                                  1,
                                 )}% increase this month.`
                               : "Your account activity is steady. Keep tracking your transactions!"}
                           </p>
@@ -2591,7 +2595,7 @@ export function ClientUserDashboard({
                           <div className="w-12 h-12 bg-white/90 flex items-center justify-center mb-4">
                             <Target className="w-6 h-6 text-emerald-600" />
                           </div>
-                          <h3 className="text-xl font-bold text-white mb-2">
+                          <h3 className="text-xl font-black text-white mb-2">
                             Summary
                           </h3>
                           <p className="text-emerald-50 leading-relaxed">
@@ -2599,7 +2603,7 @@ export function ClientUserDashboard({
                             transactions with an average of{" "}
                             {formatCurrency(
                               analytics.totals.avgTransactionKES,
-                              Currency.KES
+                              Currency.KES,
                             )}{" "}
                             per transaction.
                           </p>
@@ -2608,16 +2612,23 @@ export function ClientUserDashboard({
                     </div>
                   </>
                 )}
-              </div>
+              </motion.div>
             )}
             {/* ============ PROFILE VIEW ============ */}
             {activeView === "profile" && (
-              <div key="profile" className="space-y-8">
+              <motion.div
+                key="profile"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-8"
+              >
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900">
+                  <h1 className="text-4xl font-black text-transparent bg-gradient-to-r from-pink-600 via-rose-600 to-pink-700 bg-clip-text">
                     Profile Settings
-                  </h2>
-                  <p className="text-sm text-slate-600 mt-1">
+                  </h1>
+                  <p className="text-slate-600 mt-2">
                     Manage your account information and preferences
                   </p>
                 </div>
@@ -2627,16 +2638,16 @@ export function ClientUserDashboard({
                   <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
                   <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-400/20 rounded-full blur-3xl" />
                   <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
-                    <div className="w-24 h-24 bg-white flex items-center justify-center text-blue-600 text-3xl font-bold shadow-2xl">
+                    <div className="w-24 h-24 bg-white flex items-center justify-center text-blue-600 text-3xl font-black shadow-2xl">
                       {(profile?.fullName || userName).charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 text-center md:text-left">
-                      <h2 className="text-3xl font-bold text-white mb-2">
+                      <h2 className="text-3xl font-black text-white mb-2">
                         {profile?.fullName || userName}
                       </h2>
                       <p className="text-blue-100 font-semibold mb-4">
                         {getClientTypeLabel(
-                          profile?.clientType ?? ClientType.Temporary
+                          profile?.clientType ?? ClientType.Temporary,
                         )}{" "}
                         • ID: {profile?.code || "Loading..."}
                       </p>
@@ -2661,9 +2672,9 @@ export function ClientUserDashboard({
                 </div>
 
                 {/* Personal Information */}
-                <div className="bg-white/80 backdrop-blur-xl border-2 border-slate-200 hover:border-pink-200 transition-all shadow-xl">
+                <div className="bg-white/70 backdrop-blur-sm border-2 border-slate-200 hover:border-pink-200 transition-all shadow-xl">
                   <div className="p-6 border-b-2 border-slate-200">
-                    <h3 className="text-xl font-bold text-slate-900">
+                    <h3 className="text-xl font-black text-transparent bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text">
                       Personal Information
                     </h3>
                     <p className="text-sm text-slate-600 mt-1">
@@ -2758,9 +2769,9 @@ export function ClientUserDashboard({
                 </div>
 
                 {/* Account Balances */}
-                <div className="bg-white/80 backdrop-blur-xl border-2 border-slate-200 hover:border-emerald-200 transition-all shadow-xl">
+                <div className="bg-white/70 backdrop-blur-sm border-2 border-slate-200 hover:border-emerald-200 transition-all shadow-xl">
                   <div className="p-6 border-b-2 border-slate-200">
-                    <h3 className="text-xl font-bold text-slate-900">
+                    <h3 className="text-xl font-black text-transparent bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text">
                       Account Balances
                     </h3>
                     <p className="text-sm text-slate-600 mt-1">
@@ -2775,14 +2786,14 @@ export function ClientUserDashboard({
                           KES Balance
                         </span>
                       </div>
-                      <p className="text-3xl font-bold text-emerald-600">
+                      <p className="text-3xl font-black text-transparent bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text">
                         {formatCurrency(profile?.balanceKES ?? 0, Currency.KES)}
                       </p>
                       <p className="text-xs text-slate-500 mt-2">
                         Opening:{" "}
                         {formatCurrency(
                           profile?.openingBalanceKES ?? 0,
-                          Currency.KES
+                          Currency.KES,
                         )}
                       </p>
                     </div>
@@ -2794,14 +2805,14 @@ export function ClientUserDashboard({
                           USD Balance
                         </span>
                       </div>
-                      <p className="text-3xl font-bold text-indigo-600">
+                      <p className="text-3xl font-black text-transparent bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text">
                         {formatCurrency(profile?.balanceUSD ?? 0, Currency.USD)}
                       </p>
                       <p className="text-xs text-slate-500 mt-2">
                         Opening:{" "}
                         {formatCurrency(
                           profile?.openingBalanceUSD ?? 0,
-                          Currency.USD
+                          Currency.USD,
                         )}
                       </p>
                     </div>
@@ -2810,9 +2821,9 @@ export function ClientUserDashboard({
 
                 {/* Security Settings */}
                 {profile?.clientType === ClientType.Permanent && (
-                  <div className="bg-white/80 backdrop-blur-xl border-2 border-slate-200 shadow-lg">
+                  <div className="bg-white/70 backdrop-blur-sm border-2 border-slate-200 hover:border-blue-200 transition-all shadow-xl">
                     <div className="p-6 border-b-2 border-slate-200">
-                      <h3 className="text-xl font-bold text-slate-900">
+                      <h3 className="text-xl font-black text-transparent bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text">
                         Security & Privacy
                       </h3>
                       <p className="text-sm text-slate-600 mt-1">
@@ -2858,469 +2869,499 @@ export function ClientUserDashboard({
                     Logout
                   </button>
                 </div>
-              </div>
+              </motion.div>
             )}
-          </div>
-        </div>
-      </main>
+          </AnimatePresence>
+        </main>
+      </div>
 
       {/* ============ TRANSACTION DETAIL MODAL ============ */}
-
-      {selectedTransaction && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
-            onClick={() => setSelectedTransaction(null)}
-          />
-          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white shadow-2xl z-50 max-h-[90vh] overflow-y-auto">
-            {/* Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 p-6 border-b-2 border-blue-400 relative overflow-hidden z-10">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
-              <div className="relative z-10 flex items-center justify-between">
-                <div>
-                  <h3 className="text-2xl font-bold text-white mb-1">
-                    Transaction Details
-                  </h3>
-                  <p className="text-blue-100 font-semibold">
-                    {selectedTransaction.code}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setSelectedTransaction(null)}
-                  className="p-2 hover:bg-white/20 transition-all"
-                >
-                  <X className="w-6 h-6 text-white" />
-                </button>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 space-y-6">
-              {/* Status Banner */}
-              <div
-                className={`p-4 border-2 ${getStatusBadgeClass(
-                  selectedTransaction.status
-                )}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-emerald-500 flex items-center justify-center">
-                    <CheckCircle className="w-6 h-6 text-white" />
-                  </div>
+      <AnimatePresence>
+        {selectedTransaction && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+              onClick={() => setSelectedTransaction(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white shadow-2xl z-50 max-h-[90vh] overflow-y-auto"
+            >
+              {/* Header */}
+              <div className="sticky top-0 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 p-6 border-b-2 border-blue-400 relative overflow-hidden z-10">
+                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
+                <div className="relative z-10 flex items-center justify-between">
                   <div>
-                    <p className="font-bold text-slate-900">
-                      Transaction {getStatusLabel(selectedTransaction.status)}
-                    </p>
-                    <p className="text-sm text-slate-600">
-                      Processed successfully
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Transaction Info Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 bg-slate-50 border-2 border-slate-200">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                    Transaction Type
-                  </p>
-                  <span
-                    className={`inline-flex px-3 py-2 text-sm font-bold border-2 ${
-                      selectedTransaction.type === "Debit"
-                        ? "bg-gradient-to-r from-red-50 to-rose-50 text-red-700 border-red-300"
-                        : "bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-700 border-blue-300"
-                    }`}
-                  >
-                    {selectedTransaction.type}
-                  </span>
-                </div>
-
-                <div className="p-4 bg-slate-50 border-2 border-slate-200">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                    Currency
-                  </p>
-                  <span className="inline-flex px-3 py-2 bg-slate-200 text-slate-900 text-sm font-bold">
-                    {selectedTransaction.currency === Currency.KES
-                      ? "KES"
-                      : "USD"}
-                  </span>
-                </div>
-
-                <div className="p-4 bg-slate-50 border-2 border-slate-200">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                    Date & Time
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-slate-600" />
-                    <p className="font-bold text-slate-900">
-                      {formatDate(selectedTransaction.date)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Clock className="w-4 h-4 text-slate-600" />
-                    <p className="font-bold text-slate-900">
-                      {selectedTransaction.time}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-slate-50 border-2 border-slate-200">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                    Reference Number
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Receipt className="w-4 h-4 text-slate-600" />
-                    <p className="font-bold text-slate-900 font-mono text-sm">
-                      {selectedTransaction.reference}
+                    <h3 className="text-2xl font-black text-white mb-1">
+                      Transaction Details
+                    </h3>
+                    <p className="text-blue-100 font-semibold">
+                      {selectedTransaction.code}
                     </p>
                   </div>
                   <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(
-                        selectedTransaction.reference
-                      );
-                      toast.success("Reference copied!");
-                    }}
-                    className="mt-2 text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                    onClick={() => setSelectedTransaction(null)}
+                    className="p-2 hover:bg-white/20 transition-all"
                   >
-                    <Copy className="w-3 h-3" />
-                    Copy
+                    <X className="w-6 h-6 text-white" />
                   </button>
                 </div>
               </div>
 
-              {/* Amount Section */}
-              <div className="p-6 bg-gradient-to-br from-slate-50 to-blue-50/30 border-2 border-slate-200">
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                      Amount
-                    </p>
-                    <p
-                      className={`text-3xl font-bold font-mono ${
-                        selectedTransaction.type === "Debit"
-                          ? "text-red-700"
-                          : "text-blue-700"
-                      }`}
-                    >
-                      {selectedTransaction.type === "Debit" ? "-" : "+"}
-                      {formatCurrency(
-                        selectedTransaction.amount,
-                        selectedTransaction.currency
-                      )}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                      Balance After
-                    </p>
-                    <p className="text-3xl font-bold font-mono text-slate-900">
-                      {formatCurrency(
-                        selectedTransaction.balanceAfter,
-                        selectedTransaction.currency
-                      )}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t border-slate-200">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                    Balance Before
-                  </p>
-                  <p className="text-lg font-bold font-mono text-slate-600">
-                    {formatCurrency(
-                      selectedTransaction.balanceBefore,
-                      selectedTransaction.currency
-                    )}
-                  </p>
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="p-4 bg-slate-50 border-2 border-slate-200">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                  Description
-                </p>
-                <p className="text-lg font-bold text-slate-900">
-                  {selectedTransaction.description}
-                </p>
-                {selectedTransaction.notes && (
-                  <p className="text-sm text-slate-600 mt-2">
-                    {selectedTransaction.notes}
-                  </p>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() =>
-                    handleDownloadReceipt(
-                      selectedTransaction.id,
-                      selectedTransaction.code
-                    )
-                  }
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold hover:shadow-lg transition-all"
+              {/* Content */}
+              <div className="p-6 space-y-6">
+                {/* Status Banner */}
+                <div
+                  className={`p-4 border-2 ${getStatusBadgeClass(
+                    selectedTransaction.status,
+                  )}`}
                 >
-                  <Download className="w-4 h-4" />
-                  Download Receipt
-                </button>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(
-                      `Transaction: ${
-                        selectedTransaction.code
-                      }\nAmount: ${formatCurrency(
-                        selectedTransaction.amount,
-                        selectedTransaction.currency
-                      )}\nDate: ${formatDate(selectedTransaction.date)}`
-                    );
-                    toast.success("Transaction details copied!");
-                  }}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white text-slate-700 font-bold border-2 border-slate-300 hover:border-blue-300 transition-all"
-                >
-                  <Share2 className="w-4 h-4" />
-                  Share
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* ============ ALERT DETAIL MODAL ============ */}
-
-      {selectedAlert && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
-            onClick={() => setSelectedAlert(null)}
-          />
-          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white shadow-2xl z-50 max-h-[90vh] overflow-y-auto">
-            {(() => {
-              const AlertIcon = getAlertIcon(selectedAlert.type);
-              const gradient = getAlertGradient(selectedAlert.type);
-              return (
-                <>
-                  {/* Header */}
-                  <div
-                    className={`sticky top-0 bg-gradient-to-r ${gradient} p-6 border-b-2 relative overflow-hidden z-10`}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
-                    <div className="relative z-10 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-white/90 flex items-center justify-center shadow-lg">
-                          <AlertIcon className="w-7 h-7 text-slate-700" />
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-white">
-                            {selectedAlert.title}
-                          </h3>
-                          <p className="text-white/80 text-sm font-semibold flex items-center gap-1.5 mt-1">
-                            <Clock className="w-3.5 h-3.5" />
-                            {formatDate(selectedAlert.createdAt)}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setSelectedAlert(null)}
-                        className="p-2 hover:bg-white/20 transition-all"
-                      >
-                        <X className="w-6 h-6 text-white" />
-                      </button>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-emerald-500 flex items-center justify-center">
+                      <CheckCircle className="w-6 h-6 text-white" />
                     </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-6 space-y-6">
-                    <div className="p-5 bg-slate-50 border-2 border-slate-200">
-                      <p className="text-base leading-relaxed text-slate-900 font-medium">
-                        {selectedAlert.message}
+                    <div>
+                      <p className="font-black text-slate-900">
+                        Transaction {getStatusLabel(selectedTransaction.status)}
+                      </p>
+                      <p className="text-sm text-slate-600">
+                        Processed successfully
                       </p>
                     </div>
+                  </div>
+                </div>
 
-                    <div className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-blue-50/30 border-2 border-slate-200">
-                      <div>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
-                          Alert Type
-                        </p>
-                        <span
-                          className={`inline-flex px-3 py-2 text-sm font-bold border-2 ${
-                            selectedAlert.type === "success"
-                              ? "bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 border-emerald-300"
-                              : selectedAlert.type === "warning"
-                              ? "bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 border-amber-300"
-                              : selectedAlert.type === "error"
-                              ? "bg-gradient-to-r from-red-50 to-rose-50 text-red-700 border-red-300"
-                              : "bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-700 border-blue-300"
-                          }`}
-                        >
-                          {selectedAlert.type.toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
-                          Status
-                        </p>
-                        <span
-                          className={`inline-flex px-3 py-2 text-sm font-black ${
-                            selectedAlert.isRead
-                              ? "bg-slate-100 text-slate-600 border-2 border-slate-300"
-                              : "bg-blue-100 text-blue-700 border-2 border-blue-300"
-                          }`}
-                        >
-                          {selectedAlert.isRead ? "Read" : "Unread"}
-                        </span>
-                      </div>
+                {/* Transaction Info Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-slate-50 border-2 border-slate-200">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Transaction Type
+                    </p>
+                    <span
+                      className={`inline-flex px-3 py-2 text-sm font-black border-2 ${
+                        selectedTransaction.type === "Debit"
+                          ? "bg-gradient-to-r from-red-50 to-rose-50 text-red-700 border-red-300"
+                          : "bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-700 border-blue-300"
+                      }`}
+                    >
+                      {selectedTransaction.type}
+                    </span>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 border-2 border-slate-200">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Currency
+                    </p>
+                    <span className="inline-flex px-3 py-2 bg-slate-200 text-slate-900 text-sm font-black">
+                      {selectedTransaction.currency === Currency.KES
+                        ? "KES"
+                        : "USD"}
+                    </span>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 border-2 border-slate-200">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Date & Time
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-slate-600" />
+                      <p className="font-bold text-slate-900">
+                        {formatDate(selectedTransaction.date)}
+                      </p>
                     </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-3">
-                      {!selectedAlert.isRead && (
-                        <button
-                          onClick={() => {
-                            handleMarkAlertRead(selectedAlert.id);
-                            setSelectedAlert({
-                              ...selectedAlert,
-                              isRead: true,
-                            });
-                          }}
-                          className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r ${gradient} text-white font-bold hover:shadow-lg transition-all`}
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                          Mark as Read
-                        </button>
-                      )}
-                      <button
-                        onClick={() => setSelectedAlert(null)}
-                        className={`${
-                          selectedAlert.isRead ? "flex-1" : ""
-                        } px-4 py-3 bg-white text-slate-700 font-bold border-2 border-slate-300 hover:border-slate-400 transition-all`}
-                      >
-                        Close
-                      </button>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Clock className="w-4 h-4 text-slate-600" />
+                      <p className="font-bold text-slate-900">
+                        {selectedTransaction.time}
+                      </p>
                     </div>
                   </div>
-                </>
-              );
-            })()}
-          </div>
-        </>
-      )}
+
+                  <div className="p-4 bg-slate-50 border-2 border-slate-200">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Reference Number
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Receipt className="w-4 h-4 text-slate-600" />
+                      <p className="font-bold text-slate-900 font-mono text-sm">
+                        {selectedTransaction.reference}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          selectedTransaction.reference,
+                        );
+                        toast.success("Reference copied!");
+                      }}
+                      className="mt-2 text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                    >
+                      <Copy className="w-3 h-3" />
+                      Copy
+                    </button>
+                  </div>
+                </div>
+
+                {/* Amount Section */}
+                <div className="p-6 bg-gradient-to-br from-slate-50 to-blue-50/30 border-2 border-slate-200">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                        Amount
+                      </p>
+                      <p
+                        className={`text-3xl font-black font-mono ${
+                          selectedTransaction.type === "Debit"
+                            ? "text-transparent bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text"
+                            : "text-transparent bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text"
+                        }`}
+                      >
+                        {selectedTransaction.type === "Debit" ? "-" : "+"}
+                        {formatCurrency(
+                          selectedTransaction.amount,
+                          selectedTransaction.currency,
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                        Balance After
+                      </p>
+                      <p className="text-3xl font-black font-mono text-slate-900">
+                        {formatCurrency(
+                          selectedTransaction.balanceAfter,
+                          selectedTransaction.currency,
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-slate-200">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Balance Before
+                    </p>
+                    <p className="text-lg font-bold font-mono text-slate-600">
+                      {formatCurrency(
+                        selectedTransaction.balanceBefore,
+                        selectedTransaction.currency,
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div className="p-4 bg-slate-50 border-2 border-slate-200">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Description
+                  </p>
+                  <p className="text-lg font-bold text-slate-900">
+                    {selectedTransaction.description}
+                  </p>
+                  {selectedTransaction.notes && (
+                    <p className="text-sm text-slate-600 mt-2">
+                      {selectedTransaction.notes}
+                    </p>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() =>
+                      handleDownloadReceipt(
+                        selectedTransaction.id,
+                        selectedTransaction.code,
+                      )
+                    }
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold hover:shadow-lg transition-all"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download Receipt
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        `Transaction: ${
+                          selectedTransaction.code
+                        }\nAmount: ${formatCurrency(
+                          selectedTransaction.amount,
+                          selectedTransaction.currency,
+                        )}\nDate: ${formatDate(selectedTransaction.date)}`,
+                      );
+                      toast.success("Transaction details copied!");
+                    }}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white text-slate-700 font-bold border-2 border-slate-300 hover:border-blue-300 transition-all"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    Share
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ============ ALERT DETAIL MODAL ============ */}
+      <AnimatePresence>
+        {selectedAlert && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+              onClick={() => setSelectedAlert(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white shadow-2xl z-50 max-h-[90vh] overflow-y-auto"
+            >
+              {(() => {
+                const AlertIcon = getAlertIcon(selectedAlert.type);
+                const gradient = getAlertGradient(selectedAlert.type);
+                return (
+                  <>
+                    {/* Header */}
+                    <div
+                      className={`sticky top-0 bg-gradient-to-r ${gradient} p-6 border-b-2 relative overflow-hidden z-10`}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent" />
+                      <div className="relative z-10 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-white/90 flex items-center justify-center shadow-lg">
+                            <AlertIcon className="w-7 h-7 text-slate-700" />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-black text-white">
+                              {selectedAlert.title}
+                            </h3>
+                            <p className="text-white/80 text-sm font-semibold flex items-center gap-1.5 mt-1">
+                              <Clock className="w-3.5 h-3.5" />
+                              {formatDate(selectedAlert.createdAt)}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setSelectedAlert(null)}
+                          className="p-2 hover:bg-white/20 transition-all"
+                        >
+                          <X className="w-6 h-6 text-white" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-6 space-y-6">
+                      <div className="p-5 bg-slate-50 border-2 border-slate-200">
+                        <p className="text-base leading-relaxed text-slate-900 font-medium">
+                          {selectedAlert.message}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-blue-50/30 border-2 border-slate-200">
+                        <div>
+                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            Alert Type
+                          </p>
+                          <span
+                            className={`inline-flex px-3 py-2 text-sm font-black border-2 ${
+                              selectedAlert.type === "success"
+                                ? "bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 border-emerald-300"
+                                : selectedAlert.type === "warning"
+                                  ? "bg-gradient-to-r from-amber-50 to-orange-50 text-amber-700 border-amber-300"
+                                  : selectedAlert.type === "error"
+                                    ? "bg-gradient-to-r from-red-50 to-rose-50 text-red-700 border-red-300"
+                                    : "bg-gradient-to-r from-blue-50 to-cyan-50 text-blue-700 border-blue-300"
+                            }`}
+                          >
+                            {selectedAlert.type.toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                            Status
+                          </p>
+                          <span
+                            className={`inline-flex px-3 py-2 text-sm font-black ${
+                              selectedAlert.isRead
+                                ? "bg-slate-100 text-slate-600 border-2 border-slate-300"
+                                : "bg-blue-100 text-blue-700 border-2 border-blue-300"
+                            }`}
+                          >
+                            {selectedAlert.isRead ? "Read" : "Unread"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex gap-3">
+                        {!selectedAlert.isRead && (
+                          <button
+                            onClick={() => {
+                              handleMarkAlertRead(selectedAlert.id);
+                              setSelectedAlert({
+                                ...selectedAlert,
+                                isRead: true,
+                              });
+                            }}
+                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r ${gradient} text-white font-bold hover:shadow-lg transition-all`}
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            Mark as Read
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setSelectedAlert(null)}
+                          className={`${
+                            selectedAlert.isRead ? "flex-1" : ""
+                          } px-4 py-3 bg-white text-slate-700 font-bold border-2 border-slate-300 hover:border-slate-400 transition-all`}
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* ============ PASSWORD CHANGE MODAL ============ */}
-
-      {showPasswordModal && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
-            onClick={() => setShowPasswordModal(false)}
-          />
-          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white shadow-2xl z-50">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 p-6 border-b-2 border-blue-400">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Lock className="w-6 h-6 text-white" />
-                  <h3 className="text-xl font-bold text-white">
-                    Change Password
-                  </h3>
+      <AnimatePresence>
+        {showPasswordModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+              onClick={() => setShowPasswordModal(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white shadow-2xl z-50"
+            >
+              {/* Header */}
+              <div className="bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 p-6 border-b-2 border-blue-400">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Lock className="w-6 h-6 text-white" />
+                    <h3 className="text-xl font-black text-white">
+                      Change Password
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => setShowPasswordModal(false)}
+                    className="p-2 hover:bg-white/20 transition-all"
+                  >
+                    <X className="w-6 h-6 text-white" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setShowPasswordModal(false)}
-                  className="p-2 hover:bg-white/20 transition-all"
-                >
-                  <X className="w-6 h-6 text-white" />
-                </button>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">
-                  Current Password
-                </label>
-                <input
-                  type="password"
-                  value={passwordForm.currentPassword}
-                  onChange={(e) =>
-                    setPasswordForm({
-                      ...passwordForm,
-                      currentPassword: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-3 border-2 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all font-medium"
-                  placeholder="Enter current password"
-                />
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">
-                  New Password
-                </label>
-                <input
-                  type="password"
-                  value={passwordForm.newPassword}
-                  onChange={(e) =>
-                    setPasswordForm({
-                      ...passwordForm,
-                      newPassword: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-3 border-2 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all font-medium"
-                  placeholder="Enter new password (min 6 characters)"
-                />
-              </div>
+              {/* Content */}
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    Current Password
+                  </label>
+                  <input
+                    type="password"
+                    value={passwordForm.currentPassword}
+                    onChange={(e) =>
+                      setPasswordForm({
+                        ...passwordForm,
+                        currentPassword: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-3 border-2 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all font-medium"
+                    placeholder="Enter current password"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">
-                  Confirm New Password
-                </label>
-                <input
-                  type="password"
-                  value={passwordForm.confirmPassword}
-                  onChange={(e) =>
-                    setPasswordForm({
-                      ...passwordForm,
-                      confirmPassword: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-3 border-2 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all font-medium"
-                  placeholder="Confirm new password"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={passwordForm.newPassword}
+                    onChange={(e) =>
+                      setPasswordForm({
+                        ...passwordForm,
+                        newPassword: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-3 border-2 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all font-medium"
+                    placeholder="Enter new password (min 6 characters)"
+                  />
+                </div>
 
-              {/* Actions */}
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={handleChangePassword}
-                  disabled={passwordLoading}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold hover:shadow-lg transition-all disabled:opacity-50"
-                >
-                  {passwordLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Lock className="w-4 h-4" />
-                  )}
-                  {passwordLoading ? "Changing..." : "Change Password"}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowPasswordModal(false);
-                    setPasswordForm({
-                      currentPassword: "",
-                      newPassword: "",
-                      confirmPassword: "",
-                    });
-                  }}
-                  className="px-4 py-3 bg-white text-slate-700 font-bold border-2 border-slate-300 hover:border-slate-400 transition-all"
-                >
-                  Cancel
-                </button>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    Confirm New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) =>
+                      setPasswordForm({
+                        ...passwordForm,
+                        confirmPassword: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-3 border-2 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all font-medium"
+                    placeholder="Confirm new password"
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={handleChangePassword}
+                    disabled={passwordLoading}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-bold hover:shadow-lg transition-all disabled:opacity-50"
+                  >
+                    {passwordLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Lock className="w-4 h-4" />
+                    )}
+                    {passwordLoading ? "Changing..." : "Change Password"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowPasswordModal(false);
+                      setPasswordForm({
+                        currentPassword: "",
+                        newPassword: "",
+                        confirmPassword: "",
+                      });
+                    }}
+                    className="px-4 py-3 bg-white text-slate-700 font-bold border-2 border-slate-300 hover:border-slate-400 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-            </div>
-          </div>
-        </>
-      )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

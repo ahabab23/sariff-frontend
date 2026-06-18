@@ -219,7 +219,6 @@ export function CashAtHand() {
       }
     } catch (error) {
       console.error("Error fetching cash accounts:", error);
-      toast.error("Failed to load data. Please refresh.");
     }
   }, []);
 
@@ -243,7 +242,6 @@ export function CashAtHand() {
       }
     } catch (error) {
       console.error("Error fetching cash stats:", error);
-      toast.error("Failed to load data. Please refresh.");
     }
   }, []);
 
@@ -695,9 +693,8 @@ export function CashAtHand() {
           margin: { left: 14, right: 14 },
           didParseCell: (data: any) => {
             if (data.section === "body" && data.column.index === 3) {
-              // Asset account: DR = money IN (green), CR = money OUT (red)
               data.cell.styles.textColor =
-                data.cell.raw === "DR" ? [22, 163, 74] : [220, 38, 38];
+                data.cell.raw === "CR" ? [22, 163, 74] : [220, 38, 38];
               data.cell.styles.fontStyle = "bold";
             }
             if (data.section === "body" && data.column.index === 6) {
@@ -767,8 +764,8 @@ export function CashAtHand() {
           th { background: #f9fafb; color: #4b5563; font-weight: 600; text-align: left; padding: 10px 8px; border-bottom: 1px solid #e5e7eb; }
           td { padding: 10px 8px; border-bottom: 1px solid #f3f4f6; }
           tr:nth-child(even) { background: #f9fafb; }
-          .cr { color: #dc2626; font-weight: 600; }
-          .dr { color: #16a34a; font-weight: 600; }
+          .cr { color: #16a34a; font-weight: 600; }
+          .dr { color: #dc2626; font-weight: 600; }
           .text-right { text-align: right; }
           .text-center { text-align: center; }
           .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #9ca3af; font-size: 10px; }
@@ -873,7 +870,7 @@ export function CashAtHand() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 p-6">
-      <div className="max-w-[1800px] mx-auto space-y-6">
+      <div className="max-w-[1800px] min-w-0 w-full mx-auto space-y-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -1334,7 +1331,7 @@ export function CashAtHand() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto max-w-full">
                 <table className="w-full">
                   <thead className="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200">
                     <tr>
@@ -2075,7 +2072,7 @@ export function CashAtHand() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white w-full max-w-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+              className="bg-white w-full max-w-lg shadow-2xl rounded-lg overflow-hidden max-h-[90vh] flex flex-col"
             >
               {/* Card Header */}
               <div
@@ -2343,7 +2340,7 @@ export function CashAtHand() {
               <div className="border-t border-slate-200 bg-slate-50 p-3 flex-shrink-0">
                 <button
                   onClick={() => setSelectedTransaction(null)}
-                  className="w-full px-6 py-2 bg-slate-700 text-white hover:bg-slate-800 transition-all font-semibold text-sm "
+                  className="w-full px-4 py-2 bg-slate-700 text-white hover:bg-slate-800 transition-all font-semibold text-sm rounded-lg"
                 >
                   Close
                 </button>
