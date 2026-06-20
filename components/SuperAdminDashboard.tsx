@@ -435,6 +435,15 @@ export function SuperAdminDashboard({
     fetchDashboard().finally(() => setLoading(false));
   }, [fetchDashboard]);
 
+  // Collapse sidebar to icons below laptop width (more room for content tables)
+  useEffect(() => {
+    const applySidebarForWidth = () =>
+      setSidebarOpen(window.innerWidth >= 1024);
+    applySidebarForWidth();
+    window.addEventListener("resize", applySidebarForWidth);
+    return () => window.removeEventListener("resize", applySidebarForWidth);
+  }, []);
+
   // Tab-specific data
   useEffect(() => {
     switch (activeTab) {
@@ -787,7 +796,7 @@ export function SuperAdminDashboard({
           <div className="flex items-center gap-4">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 hover:bg-white/5 transition-colors lg:hidden"
+              className="p-2 hover:bg-white/5 transition-colors md:hidden"
             >
               <Menu className="w-5 h-5 text-white" />
             </button>
@@ -845,7 +854,9 @@ export function SuperAdminDashboard({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 transition-all ${
+                className={`w-full flex items-center py-3 transition-all ${
+                  sidebarOpen ? "gap-3 px-4" : "justify-center px-0"
+                } ${
                   activeTab === tab.id
                     ? `bg-gradient-to-r ${tab.color} text-white shadow-lg shadow-violet-500/20`
                     : "text-slate-500 hover:text-white hover:bg-white/5"
@@ -861,7 +872,9 @@ export function SuperAdminDashboard({
           <div className="p-4 border-t border-white/5">
             <button
               onClick={() => openModal("logout")}
-              className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 transition-all"
+              className={`w-full flex items-center py-3 text-red-400 hover:bg-red-500/10 transition-all ${
+                sidebarOpen ? "gap-3 px-4" : "justify-center px-0"
+              }`}
             >
               <LogOut className="w-5 h-5 flex-shrink-0" />
               {sidebarOpen && (
@@ -872,7 +885,7 @@ export function SuperAdminDashboard({
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 min-w-0 p-6 overflow-x-hidden">
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
@@ -1153,7 +1166,7 @@ export function SuperAdminDashboard({
                       </div>
                     </div>
                     <div className="bg-white/[0.02] border border-white/5 overflow-hidden">
-                      <div className="overflow-x-auto">
+                      <div className="overflow-x-auto max-w-full">
                         <table className="w-full">
                           <thead>
                             <tr className="border-b border-white/5 bg-white/[0.02]">
@@ -1540,7 +1553,7 @@ export function SuperAdminDashboard({
                           <h3 className="text-white font-semibold mb-4">
                             Recent Failed Logins
                           </h3>
-                          <div className="overflow-x-auto">
+                          <div className="overflow-x-auto max-w-full">
                             <table className="w-full">
                               <thead>
                                 <tr className="border-b border-white/5">
@@ -1714,7 +1727,7 @@ export function SuperAdminDashboard({
                       <h3 className="text-white font-semibold mb-4">
                         Recent Payments
                       </h3>
-                      <div className="overflow-x-auto">
+                      <div className="overflow-x-auto max-w-full">
                         <table className="w-full">
                           <thead>
                             <tr className="border-b border-white/5">
@@ -1878,7 +1891,7 @@ export function SuperAdminDashboard({
                       </select>
                     </div>
                     <div className="bg-white/[0.02] border border-white/5 overflow-hidden">
-                      <div className="overflow-x-auto">
+                      <div className="overflow-x-auto max-w-full">
                         <table className="w-full">
                           <thead>
                             <tr className="border-b border-white/5 bg-white/[0.02]">

@@ -222,7 +222,7 @@ export function InvoiceManager() {
   const handleItemChange = (
     index: number,
     field: keyof InvoiceItem,
-    value: any
+    value: any,
   ) => {
     const newItems = [...formData.items];
     newItems[index] = { ...newItems[index], [field]: value };
@@ -271,7 +271,7 @@ export function InvoiceManager() {
       notes: formData.notes,
       stampCode: `EST-2026-SARIF-${String(invoices.length + 1).padStart(
         3,
-        "0"
+        "0",
       )}`,
     };
 
@@ -484,7 +484,7 @@ export function InvoiceManager() {
                           handleItemChange(
                             index,
                             "quantity",
-                            parseFloat(e.target.value) || 0
+                            parseFloat(e.target.value) || 0,
                           )
                         }
                         min="1"
@@ -502,7 +502,7 @@ export function InvoiceManager() {
                           handleItemChange(
                             index,
                             "rate",
-                            parseFloat(e.target.value) || 0
+                            parseFloat(e.target.value) || 0,
                           )
                         }
                         step="0.01"
@@ -795,7 +795,7 @@ export function InvoiceManager() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-w-full">
             <table className="w-full">
               <thead>
                 <tr className="bg-slate-50 border-b-2 border-slate-200">
@@ -864,7 +864,7 @@ export function InvoiceManager() {
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <span
                         className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold uppercase ${getStatusColor(
-                          invoice.status
+                          invoice.status,
                         )}`}
                       >
                         {getStatusIcon(invoice.status)}
@@ -1066,90 +1066,94 @@ function ProfessionalTemplate({ invoice }: { invoice: Invoice }) {
 
       {/* Items Table */}
       <div className="mb-12">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
-              <th className="px-6 py-4 text-left text-sm font-bold uppercase">
-                Description
-              </th>
-              <th className="px-6 py-4 text-center text-sm font-bold uppercase">
-                Qty
-              </th>
-              <th className="px-6 py-4 text-right text-sm font-bold uppercase">
-                Rate
-              </th>
-              <th className="px-6 py-4 text-right text-sm font-bold uppercase">
-                Amount
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {invoice.items.map((item, index) => (
-              <tr key={index} className="border-b border-slate-200">
-                <td className="px-6 py-4 text-slate-900">{item.description}</td>
-                <td className="px-6 py-4 text-center text-slate-600">
-                  {item.quantity}
-                </td>
-                <td className="px-6 py-4 text-right text-slate-600">
-                  {invoice.currency}{" "}
-                  {item.rate.toLocaleString("en-US", {
-                    minimumFractionDigits: 2,
-                  })}
+        <div className="overflow-x-auto max-w-full">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
+                <th className="px-6 py-4 text-left text-sm font-bold uppercase">
+                  Description
+                </th>
+                <th className="px-6 py-4 text-center text-sm font-bold uppercase">
+                  Qty
+                </th>
+                <th className="px-6 py-4 text-right text-sm font-bold uppercase">
+                  Rate
+                </th>
+                <th className="px-6 py-4 text-right text-sm font-bold uppercase">
+                  Amount
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {invoice.items.map((item, index) => (
+                <tr key={index} className="border-b border-slate-200">
+                  <td className="px-6 py-4 text-slate-900">
+                    {item.description}
+                  </td>
+                  <td className="px-6 py-4 text-center text-slate-600">
+                    {item.quantity}
+                  </td>
+                  <td className="px-6 py-4 text-right text-slate-600">
+                    {invoice.currency}{" "}
+                    {item.rate.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                    })}
+                  </td>
+                  <td className="px-6 py-4 text-right font-bold text-slate-900">
+                    {invoice.currency}{" "}
+                    {item.amount.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                    })}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-slate-300">
+                <td
+                  colSpan={3}
+                  className="px-6 py-4 text-right font-bold text-slate-700"
+                >
+                  Subtotal:
                 </td>
                 <td className="px-6 py-4 text-right font-bold text-slate-900">
                   {invoice.currency}{" "}
-                  {item.amount.toLocaleString("en-US", {
+                  {invoice.subtotal.toLocaleString("en-US", {
                     minimumFractionDigits: 2,
                   })}
                 </td>
               </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr className="border-t-2 border-slate-300">
-              <td
-                colSpan={3}
-                className="px-6 py-4 text-right font-bold text-slate-700"
-              >
-                Subtotal:
-              </td>
-              <td className="px-6 py-4 text-right font-bold text-slate-900">
-                {invoice.currency}{" "}
-                {invoice.subtotal.toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                })}
-              </td>
-            </tr>
-            <tr>
-              <td
-                colSpan={3}
-                className="px-6 py-4 text-right font-bold text-slate-700"
-              >
-                Tax:
-              </td>
-              <td className="px-6 py-4 text-right font-bold text-slate-900">
-                {invoice.currency}{" "}
-                {invoice.tax.toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                })}
-              </td>
-            </tr>
-            <tr className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
-              <td
-                colSpan={3}
-                className="px-6 py-4 text-right font-bold text-lg"
-              >
-                TOTAL:
-              </td>
-              <td className="px-6 py-4 text-right font-bold text-2xl">
-                {invoice.currency}{" "}
-                {invoice.total.toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                })}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
+              <tr>
+                <td
+                  colSpan={3}
+                  className="px-6 py-4 text-right font-bold text-slate-700"
+                >
+                  Tax:
+                </td>
+                <td className="px-6 py-4 text-right font-bold text-slate-900">
+                  {invoice.currency}{" "}
+                  {invoice.tax.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                  })}
+                </td>
+              </tr>
+              <tr className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
+                <td
+                  colSpan={3}
+                  className="px-6 py-4 text-right font-bold text-lg"
+                >
+                  TOTAL:
+                </td>
+                <td className="px-6 py-4 text-right font-bold text-2xl">
+                  {invoice.currency}{" "}
+                  {invoice.total.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                  })}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
       </div>
 
       {/* Electronic Stamp */}
@@ -1350,54 +1354,56 @@ function ClassicTemplate({ invoice }: { invoice: Invoice }) {
       </div>
 
       {/* Items */}
-      <table className="w-full mb-12 border-4 border-slate-900">
-        <thead>
-          <tr className="bg-slate-900 text-white">
-            <th className="px-6 py-4 text-left font-serif">Description</th>
-            <th className="px-6 py-4 text-center font-serif">Quantity</th>
-            <th className="px-6 py-4 text-right font-serif">Rate</th>
-            <th className="px-6 py-4 text-right font-serif">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {invoice.items.map((item, index) => (
-            <tr key={index} className="border-b-2 border-slate-300">
-              <td className="px-6 py-4 text-slate-900">{item.description}</td>
-              <td className="px-6 py-4 text-center text-slate-700">
-                {item.quantity}
+      <div className="overflow-x-auto max-w-full">
+        <table className="w-full mb-12 border-4 border-slate-900">
+          <thead>
+            <tr className="bg-slate-900 text-white">
+              <th className="px-6 py-4 text-left font-serif">Description</th>
+              <th className="px-6 py-4 text-center font-serif">Quantity</th>
+              <th className="px-6 py-4 text-right font-serif">Rate</th>
+              <th className="px-6 py-4 text-right font-serif">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {invoice.items.map((item, index) => (
+              <tr key={index} className="border-b-2 border-slate-300">
+                <td className="px-6 py-4 text-slate-900">{item.description}</td>
+                <td className="px-6 py-4 text-center text-slate-700">
+                  {item.quantity}
+                </td>
+                <td className="px-6 py-4 text-right text-slate-700">
+                  {invoice.currency}{" "}
+                  {item.rate.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                  })}
+                </td>
+                <td className="px-6 py-4 text-right font-bold text-slate-900">
+                  {invoice.currency}{" "}
+                  {item.amount.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                  })}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="bg-slate-900 text-white">
+              <td
+                colSpan={3}
+                className="px-6 py-4 text-right font-serif font-bold text-xl"
+              >
+                TOTAL:
               </td>
-              <td className="px-6 py-4 text-right text-slate-700">
+              <td className="px-6 py-4 text-right font-serif font-bold text-2xl">
                 {invoice.currency}{" "}
-                {item.rate.toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                })}
-              </td>
-              <td className="px-6 py-4 text-right font-bold text-slate-900">
-                {invoice.currency}{" "}
-                {item.amount.toLocaleString("en-US", {
+                {invoice.total.toLocaleString("en-US", {
                   minimumFractionDigits: 2,
                 })}
               </td>
             </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr className="bg-slate-900 text-white">
-            <td
-              colSpan={3}
-              className="px-6 py-4 text-right font-serif font-bold text-xl"
-            >
-              TOTAL:
-            </td>
-            <td className="px-6 py-4 text-right font-serif font-bold text-2xl">
-              {invoice.currency}{" "}
-              {invoice.total.toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-              })}
-            </td>
-          </tr>
-        </tfoot>
-      </table>
+          </tfoot>
+        </table>
+      </div>
 
       {/* Stamp */}
       <div className="border-4 border-slate-900 p-6 text-center mb-8">

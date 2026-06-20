@@ -921,7 +921,7 @@ export function ExchangeSection() {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-w-full">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
@@ -1162,117 +1162,119 @@ export function ExchangeSection() {
                     float.
                   </p>
                 ) : (
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-200 text-left">
-                        <th className="py-2 px-2 font-medium text-gray-600">
-                          Date
-                        </th>
-                        <th className="py-2 px-2 font-medium text-gray-600 text-center">
-                          Status
-                        </th>
-                        <th className="py-2 px-2 font-medium text-gray-600 text-right">
-                          Exchanges
-                        </th>
-                        <th className="py-2 px-2 font-medium text-emerald-600 text-right">
-                          KES Profit
-                        </th>
-                        <th className="py-2 px-2 font-medium text-blue-600 text-right">
-                          USD Profit
-                        </th>
-                        <th className="py-2 px-2 font-medium text-gray-600 text-right">
-                          KES Var
-                        </th>
-                        <th className="py-2 px-2 font-medium text-gray-600 text-right">
-                          USD Var
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {floatHistory.map((day: any, i: number) => (
-                        <tr
-                          key={i}
-                          className={`border-b border-gray-100 ${i === 0 ? "bg-indigo-50" : ""}`}
-                        >
-                          <td className="py-2 px-2 text-gray-700 font-medium">
-                            {new Date(day.date).toLocaleDateString("en-GB", {
-                              weekday: "short",
-                              day: "numeric",
-                              month: "short",
-                            })}
-                          </td>
-                          <td className="py-2 px-2 text-center">
-                            <span
-                              className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
-                                day.isClosed
-                                  ? "bg-emerald-100 text-emerald-700"
-                                  : "bg-amber-100 text-amber-700"
-                              }`}
+                  <div className="overflow-x-auto max-w-full">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-200 text-left">
+                          <th className="py-2 px-2 font-medium text-gray-600">
+                            Date
+                          </th>
+                          <th className="py-2 px-2 font-medium text-gray-600 text-center">
+                            Status
+                          </th>
+                          <th className="py-2 px-2 font-medium text-gray-600 text-right">
+                            Exchanges
+                          </th>
+                          <th className="py-2 px-2 font-medium text-emerald-600 text-right">
+                            KES Profit
+                          </th>
+                          <th className="py-2 px-2 font-medium text-blue-600 text-right">
+                            USD Profit
+                          </th>
+                          <th className="py-2 px-2 font-medium text-gray-600 text-right">
+                            KES Var
+                          </th>
+                          <th className="py-2 px-2 font-medium text-gray-600 text-right">
+                            USD Var
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {floatHistory.map((day: any, i: number) => (
+                          <tr
+                            key={i}
+                            className={`border-b border-gray-100 ${i === 0 ? "bg-indigo-50" : ""}`}
+                          >
+                            <td className="py-2 px-2 text-gray-700 font-medium">
+                              {new Date(day.date).toLocaleDateString("en-GB", {
+                                weekday: "short",
+                                day: "numeric",
+                                month: "short",
+                              })}
+                            </td>
+                            <td className="py-2 px-2 text-center">
+                              <span
+                                className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
+                                  day.isClosed
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : "bg-amber-100 text-amber-700"
+                                }`}
+                              >
+                                {day.isClosed ? "Closed" : "Open"}
+                              </span>
+                            </td>
+                            <td className="py-2 px-2 text-right text-gray-700">
+                              {day.exchangeCount || 0}
+                            </td>
+                            <td className="py-2 px-2 text-right text-emerald-700 font-medium">
+                              {formatNumber(day.kesProfit || 0)}
+                            </td>
+                            <td className="py-2 px-2 text-right text-blue-700 font-medium">
+                              ${formatNumber(day.usdProfit || 0)}
+                            </td>
+                            <td
+                              className={`py-2 px-2 text-right font-medium ${(day.kesVariance || 0) === 0 ? "text-gray-400" : (day.kesVariance || 0) > 0 ? "text-blue-600" : "text-red-600"}`}
                             >
-                              {day.isClosed ? "Closed" : "Open"}
-                            </span>
+                              {(day.kesVariance || 0) === 0
+                                ? "—"
+                                : formatNumber(day.kesVariance)}
+                            </td>
+                            <td
+                              className={`py-2 px-2 text-right font-medium ${(day.usdVariance || 0) === 0 ? "text-gray-400" : (day.usdVariance || 0) > 0 ? "text-blue-600" : "text-red-600"}`}
+                            >
+                              {(day.usdVariance || 0) === 0
+                                ? "—"
+                                : formatNumber(day.usdVariance)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="border-t-2 border-gray-300 font-semibold bg-gray-50">
+                          <td className="py-2 px-2 text-gray-700">Total</td>
+                          <td className="py-2 px-2 text-center text-gray-500 text-xs">
+                            {floatHistory.filter((d: any) => d.isClosed).length}
+                            /{floatHistory.length} closed
                           </td>
                           <td className="py-2 px-2 text-right text-gray-700">
-                            {day.exchangeCount || 0}
+                            {floatHistory.reduce(
+                              (s: number, d: any) => s + (d.exchangeCount || 0),
+                              0,
+                            )}
                           </td>
-                          <td className="py-2 px-2 text-right text-emerald-700 font-medium">
-                            {formatNumber(day.kesProfit || 0)}
+                          <td className="py-2 px-2 text-right text-emerald-700">
+                            {formatNumber(
+                              floatHistory.reduce(
+                                (s: number, d: any) => s + (d.kesProfit || 0),
+                                0,
+                              ),
+                            )}
                           </td>
-                          <td className="py-2 px-2 text-right text-blue-700 font-medium">
-                            ${formatNumber(day.usdProfit || 0)}
+                          <td className="py-2 px-2 text-right text-blue-700">
+                            $
+                            {formatNumber(
+                              floatHistory.reduce(
+                                (s: number, d: any) => s + (d.usdProfit || 0),
+                                0,
+                              ),
+                            )}
                           </td>
-                          <td
-                            className={`py-2 px-2 text-right font-medium ${(day.kesVariance || 0) === 0 ? "text-gray-400" : (day.kesVariance || 0) > 0 ? "text-blue-600" : "text-red-600"}`}
-                          >
-                            {(day.kesVariance || 0) === 0
-                              ? "—"
-                              : formatNumber(day.kesVariance)}
-                          </td>
-                          <td
-                            className={`py-2 px-2 text-right font-medium ${(day.usdVariance || 0) === 0 ? "text-gray-400" : (day.usdVariance || 0) > 0 ? "text-blue-600" : "text-red-600"}`}
-                          >
-                            {(day.usdVariance || 0) === 0
-                              ? "—"
-                              : formatNumber(day.usdVariance)}
-                          </td>
+                          <td className="py-2 px-2"></td>
+                          <td className="py-2 px-2"></td>
                         </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="border-t-2 border-gray-300 font-semibold bg-gray-50">
-                        <td className="py-2 px-2 text-gray-700">Total</td>
-                        <td className="py-2 px-2 text-center text-gray-500 text-xs">
-                          {floatHistory.filter((d: any) => d.isClosed).length}/
-                          {floatHistory.length} closed
-                        </td>
-                        <td className="py-2 px-2 text-right text-gray-700">
-                          {floatHistory.reduce(
-                            (s: number, d: any) => s + (d.exchangeCount || 0),
-                            0,
-                          )}
-                        </td>
-                        <td className="py-2 px-2 text-right text-emerald-700">
-                          {formatNumber(
-                            floatHistory.reduce(
-                              (s: number, d: any) => s + (d.kesProfit || 0),
-                              0,
-                            ),
-                          )}
-                        </td>
-                        <td className="py-2 px-2 text-right text-blue-700">
-                          $
-                          {formatNumber(
-                            floatHistory.reduce(
-                              (s: number, d: any) => s + (d.usdProfit || 0),
-                              0,
-                            ),
-                          )}
-                        </td>
-                        <td className="py-2 px-2"></td>
-                        <td className="py-2 px-2"></td>
-                      </tr>
-                    </tfoot>
-                  </table>
+                      </tfoot>
+                    </table>
+                  </div>
                 )}
               </div>
             </div>
@@ -1300,59 +1302,63 @@ export function ExchangeSection() {
                     No rate history available
                   </p>
                 ) : (
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-2 px-2 font-medium text-gray-600">
-                          Date
-                        </th>
-                        <th className="text-right py-2 px-2 font-medium text-emerald-600">
-                          Buy Rate
-                        </th>
-                        <th className="text-right py-2 px-2 font-medium text-blue-600">
-                          Sell Rate
-                        </th>
-                        <th className="text-right py-2 px-2 font-medium text-purple-600">
-                          Spread
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rateHistory.slice(0, 30).map((r: any, i: number) => (
-                        <tr
-                          key={i}
-                          className={`border-b border-gray-100 ${i === 0 ? "bg-indigo-50 font-semibold" : ""}`}
-                        >
-                          <td className="py-2 px-2 text-gray-700">
-                            {new Date(
-                              r.effectiveFrom || r.createdAt,
-                            ).toLocaleDateString("en-GB", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            })}
-                            <span className="text-xs text-gray-400 ml-1">
+                  <div className="overflow-x-auto max-w-full">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left py-2 px-2 font-medium text-gray-600">
+                            Date
+                          </th>
+                          <th className="text-right py-2 px-2 font-medium text-emerald-600">
+                            Buy Rate
+                          </th>
+                          <th className="text-right py-2 px-2 font-medium text-blue-600">
+                            Sell Rate
+                          </th>
+                          <th className="text-right py-2 px-2 font-medium text-purple-600">
+                            Spread
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rateHistory.slice(0, 30).map((r: any, i: number) => (
+                          <tr
+                            key={i}
+                            className={`border-b border-gray-100 ${i === 0 ? "bg-indigo-50 font-semibold" : ""}`}
+                          >
+                            <td className="py-2 px-2 text-gray-700">
                               {new Date(
                                 r.effectiveFrom || r.createdAt,
-                              ).toLocaleTimeString("en-GB", {
-                                hour: "2-digit",
-                                minute: "2-digit",
+                              ).toLocaleDateString("en-GB", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
                               })}
-                            </span>
-                          </td>
-                          <td className="py-2 px-2 text-right text-emerald-700">
-                            {(r.buyRate || 0).toFixed(2)}
-                          </td>
-                          <td className="py-2 px-2 text-right text-blue-700">
-                            {(r.sellRate || 0).toFixed(2)}
-                          </td>
-                          <td className="py-2 px-2 text-right text-purple-700">
-                            {((r.sellRate || 0) - (r.buyRate || 0)).toFixed(2)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                              <span className="text-xs text-gray-400 ml-1">
+                                {new Date(
+                                  r.effectiveFrom || r.createdAt,
+                                ).toLocaleTimeString("en-GB", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            </td>
+                            <td className="py-2 px-2 text-right text-emerald-700">
+                              {(r.buyRate || 0).toFixed(2)}
+                            </td>
+                            <td className="py-2 px-2 text-right text-blue-700">
+                              {(r.sellRate || 0).toFixed(2)}
+                            </td>
+                            <td className="py-2 px-2 text-right text-purple-700">
+                              {((r.sellRate || 0) - (r.buyRate || 0)).toFixed(
+                                2,
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
             </div>

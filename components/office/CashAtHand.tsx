@@ -873,7 +873,7 @@ export function CashAtHand() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 p-6">
-      <div className="max-w-[1800px] mx-auto space-y-6">
+      <div className="max-w-[1800px] min-w-0 w-full mx-auto space-y-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -1334,7 +1334,7 @@ export function CashAtHand() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto max-w-full">
                 <table className="w-full">
                   <thead className="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200">
                     <tr>

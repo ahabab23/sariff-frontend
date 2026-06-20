@@ -238,6 +238,16 @@ export function OfficeUserDashboard({
     setActiveTab(initialTab);
   }, [initialTab]);
 
+  // Auto-collapse the sidebar to icons on tablet-width screens (more room for
+  // content), keep it expanded on laptops/desktops. Runs on mount + resize.
+  useEffect(() => {
+    const applySidebarForWidth = () =>
+      setSidebarOpen(window.innerWidth >= 1024);
+    applySidebarForWidth();
+    window.addEventListener("resize", applySidebarForWidth);
+    return () => window.removeEventListener("resize", applySidebarForWidth);
+  }, []);
+
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
@@ -995,7 +1005,7 @@ export function OfficeUserDashboard({
               <Eye className="w-4 h-4" />
             </button>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-w-full">
             <table className="w-full">
               <thead>
                 <tr className="bg-slate-50 border-b-2 border-slate-200">
@@ -1104,7 +1114,7 @@ export function OfficeUserDashboard({
       <motion.aside
         initial={false}
         animate={{ width: sidebarOpen ? 280 : 80 }}
-        className="hidden lg:block bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl border-r border-slate-700/50 fixed left-0 top-0 h-screen z-50 overflow-hidden"
+        className="hidden md:block bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl border-r border-slate-700/50 fixed left-0 top-0 h-screen z-50 overflow-hidden"
       >
         {/* Decorative gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-cyan-600/10 pointer-events-none"></div>
@@ -1158,7 +1168,9 @@ export function OfficeUserDashboard({
             <Link
               key={item.id}
               href={item.href}
-              className={`w-full flex items-center gap-3 px-6 py-3 transition-all ${
+              className={`w-full flex items-center py-3 transition-all ${
+                sidebarOpen ? "gap-3 px-6" : "justify-center px-0"
+              } ${
                 activeTab === item.id
                   ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg border-l-4 border-cyan-400"
                   : "text-slate-300 hover:bg-slate-700/50 hover:text-white"
@@ -1176,7 +1188,7 @@ export function OfficeUserDashboard({
         <div className="relative p-4 border-t border-slate-700/50 space-y-2">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="w-full flex items-center gap-3 px-4 py-3 bg-slate-700/50 hover:bg-slate-600/50 transition-all"
+            className={`w-full flex items-center py-3 bg-slate-700/50 hover:bg-slate-600/50 transition-all ${sidebarOpen ? "gap-3 px-4" : "justify-center px-0"}`}
           >
             <Menu className="w-5 h-5" />
             {sidebarOpen && (
@@ -1185,7 +1197,7 @@ export function OfficeUserDashboard({
           </button>
           <button
             onClick={onLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 bg-red-600/80 hover:bg-red-600 transition-all"
+            className={`w-full flex items-center py-3 bg-red-600/80 hover:bg-red-600 transition-all ${sidebarOpen ? "gap-3 px-4" : "justify-center px-0"}`}
           >
             <LogOut className="w-5 h-5" />
             {sidebarOpen && <span className="text-sm font-medium">Logout</span>}
@@ -1194,7 +1206,7 @@ export function OfficeUserDashboard({
       </motion.aside>
 
       {/* Mobile Top Header - Only visible on mobile */}
-      <header className="lg:hidden sticky top-0 z-40 backdrop-blur-xl bg-white/95 border-b-2 border-slate-200 shadow-lg">
+      <header className="md:hidden sticky top-0 z-40 backdrop-blur-xl bg-white/95 border-b-2 border-slate-200 shadow-lg">
         <div className="flex items-center justify-between h-16 px-4">
           <div className="flex items-center gap-3">
             <button
@@ -1240,7 +1252,7 @@ export function OfficeUserDashboard({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
               onClick={() => setMobileMenuOpen(false)}
             />
             <motion.aside
@@ -1248,7 +1260,7 @@ export function OfficeUserDashboard({
               animate={{ x: 0 }}
               exit={{ x: -320 }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed left-0 top-0 bottom-0 w-80 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white z-50 lg:hidden shadow-2xl overflow-y-auto"
+              className="fixed left-0 top-0 bottom-0 w-80 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white z-50 md:hidden shadow-2xl overflow-y-auto"
             >
               {/* Decorative gradient overlay */}
               <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-transparent to-cyan-600/10 pointer-events-none"></div>
@@ -1325,7 +1337,7 @@ export function OfficeUserDashboard({
         initial={false}
         animate={{ marginLeft: sidebarOpen ? 280 : 80 }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="min-h-screen lg:block hidden"
+        className="min-h-screen md:block hidden"
       >
         <div className="max-w-[1600px] min-w-0 w-full mx-auto p-4 sm:p-8 overflow-x-hidden">
           <AnimatePresence mode="wait">
@@ -1343,7 +1355,7 @@ export function OfficeUserDashboard({
       </motion.main>
 
       {/* Mobile Main Content - No margin */}
-      <main className="lg:hidden min-h-screen">
+      <main className="md:hidden min-h-screen">
         <div className="max-w-[1600px] mx-auto p-4">
           <AnimatePresence mode="wait">
             <motion.div

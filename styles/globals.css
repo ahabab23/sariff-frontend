@@ -373,7 +373,7 @@
    — the automatic equivalent of a manual ~85% browser zoom.
    Tune the font-size to taste: 15px = milder, 13px ≈ an 80% zoom.
    ────────────────────────────────────────────────────────────────────────── */
-@media (min-width: 1024px) and (max-width: 1439px) {
+@media (min-width: 768px) and (max-width: 1439px) {
   html {
     font-size: 14px;
   }

@@ -91,7 +91,7 @@ export function OfficeSettings({
   const [categoryLoading, setCategoryLoading] = useState(false);
   const [categorySearchTerm, setCategorySearchTerm] = useState("");
   const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(
-    null
+    null,
   );
 
   // Delete Category Confirmation Modal
@@ -357,7 +357,7 @@ export function OfficeSettings({
 
       if (result.success) {
         toast.success(
-          `Password set successfully for ${getClientName(selectedClient)}`
+          `Password set successfully for ${getClientName(selectedClient)}`,
         );
         setShowPasswordModal(false);
         setNewPassword("");
@@ -405,7 +405,7 @@ export function OfficeSettings({
       (category.description
         ?.toLowerCase()
         .includes(categorySearchTerm.toLowerCase()) ??
-        false)
+        false),
   );
 
   return (
@@ -669,7 +669,7 @@ export function OfficeSettings({
           </div>
         ) : (
           <div className="bg-white border-2 border-amber-200 overflow-hidden">
-            <div className="overflow-x-auto max-h-96">
+            <div className="overflow-x-auto max-w-full max-h-96">
               <table className="w-full">
                 <thead>
                   <tr className="bg-amber-100 border-b-2 border-amber-200">
@@ -814,7 +814,7 @@ export function OfficeSettings({
           </div>
         ) : (
           <div className="bg-white border-2 border-emerald-200 overflow-hidden">
-            <div className="overflow-x-auto max-h-96">
+            <div className="overflow-x-auto max-w-full max-h-96">
               <table className="w-full">
                 <thead>
                   <tr className="bg-emerald-100 border-b-2 border-emerald-200">

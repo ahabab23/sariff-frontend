@@ -166,14 +166,14 @@ export function Reports() {
   const [reportType, setReportType] = useState<ReportType>("daily");
   const [dateRange, setDateRange] = useState("today");
   const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
+    new Date().toISOString().split("T")[0],
   );
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [currencyFilter, setCurrencyFilter] = useState<"all" | "KES" | "USD">(
-    "all"
+    "all",
   );
   const [transactionTypeFilter, setTransactionTypeFilter] = useState<
     "all" | "debit" | "credit"
@@ -188,12 +188,12 @@ export function Reports() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [clientBalances, setClientBalances] = useState<ClientBalance[]>([]);
   const [accountSummary, setAccountSummary] = useState<AccountSummary | null>(
-    null
+    null,
   );
   const [exchangeSummary, setExchangeSummary] =
     useState<ExchangeSummaryData | null>(null);
   const [profitLossData, setProfitLossData] = useState<ProfitLossData | null>(
-    null
+    null,
   );
   const [statistics, setStatistics] = useState({
     totalTransactions: 0,
@@ -277,7 +277,7 @@ export function Reports() {
                 destAccountType: txn.destAccountType,
                 rawTransactionType: txn.transactionType,
               };
-            })
+            }),
           );
         }
       }
@@ -292,7 +292,7 @@ export function Reports() {
     try {
       // Use the correct report endpoint
       const response = await apiRequest<any[]>(
-        "/api/report/transactions?page=1&pageSize=500"
+        "/api/report/transactions?page=1&pageSize=500",
       );
 
       if (response.success && response.data) {
@@ -331,18 +331,18 @@ export function Reports() {
 
         // Calculate statistics
         const debits = mappedTransactions.filter(
-          (t: any) => t.type === "debit"
+          (t: any) => t.type === "debit",
         );
         const credits = mappedTransactions.filter(
-          (t: any) => t.type === "credit"
+          (t: any) => t.type === "credit",
         );
         const totalDebits = debits.reduce(
           (sum: number, t: any) => sum + t.amount,
-          0
+          0,
         );
         const totalCredits = credits.reduce(
           (sum: number, t: any) => sum + t.amount,
-          0
+          0,
         );
 
         setStatistics((prev) => ({
@@ -380,8 +380,8 @@ export function Reports() {
               (client.balanceKES || 0) > 0 || (client.balanceUSD || 0) > 0
                 ? "Owes Us"
                 : (client.balanceKES || 0) < 0 || (client.balanceUSD || 0) < 0
-                ? "We Owe"
-                : "Settled",
+                  ? "We Owe"
+                  : "Settled",
           }));
           setClientBalances(clients);
           setStatistics((prev) => ({
@@ -425,7 +425,7 @@ export function Reports() {
         .reduce((sum: number, a: any) => sum + (a.balance || 0), 0);
       const totalMpesa = mpesaAgents.reduce(
         (sum: number, a: any) => sum + (a.balance || 0),
-        0
+        0,
       );
 
       setAccountSummary({
@@ -562,7 +562,7 @@ export function Reports() {
       if (Array.isArray(exchangeTransactions)) {
         exchangeProfit = exchangeTransactions.reduce(
           (sum: number, txn: any) => sum + (txn.profit || 0),
-          0
+          0,
         );
       }
 
@@ -820,7 +820,7 @@ export function Reports() {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredTransactions.slice(
     indexOfFirstItem,
-    indexOfLastItem
+    indexOfLastItem,
   );
 
   // Reset to page 1 when filters change
@@ -901,18 +901,18 @@ export function Reports() {
           reportType === "transactions"
             ? "Transaction Report"
             : reportType === "clients"
-            ? "Client Balances Report"
-            : reportType === "exchange"
-            ? "Exchange Summary Report"
-            : reportType === "cashflow"
-            ? "Cash Flow Report"
-            : reportType === "accounts"
-            ? "Accounts Summary Report"
-            : reportType === "daily"
-            ? "Daily Report"
-            : reportType === "profit"
-            ? "Profit & Loss Report"
-            : "Report";
+              ? "Client Balances Report"
+              : reportType === "exchange"
+                ? "Exchange Summary Report"
+                : reportType === "cashflow"
+                  ? "Cash Flow Report"
+                  : reportType === "accounts"
+                    ? "Accounts Summary Report"
+                    : reportType === "daily"
+                      ? "Daily Report"
+                      : reportType === "profit"
+                        ? "Profit & Loss Report"
+                        : "Report";
 
         // ========== CORPORATE HEADER ==========
         doc.setFillColor(37, 99, 235);
@@ -954,7 +954,7 @@ export function Reports() {
           }),
           pageWidth - 14,
           21,
-          { align: "right" }
+          { align: "right" },
         );
 
         doc.setTextColor(107, 114, 128);
@@ -997,7 +997,7 @@ export function Reports() {
             dailyReport?.transactionSummary?.totalCredits || 0
           ).toLocaleString()}`,
           16,
-          yPos + 14
+          yPos + 14,
         );
 
         // Money Out
@@ -1014,7 +1014,7 @@ export function Reports() {
             dailyReport?.transactionSummary?.totalDebits || 0
           ).toLocaleString()}`,
           18 + cardWidth,
-          yPos + 14
+          yPos + 14,
         );
 
         // Net Position
@@ -1031,13 +1031,13 @@ export function Reports() {
         doc.setTextColor(
           netPositive ? 22 : 185,
           netPositive ? 163 : 28,
-          netPositive ? 74 : 28
+          netPositive ? 74 : 28,
         );
         doc.setFont("helvetica", "bold");
         doc.text(
           `${netPositive ? "+" : ""}KES ${netPosition.toLocaleString()}`,
           18 + (cardWidth + 4) * 2,
-          yPos + 14
+          yPos + 14,
         );
 
         // Transactions
@@ -1052,7 +1052,7 @@ export function Reports() {
         doc.text(
           String(dailyReport?.transactionSummary?.transactionCount || 0),
           18 + (cardWidth + 4) * 3,
-          yPos + 14
+          yPos + 14,
         );
 
         // ========== BALANCES TABLE ==========
@@ -1162,7 +1162,7 @@ export function Reports() {
           doc.text(
             `USD ${(exchangeSummary.totalUsdBought || 0).toLocaleString()}`,
             16,
-            yPos + 14
+            yPos + 14,
           );
 
           // USD Sold
@@ -1177,7 +1177,7 @@ export function Reports() {
           doc.text(
             `USD ${(exchangeSummary.totalUsdSold || 0).toLocaleString()}`,
             18 + exchCardWidth + 5,
-            yPos + 14
+            yPos + 14,
           );
 
           // Profit
@@ -1191,13 +1191,13 @@ export function Reports() {
           doc.setTextColor(
             profitPositive ? 22 : 185,
             profitPositive ? 163 : 28,
-            profitPositive ? 74 : 28
+            profitPositive ? 74 : 28,
           );
           doc.setFont("helvetica", "bold");
           doc.text(
             `KES ${(exchangeSummary.totalProfit || 0).toLocaleString()}`,
             18 + (exchCardWidth + 5) * 2,
-            yPos + 14
+            yPos + 14,
           );
         }
 
@@ -1216,10 +1216,10 @@ export function Reports() {
             client.name,
             client.whatsAppNumber,
             `${client.balanceKES >= 0 ? "" : "-"}KES ${Math.abs(
-              client.balanceKES
+              client.balanceKES,
             ).toLocaleString()}`,
             `${client.balanceUSD >= 0 ? "" : "-"}USD ${Math.abs(
-              client.balanceUSD
+              client.balanceUSD,
             ).toLocaleString()}`,
           ]);
 
@@ -1268,7 +1268,7 @@ export function Reports() {
                 `Page ${data.pageNumber}`,
                 pageWidth / 2,
                 pageHeight - 12,
-                { align: "center" }
+                { align: "center" },
               );
               doc.text("Confidential", pageWidth - 14, pageHeight - 12, {
                 align: "right",
@@ -1292,7 +1292,7 @@ export function Reports() {
             .map((txn: any) => [
               new Date(txn.transactionDate || txn.date).toLocaleDateString(
                 "en-GB",
-                { day: "2-digit", month: "short" }
+                { day: "2-digit", month: "short" },
               ),
               txn.code || txn.reference || "-",
               (txn.description || "").substring(0, 25) +
@@ -1343,13 +1343,13 @@ export function Reports() {
                 `Page ${data.pageNumber}`,
                 pageWidth / 2,
                 pageHeight - 12,
-                { align: "center" }
+                { align: "center" },
               );
               doc.text(
                 "Computer-generated report",
                 pageWidth - 14,
                 pageHeight - 12,
-                { align: "right" }
+                { align: "right" },
               );
             },
           });
@@ -1381,7 +1381,7 @@ export function Reports() {
           doc.text(
             `KES ${(accountSummary.totalCashKES || 0).toLocaleString()}`,
             16,
-            yPos + 14
+            yPos + 14,
           );
 
           // Total Bank
@@ -1396,7 +1396,7 @@ export function Reports() {
           doc.text(
             `KES ${(accountSummary.totalBankKES || 0).toLocaleString()}`,
             18 + acctCardWidth + 5,
-            yPos + 14
+            yPos + 14,
           );
 
           // Total M-Pesa
@@ -1411,7 +1411,7 @@ export function Reports() {
           doc.text(
             `KES ${(accountSummary.totalMpesa || 0).toLocaleString()}`,
             18 + (acctCardWidth + 5) * 2,
-            yPos + 14
+            yPos + 14,
           );
         }
 
@@ -1440,13 +1440,13 @@ export function Reports() {
           doc.setTextColor(
             exchProfitPositive ? 22 : 185,
             exchProfitPositive ? 163 : 28,
-            exchProfitPositive ? 74 : 28
+            exchProfitPositive ? 74 : 28,
           );
           doc.setFont("helvetica", "bold");
           doc.text(
             `KES ${(profitLossData.exchangeProfit || 0).toLocaleString()}`,
             16,
-            yPos + 14
+            yPos + 14,
           );
 
           // Total Income
@@ -1461,7 +1461,7 @@ export function Reports() {
           doc.text(
             `KES ${(profitLossData.totalIncome || 0).toLocaleString()}`,
             18 + plCardWidth,
-            yPos + 14
+            yPos + 14,
           );
 
           // Total Expenses
@@ -1476,7 +1476,7 @@ export function Reports() {
           doc.text(
             `KES ${(profitLossData.totalExpenses || 0).toLocaleString()}`,
             18 + (plCardWidth + 4) * 2,
-            yPos + 14
+            yPos + 14,
           );
 
           // Net Profit
@@ -1490,13 +1490,13 @@ export function Reports() {
           doc.setTextColor(
             netProfitPositive ? 22 : 185,
             netProfitPositive ? 163 : 28,
-            netProfitPositive ? 74 : 28
+            netProfitPositive ? 74 : 28,
           );
           doc.setFont("helvetica", "bold");
           doc.text(
             `KES ${(profitLossData.netProfit || 0).toLocaleString()}`,
             18 + (plCardWidth + 4) * 3,
-            yPos + 14
+            yPos + 14,
           );
         }
 
@@ -1512,19 +1512,19 @@ export function Reports() {
             "This is a computer-generated report and does not require a signature.",
             pageWidth / 2,
             lastY + 20,
-            { align: "center" }
+            { align: "center" },
           );
           doc.text(
             `${companyName} • Generated on ${new Date().toLocaleString()}`,
             pageWidth / 2,
             lastY + 26,
-            { align: "center" }
+            { align: "center" },
           );
         }
 
         const fileName = `${companyName.replace(
           /\s+/g,
-          "_"
+          "_",
         )}_${reportTitle.replace(/\s+/g, "_")}_${
           new Date().toISOString().split("T")[0]
         }.pdf`;
@@ -2107,7 +2107,7 @@ export function Reports() {
             <div className="flex items-center gap-3">
               {(() => {
                 const currentReport = reportCards.find(
-                  (r) => r.id === reportType
+                  (r) => r.id === reportType,
                 );
                 const IconComponent = currentReport?.icon;
                 return (
@@ -2138,7 +2138,7 @@ export function Reports() {
                         {reportType === "daily" &&
                           dailyReport &&
                           `Report for ${new Date(
-                            dailyReport.date
+                            dailyReport.date,
                           ).toLocaleDateString()}`}
                       </p>
                     </div>
@@ -2167,7 +2167,7 @@ export function Reports() {
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-w-full">
             {/* Transactions Report */}
             {reportType === "transactions" && (
               <table className="w-full">
@@ -2302,278 +2302,285 @@ export function Reports() {
 
             {/* Daily Report Transactions */}
             {reportType === "daily" && dailyReport && (
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-slate-50 border-b-2 border-slate-200">
-                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Time
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Description
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Account
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Flow
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Amount
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Currency
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-slate-100">
-                  {dailyReport.transactions.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center">
-                        <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                        <p className="text-slate-600">
-                          No transactions for this date
-                        </p>
-                      </td>
+              <div className="overflow-x-auto max-w-full">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-slate-50 border-b-2 border-slate-200">
+                      <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Time
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Description
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Account
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Flow
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Amount
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Currency
+                      </th>
                     </tr>
-                  ) : (
-                    dailyReport.transactions.map((txn: any, index: number) => {
-                      // AccountType: 0=Cash, 1=Bank, 2=Mpesa, 3=Client
-                      // TransactionType: 0=Debit, 1=Credit
-                      // For Client accounts: Credit = money IN (client deposited), Debit = money OUT (client withdrew)
-                      // For Asset accounts: Debit = money IN, Credit = money OUT
-                      const isClientTransaction =
-                        txn.sourceAccountType === 3 ||
-                        txn.destAccountType === 3;
-                      const isMoneyIn = isClientTransaction
-                        ? txn.transactionType === 1 // Credit to client = money IN for business
-                        : txn.transactionType === 0; // Debit to asset = money IN for business
-                      return (
-                        <tr
-                          key={txn.id || index}
-                          className="hover:bg-slate-50 transition-colors"
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                            {new Date(
-                              txn.transactionDate || txn.createdAt
-                            ).toLocaleTimeString("en-GB", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              second: "2-digit",
-                            })}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-slate-900">
-                            <div>{txn.description || txn.notes || ""}</div>
-                            {(txn.reference || txn.code) && (
-                              <div className="text-xs text-blue-500 font-mono mt-0.5">
-                                {txn.reference || txn.code}
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-slate-700">
-                            <div className="font-medium">
-                              {txn.sourceAccountName || "—"}
-                            </div>
-                            {txn.destAccountName && (
-                              <div className="text-xs text-slate-400 mt-0.5">
-                                → {txn.destAccountName}
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span
-                              className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold uppercase ${
-                                isMoneyIn
-                                  ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                                  : "bg-red-100 text-red-700 border border-red-200"
-                              }`}
+                  </thead>
+                  <tbody className="bg-white divide-y divide-slate-100">
+                    {dailyReport.transactions.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-12 text-center">
+                          <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                          <p className="text-slate-600">
+                            No transactions for this date
+                          </p>
+                        </td>
+                      </tr>
+                    ) : (
+                      dailyReport.transactions.map(
+                        (txn: any, index: number) => {
+                          // AccountType: 0=Cash, 1=Bank, 2=Mpesa, 3=Client
+                          // TransactionType: 0=Debit, 1=Credit
+                          // For Client accounts: Credit = money IN (client deposited), Debit = money OUT (client withdrew)
+                          // For Asset accounts: Debit = money IN, Credit = money OUT
+                          const isClientTransaction =
+                            txn.sourceAccountType === 3 ||
+                            txn.destAccountType === 3;
+                          const isMoneyIn = isClientTransaction
+                            ? txn.transactionType === 1 // Credit to client = money IN for business
+                            : txn.transactionType === 0; // Debit to asset = money IN for business
+                          return (
+                            <tr
+                              key={txn.id || index}
+                              className="hover:bg-slate-50 transition-colors"
                             >
-                              {isMoneyIn ? (
-                                <ArrowUpRight className="w-3 h-3" />
-                              ) : (
-                                <ArrowDownRight className="w-3 h-3" />
-                              )}
-                              {isMoneyIn ? "Money In" : "Money Out"}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-slate-900">
-                            {Math.abs(txn.amount).toLocaleString("en-US", {
-                              minimumFractionDigits: 2,
-                            })}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 font-semibold">
-                            {txn.currency === 0 ? "KES" : "USD"}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                                {new Date(
+                                  txn.transactionDate || txn.createdAt,
+                                ).toLocaleTimeString("en-GB", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  second: "2-digit",
+                                })}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-slate-900">
+                                <div>{txn.description || txn.notes || ""}</div>
+                                {(txn.reference || txn.code) && (
+                                  <div className="text-xs text-blue-500 font-mono mt-0.5">
+                                    {txn.reference || txn.code}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-slate-700">
+                                <div className="font-medium">
+                                  {txn.sourceAccountName || "—"}
+                                </div>
+                                {txn.destAccountName && (
+                                  <div className="text-xs text-slate-400 mt-0.5">
+                                    → {txn.destAccountName}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span
+                                  className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold uppercase ${
+                                    isMoneyIn
+                                      ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                                      : "bg-red-100 text-red-700 border border-red-200"
+                                  }`}
+                                >
+                                  {isMoneyIn ? (
+                                    <ArrowUpRight className="w-3 h-3" />
+                                  ) : (
+                                    <ArrowDownRight className="w-3 h-3" />
+                                  )}
+                                  {isMoneyIn ? "Money In" : "Money Out"}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-bold text-slate-900">
+                                {Math.abs(txn.amount).toLocaleString("en-US", {
+                                  minimumFractionDigits: 2,
+                                })}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700 font-semibold">
+                                {txn.currency === 0 ? "KES" : "USD"}
+                              </td>
+                            </tr>
+                          );
+                        },
+                      )
+                    )}
+                  </tbody>
+                </table>
+              </div>
             )}
 
             {/* Client Balances Report */}
             {reportType === "clients" && (
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-slate-50 border-b-2 border-slate-200">
-                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Code
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Client Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Contact
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Balance KES
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Balance USD
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-slate-100">
-                  {clientBalances.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center">
-                        <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                        <p className="text-slate-600 font-medium">
-                          No clients found
-                        </p>
-                        <p className="text-slate-400 text-sm mt-1">
-                          Client data will appear here once loaded
-                        </p>
-                      </td>
+              <div className="overflow-x-auto max-w-full">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-slate-50 border-b-2 border-slate-200">
+                      <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Code
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Client Name
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Contact
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Balance KES
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Balance USD
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Status
+                      </th>
                     </tr>
-                  ) : (
-                    clientBalances.map((client) => (
-                      <tr
-                        key={client.id}
-                        className="hover:bg-slate-50 transition-colors"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-1">
-                            {client.code || client.id.slice(0, 8).toUpperCase()}
-                          </span>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-slate-100">
+                    {clientBalances.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-12 text-center">
+                          <Users className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                          <p className="text-slate-600 font-medium">
+                            No clients found
+                          </p>
+                          <p className="text-slate-400 text-sm mt-1">
+                            Client data will appear here once loaded
+                          </p>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
-                          {client.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                          {client.whatsAppNumber || "-"}
-                        </td>
-                        <td
-                          className={`px-6 py-4 whitespace-nowrap text-right text-sm font-bold ${
-                            client.balanceKES > 0
-                              ? "text-emerald-600"
-                              : client.balanceKES < 0
-                              ? "text-red-600"
-                              : "text-slate-500"
-                          }`}
+                      </tr>
+                    ) : (
+                      clientBalances.map((client) => (
+                        <tr
+                          key={client.id}
+                          className="hover:bg-slate-50 transition-colors"
                         >
-                          {client.balanceKES > 0 ? "+" : ""}KES{" "}
-                          {client.balanceKES.toLocaleString("en-US", {
-                            minimumFractionDigits: 2,
-                          })}
-                        </td>
-                        <td
-                          className={`px-6 py-4 whitespace-nowrap text-right text-sm font-bold ${
-                            client.balanceUSD > 0
-                              ? "text-blue-600"
-                              : client.balanceUSD < 0
-                              ? "text-red-600"
-                              : "text-slate-500"
-                          }`}
-                        >
-                          {client.balanceUSD > 0 ? "+" : ""}$
-                          {client.balanceUSD.toLocaleString("en-US", {
-                            minimumFractionDigits: 2,
-                          })}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <span
-                            className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold uppercase ${
-                              client.balanceType === "Owes Us"
-                                ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                                : client.balanceType === "We Owe"
-                                ? "bg-red-100 text-red-700 border border-red-200"
-                                : "bg-slate-100 text-slate-600 border border-slate-200"
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-1">
+                              {client.code ||
+                                client.id.slice(0, 8).toUpperCase()}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
+                            {client.name}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                            {client.whatsAppNumber || "-"}
+                          </td>
+                          <td
+                            className={`px-6 py-4 whitespace-nowrap text-right text-sm font-bold ${
+                              client.balanceKES > 0
+                                ? "text-emerald-600"
+                                : client.balanceKES < 0
+                                  ? "text-red-600"
+                                  : "text-slate-500"
                             }`}
                           >
-                            {client.balanceType === "Owes Us" ? (
-                              <ArrowUpRight className="w-3 h-3" />
-                            ) : client.balanceType === "We Owe" ? (
-                              <ArrowDownRight className="w-3 h-3" />
-                            ) : (
-                              <CheckCircle className="w-3 h-3" />
-                            )}
-                            {client.balanceType}
+                            {client.balanceKES > 0 ? "+" : ""}KES{" "}
+                            {client.balanceKES.toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                            })}
+                          </td>
+                          <td
+                            className={`px-6 py-4 whitespace-nowrap text-right text-sm font-bold ${
+                              client.balanceUSD > 0
+                                ? "text-blue-600"
+                                : client.balanceUSD < 0
+                                  ? "text-red-600"
+                                  : "text-slate-500"
+                            }`}
+                          >
+                            {client.balanceUSD > 0 ? "+" : ""}$
+                            {client.balanceUSD.toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                            })}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <span
+                              className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold uppercase ${
+                                client.balanceType === "Owes Us"
+                                  ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                                  : client.balanceType === "We Owe"
+                                    ? "bg-red-100 text-red-700 border border-red-200"
+                                    : "bg-slate-100 text-slate-600 border border-slate-200"
+                              }`}
+                            >
+                              {client.balanceType === "Owes Us" ? (
+                                <ArrowUpRight className="w-3 h-3" />
+                              ) : client.balanceType === "We Owe" ? (
+                                <ArrowDownRight className="w-3 h-3" />
+                              ) : (
+                                <CheckCircle className="w-3 h-3" />
+                              )}
+                              {client.balanceType}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                  {clientBalances.length > 0 && (
+                    <tfoot className="bg-slate-50 border-t-2 border-slate-200">
+                      <tr>
+                        <td
+                          colSpan={3}
+                          className="px-6 py-4 font-bold text-slate-900 text-right"
+                        >
+                          TOTALS:
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <span
+                            className={`font-bold ${
+                              clientBalances.reduce(
+                                (sum, c) => sum + c.balanceKES,
+                                0,
+                              ) >= 0
+                                ? "text-emerald-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            KES{" "}
+                            {clientBalances
+                              .reduce((sum, c) => sum + c.balanceKES, 0)
+                              .toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                              })}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <span
+                            className={`font-bold ${
+                              clientBalances.reduce(
+                                (sum, c) => sum + c.balanceUSD,
+                                0,
+                              ) >= 0
+                                ? "text-blue-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            $
+                            {clientBalances
+                              .reduce((sum, c) => sum + c.balanceUSD, 0)
+                              .toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                              })}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="text-sm font-medium text-slate-600">
+                            {clientBalances.length} clients
                           </span>
                         </td>
                       </tr>
-                    ))
+                    </tfoot>
                   )}
-                </tbody>
-                {clientBalances.length > 0 && (
-                  <tfoot className="bg-slate-50 border-t-2 border-slate-200">
-                    <tr>
-                      <td
-                        colSpan={3}
-                        className="px-6 py-4 font-bold text-slate-900 text-right"
-                      >
-                        TOTALS:
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <span
-                          className={`font-bold ${
-                            clientBalances.reduce(
-                              (sum, c) => sum + c.balanceKES,
-                              0
-                            ) >= 0
-                              ? "text-emerald-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          KES{" "}
-                          {clientBalances
-                            .reduce((sum, c) => sum + c.balanceKES, 0)
-                            .toLocaleString("en-US", {
-                              minimumFractionDigits: 2,
-                            })}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <span
-                          className={`font-bold ${
-                            clientBalances.reduce(
-                              (sum, c) => sum + c.balanceUSD,
-                              0
-                            ) >= 0
-                              ? "text-blue-600"
-                              : "text-red-600"
-                          }`}
-                        >
-                          $
-                          {clientBalances
-                            .reduce((sum, c) => sum + c.balanceUSD, 0)
-                            .toLocaleString("en-US", {
-                              minimumFractionDigits: 2,
-                            })}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="text-sm font-medium text-slate-600">
-                          {clientBalances.length} clients
-                        </span>
-                      </td>
-                    </tr>
-                  </tfoot>
-                )}
-              </table>
+                </table>
+              </div>
             )}
 
             {/* Account Summary Report */}
@@ -2626,61 +2633,63 @@ export function Reports() {
                     <Building2 className="w-5 h-5 text-blue-600" />
                     Bank Accounts
                   </h4>
-                  <table className="w-full border border-slate-200">
-                    <thead className="bg-slate-50">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-bold text-slate-700 uppercase">
-                          Bank
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs font-bold text-slate-700 uppercase">
-                          Account
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs font-bold text-slate-700 uppercase">
-                          Currency
-                        </th>
-                        <th className="px-4 py-2 text-right text-xs font-bold text-slate-700 uppercase">
-                          Balance
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {accountSummary.bankAccounts.map((account: any) => (
-                        <tr key={account.id} className="hover:bg-slate-50">
-                          <td className="px-4 py-3 text-sm font-semibold text-slate-900">
-                            {account.bankName}
+                  <div className="overflow-x-auto max-w-full">
+                    <table className="w-full border border-slate-200">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-bold text-slate-700 uppercase">
+                            Bank
+                          </th>
+                          <th className="px-4 py-2 text-left text-xs font-bold text-slate-700 uppercase">
+                            Account
+                          </th>
+                          <th className="px-4 py-2 text-left text-xs font-bold text-slate-700 uppercase">
+                            Currency
+                          </th>
+                          <th className="px-4 py-2 text-right text-xs font-bold text-slate-700 uppercase">
+                            Balance
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {accountSummary.bankAccounts.map((account: any) => (
+                          <tr key={account.id} className="hover:bg-slate-50">
+                            <td className="px-4 py-3 text-sm font-semibold text-slate-900">
+                              {account.bankName}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-slate-600">
+                              {account.accountNumber}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-slate-700">
+                              {account.currency === 0 ? "KES" : "USD"}
+                            </td>
+                            <td className="px-4 py-3 text-sm font-bold text-right text-blue-700">
+                              {account.currency === 0 ? "KES" : "$"}{" "}
+                              {account.balance.toLocaleString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="bg-blue-50 border-t-2 border-blue-200">
+                        <tr>
+                          <td
+                            colSpan={3}
+                            className="px-4 py-3 font-bold text-slate-900"
+                          >
+                            Total Bank
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-600">
-                            {account.accountNumber}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-slate-700">
-                            {account.currency === 0 ? "KES" : "USD"}
-                          </td>
-                          <td className="px-4 py-3 text-sm font-bold text-right text-blue-700">
-                            {account.currency === 0 ? "KES" : "$"}{" "}
-                            {account.balance.toLocaleString()}
+                          <td className="px-4 py-3 text-right">
+                            <div className="font-bold text-blue-700">
+                              KES {accountSummary.totalBankKES.toLocaleString()}
+                            </div>
+                            <div className="font-bold text-indigo-700">
+                              ${accountSummary.totalBankUSD.toLocaleString()}
+                            </div>
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                    <tfoot className="bg-blue-50 border-t-2 border-blue-200">
-                      <tr>
-                        <td
-                          colSpan={3}
-                          className="px-4 py-3 font-bold text-slate-900"
-                        >
-                          Total Bank
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="font-bold text-blue-700">
-                            KES {accountSummary.totalBankKES.toLocaleString()}
-                          </div>
-                          <div className="font-bold text-indigo-700">
-                            ${accountSummary.totalBankUSD.toLocaleString()}
-                          </div>
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
+                      </tfoot>
+                    </table>
+                  </div>
                 </div>
 
                 {/* M-Pesa Agents */}
@@ -2689,49 +2698,51 @@ export function Reports() {
                     <Smartphone className="w-5 h-5 text-cyan-600" />
                     M-Pesa Agents
                   </h4>
-                  <table className="w-full border border-slate-200">
-                    <thead className="bg-slate-50">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-xs font-bold text-slate-700 uppercase">
-                          Agent Name
-                        </th>
-                        <th className="px-4 py-2 text-left text-xs font-bold text-slate-700 uppercase">
-                          Phone
-                        </th>
-                        <th className="px-4 py-2 text-right text-xs font-bold text-slate-700 uppercase">
-                          Balance (KES)
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {accountSummary.mpesaAgents.map((agent: any) => (
-                        <tr key={agent.id} className="hover:bg-slate-50">
-                          <td className="px-4 py-3 text-sm font-semibold text-slate-900">
-                            {agent.agentName}
+                  <div className="overflow-x-auto max-w-full">
+                    <table className="w-full border border-slate-200">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-bold text-slate-700 uppercase">
+                            Agent Name
+                          </th>
+                          <th className="px-4 py-2 text-left text-xs font-bold text-slate-700 uppercase">
+                            Phone
+                          </th>
+                          <th className="px-4 py-2 text-right text-xs font-bold text-slate-700 uppercase">
+                            Balance (KES)
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {accountSummary.mpesaAgents.map((agent: any) => (
+                          <tr key={agent.id} className="hover:bg-slate-50">
+                            <td className="px-4 py-3 text-sm font-semibold text-slate-900">
+                              {agent.agentName}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-slate-600">
+                              {agent.phoneNumber}
+                            </td>
+                            <td className="px-4 py-3 text-sm font-bold text-right text-cyan-700">
+                              KES {agent.balance.toLocaleString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="bg-cyan-50 border-t-2 border-cyan-200">
+                        <tr>
+                          <td
+                            colSpan={2}
+                            className="px-4 py-3 font-bold text-slate-900"
+                          >
+                            Total M-Pesa
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-600">
-                            {agent.phoneNumber}
-                          </td>
-                          <td className="px-4 py-3 text-sm font-bold text-right text-cyan-700">
-                            KES {agent.balance.toLocaleString()}
+                          <td className="px-4 py-3 text-right font-bold text-cyan-700">
+                            KES {accountSummary.totalMpesa.toLocaleString()}
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                    <tfoot className="bg-cyan-50 border-t-2 border-cyan-200">
-                      <tr>
-                        <td
-                          colSpan={2}
-                          className="px-4 py-3 font-bold text-slate-900"
-                        >
-                          Total M-Pesa
-                        </td>
-                        <td className="px-4 py-3 text-right font-bold text-cyan-700">
-                          KES {accountSummary.totalMpesa.toLocaleString()}
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
+                      </tfoot>
+                    </table>
+                  </div>
                 </div>
               </div>
             )}
@@ -2969,7 +2980,7 @@ export function Reports() {
                           Recent Exchange Transactions
                         </h4>
                       </div>
-                      <div className="overflow-x-auto">
+                      <div className="overflow-x-auto max-w-full">
                         <table className="w-full">
                           <thead className="bg-slate-50 border-b border-slate-200">
                             <tr>
@@ -3022,7 +3033,7 @@ export function Reports() {
                                   >
                                     <td className="px-4 py-3 text-sm text-slate-600">
                                       {new Date(
-                                        txn.date || txn.createdAt
+                                        txn.date || txn.createdAt,
                                       ).toLocaleDateString("en-KE", {
                                         month: "short",
                                         day: "numeric",
@@ -3100,7 +3111,7 @@ export function Reports() {
                                     .reduce(
                                       (sum: number, t: any) =>
                                         sum + (t.profit || 0),
-                                      0
+                                      0,
                                     )
                                     .toLocaleString()}
                                 </td>
@@ -3312,7 +3323,7 @@ export function Reports() {
                             <RechartsPieChart>
                               <Pie
                                 data={profitLossData.profitByCategory.filter(
-                                  (c) => c.amount > 0
+                                  (c) => c.amount > 0,
                                 )}
                                 cx="50%"
                                 cy="50%"
@@ -3368,162 +3379,166 @@ export function Reports() {
                         </h4>
                       </div>
                       <div className="p-6">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="border-b-2 border-slate-200">
-                              <th className="pb-3 text-left text-sm font-bold text-slate-700 uppercase">
-                                Category
-                              </th>
-                              <th className="pb-3 text-right text-sm font-bold text-slate-700 uppercase">
-                                Amount (KES)
-                              </th>
-                              <th className="pb-3 text-right text-sm font-bold text-slate-700 uppercase">
-                                % of Total
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {/* Income Section */}
-                            <tr className="bg-emerald-50">
-                              <td
-                                colSpan={3}
-                                className="px-3 py-2 font-bold text-emerald-700 text-sm uppercase"
-                              >
-                                Income
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="py-3 pl-6 text-slate-700">
-                                Exchange Profit
-                              </td>
-                              <td className="py-3 text-right font-medium text-emerald-600">
-                                +
-                                {profitLossData.exchangeProfit.toLocaleString()}
-                              </td>
-                              <td className="py-3 text-right text-slate-500">
-                                {profitLossData.totalIncome > 0
-                                  ? (
-                                      (profitLossData.exchangeProfit /
-                                        profitLossData.totalIncome) *
-                                      100
-                                    ).toFixed(1)
-                                  : 0}
-                                %
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="py-3 pl-6 text-slate-700">
-                                Other Income
-                              </td>
-                              <td className="py-3 text-right font-medium text-emerald-600">
-                                +
-                                {(
-                                  profitLossData.totalIncome -
-                                  profitLossData.exchangeProfit
-                                ).toLocaleString()}
-                              </td>
-                              <td className="py-3 text-right text-slate-500">
-                                {profitLossData.totalIncome > 0
-                                  ? (
-                                      ((profitLossData.totalIncome -
-                                        profitLossData.exchangeProfit) /
-                                        profitLossData.totalIncome) *
-                                      100
-                                    ).toFixed(1)
-                                  : 0}
-                                %
-                              </td>
-                            </tr>
-                            <tr className="bg-emerald-100 font-bold">
-                              <td className="py-3 pl-3 text-emerald-800">
-                                Total Income
-                              </td>
-                              <td className="py-3 text-right text-emerald-700">
-                                {profitLossData.totalIncome.toLocaleString()}
-                              </td>
-                              <td className="py-3 text-right text-emerald-600">
-                                100%
-                              </td>
-                            </tr>
+                        <div className="overflow-x-auto max-w-full">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b-2 border-slate-200">
+                                <th className="pb-3 text-left text-sm font-bold text-slate-700 uppercase">
+                                  Category
+                                </th>
+                                <th className="pb-3 text-right text-sm font-bold text-slate-700 uppercase">
+                                  Amount (KES)
+                                </th>
+                                <th className="pb-3 text-right text-sm font-bold text-slate-700 uppercase">
+                                  % of Total
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {/* Income Section */}
+                              <tr className="bg-emerald-50">
+                                <td
+                                  colSpan={3}
+                                  className="px-3 py-2 font-bold text-emerald-700 text-sm uppercase"
+                                >
+                                  Income
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="py-3 pl-6 text-slate-700">
+                                  Exchange Profit
+                                </td>
+                                <td className="py-3 text-right font-medium text-emerald-600">
+                                  +
+                                  {profitLossData.exchangeProfit.toLocaleString()}
+                                </td>
+                                <td className="py-3 text-right text-slate-500">
+                                  {profitLossData.totalIncome > 0
+                                    ? (
+                                        (profitLossData.exchangeProfit /
+                                          profitLossData.totalIncome) *
+                                        100
+                                      ).toFixed(1)
+                                    : 0}
+                                  %
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="py-3 pl-6 text-slate-700">
+                                  Other Income
+                                </td>
+                                <td className="py-3 text-right font-medium text-emerald-600">
+                                  +
+                                  {(
+                                    profitLossData.totalIncome -
+                                    profitLossData.exchangeProfit
+                                  ).toLocaleString()}
+                                </td>
+                                <td className="py-3 text-right text-slate-500">
+                                  {profitLossData.totalIncome > 0
+                                    ? (
+                                        ((profitLossData.totalIncome -
+                                          profitLossData.exchangeProfit) /
+                                          profitLossData.totalIncome) *
+                                        100
+                                      ).toFixed(1)
+                                    : 0}
+                                  %
+                                </td>
+                              </tr>
+                              <tr className="bg-emerald-100 font-bold">
+                                <td className="py-3 pl-3 text-emerald-800">
+                                  Total Income
+                                </td>
+                                <td className="py-3 text-right text-emerald-700">
+                                  {profitLossData.totalIncome.toLocaleString()}
+                                </td>
+                                <td className="py-3 text-right text-emerald-600">
+                                  100%
+                                </td>
+                              </tr>
 
-                            {/* Expenses Section */}
-                            <tr className="bg-red-50">
-                              <td
-                                colSpan={3}
-                                className="px-3 py-2 font-bold text-red-700 text-sm uppercase"
-                              >
-                                Expenses
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="py-3 pl-6 text-slate-700">
-                                Operating Expenses
-                              </td>
-                              <td className="py-3 text-right font-medium text-red-600">
-                                -{profitLossData.totalExpenses.toLocaleString()}
-                              </td>
-                              <td className="py-3 text-right text-slate-500">
-                                100%
-                              </td>
-                            </tr>
-                            <tr className="bg-red-100 font-bold">
-                              <td className="py-3 pl-3 text-red-800">
-                                Total Expenses
-                              </td>
-                              <td className="py-3 text-right text-red-700">
-                                -{profitLossData.totalExpenses.toLocaleString()}
-                              </td>
-                              <td className="py-3 text-right text-red-600">
-                                100%
-                              </td>
-                            </tr>
+                              {/* Expenses Section */}
+                              <tr className="bg-red-50">
+                                <td
+                                  colSpan={3}
+                                  className="px-3 py-2 font-bold text-red-700 text-sm uppercase"
+                                >
+                                  Expenses
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="py-3 pl-6 text-slate-700">
+                                  Operating Expenses
+                                </td>
+                                <td className="py-3 text-right font-medium text-red-600">
+                                  -
+                                  {profitLossData.totalExpenses.toLocaleString()}
+                                </td>
+                                <td className="py-3 text-right text-slate-500">
+                                  100%
+                                </td>
+                              </tr>
+                              <tr className="bg-red-100 font-bold">
+                                <td className="py-3 pl-3 text-red-800">
+                                  Total Expenses
+                                </td>
+                                <td className="py-3 text-right text-red-700">
+                                  -
+                                  {profitLossData.totalExpenses.toLocaleString()}
+                                </td>
+                                <td className="py-3 text-right text-red-600">
+                                  100%
+                                </td>
+                              </tr>
 
-                            {/* Net Profit */}
-                            <tr
-                              className={`font-bold text-lg ${
-                                profitLossData.netProfit >= 0
-                                  ? "bg-indigo-100"
-                                  : "bg-slate-200"
-                              }`}
-                            >
-                              <td
-                                className={`py-4 pl-3 ${
+                              {/* Net Profit */}
+                              <tr
+                                className={`font-bold text-lg ${
                                   profitLossData.netProfit >= 0
-                                    ? "text-indigo-800"
-                                    : "text-slate-800"
+                                    ? "bg-indigo-100"
+                                    : "bg-slate-200"
                                 }`}
                               >
-                                NET PROFIT / (LOSS)
-                              </td>
-                              <td
-                                className={`py-4 text-right ${
-                                  profitLossData.netProfit >= 0
-                                    ? "text-indigo-700"
-                                    : "text-red-700"
-                                }`}
-                              >
-                                {profitLossData.netProfit >= 0 ? "+" : ""}
-                                {profitLossData.netProfit.toLocaleString()}
-                              </td>
-                              <td
-                                className={`py-4 text-right ${
-                                  profitLossData.netProfit >= 0
-                                    ? "text-indigo-600"
-                                    : "text-red-600"
-                                }`}
-                              >
-                                {profitLossData.totalIncome > 0
-                                  ? (
-                                      (profitLossData.netProfit /
-                                        profitLossData.totalIncome) *
-                                      100
-                                    ).toFixed(1)
-                                  : 0}
-                                %
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
+                                <td
+                                  className={`py-4 pl-3 ${
+                                    profitLossData.netProfit >= 0
+                                      ? "text-indigo-800"
+                                      : "text-slate-800"
+                                  }`}
+                                >
+                                  NET PROFIT / (LOSS)
+                                </td>
+                                <td
+                                  className={`py-4 text-right ${
+                                    profitLossData.netProfit >= 0
+                                      ? "text-indigo-700"
+                                      : "text-red-700"
+                                  }`}
+                                >
+                                  {profitLossData.netProfit >= 0 ? "+" : ""}
+                                  {profitLossData.netProfit.toLocaleString()}
+                                </td>
+                                <td
+                                  className={`py-4 text-right ${
+                                    profitLossData.netProfit >= 0
+                                      ? "text-indigo-600"
+                                      : "text-red-600"
+                                  }`}
+                                >
+                                  {profitLossData.totalIncome > 0
+                                    ? (
+                                        (profitLossData.netProfit /
+                                          profitLossData.totalIncome) *
+                                        100
+                                      ).toFixed(1)
+                                    : 0}
+                                  %
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     </div>
                   </>

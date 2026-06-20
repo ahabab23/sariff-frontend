@@ -1365,7 +1365,7 @@ export function BankAccounts() {
 
       {/* Bank Accounts Table */}
       <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-xl overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-w-full">
           <table className="w-full">
             <thead className="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200">
               <tr>
@@ -1646,7 +1646,7 @@ export function BankAccounts() {
                   </div>
 
                   {/* Balance Card */}
-                  <div className="mt-6 grid grid-cols-4 gap-4">
+                  <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div className="bg-white/10 backdrop-blur-sm p-4 border border-white/20">
                       <p className="text-xs text-blue-200 mb-1">
                         Opening Balance
@@ -1778,7 +1778,7 @@ export function BankAccounts() {
                       </span>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto max-w-full">
                       <table className="w-full">
                         <thead className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-b border-slate-300">
                           <tr>

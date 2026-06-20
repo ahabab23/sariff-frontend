@@ -374,7 +374,7 @@ export function ExpensesAccount() {
     if (formData.paymentAccountType === 0) {
       cashAccounts
         .filter(
-          (acc) => acc.currency === formData.currency && acc.isActive !== false
+          (acc) => acc.currency === formData.currency && acc.isActive !== false,
         )
         .forEach((acc) => {
           accounts.push({
@@ -389,7 +389,7 @@ export function ExpensesAccount() {
     if (formData.paymentAccountType === 1) {
       bankAccounts
         .filter(
-          (acc) => acc.currency === formData.currency && acc.isActive !== false
+          (acc) => acc.currency === formData.currency && acc.isActive !== false,
         )
         .forEach((acc) => {
           accounts.push({
@@ -427,7 +427,7 @@ export function ExpensesAccount() {
     const accounts = getAvailableAccounts();
     if (accounts.length > 0) {
       const valid = accounts.some(
-        (acc) => acc.id === formData.paymentAccountId
+        (acc) => acc.id === formData.paymentAccountId,
       );
       if (!formData.paymentAccountId || !valid) {
         setFormData((prev) => ({ ...prev, paymentAccountId: accounts[0].id }));
@@ -465,7 +465,7 @@ export function ExpensesAccount() {
         paymentAccountId: formData.paymentAccountId,
         reference: formData.reference.trim() || undefined,
         expenseDate: new Date(
-          formData.expenseDate + "T12:00:00Z"
+          formData.expenseDate + "T12:00:00Z",
         ).toISOString(),
       };
       const response = await createExpense(createDto);
@@ -548,7 +548,7 @@ export function ExpensesAccount() {
         toast.success(
           `Expense deleted! ${
             expenseToDelete.currency
-          } ${expenseToDelete.amount.toLocaleString()} restored.`
+          } ${expenseToDelete.amount.toLocaleString()} restored.`,
         );
         setShowDeleteModal(false);
         setExpenseToDelete(null);
@@ -648,7 +648,7 @@ export function ExpensesAccount() {
         }),
         pageWidth - 14,
         21,
-        { align: "right" }
+        { align: "right" },
       );
 
       doc.setTextColor(107, 114, 128);
@@ -689,14 +689,14 @@ export function ExpensesAccount() {
       doc.setFillColor(
         isActive ? 220 : 254,
         isActive ? 252 : 226,
-        isActive ? 231 : 226
+        isActive ? 231 : 226,
       );
       doc.rect(pageWidth - 40, yPos + 4, 22, 6, "F");
       doc.setFontSize(7);
       doc.setTextColor(
         isActive ? 22 : 153,
         isActive ? 101 : 27,
-        isActive ? 52 : 27
+        isActive ? 52 : 27,
       );
       doc.text(isActive ? "ACTIVE" : "INACTIVE", pageWidth - 29, yPos + 8, {
         align: "center",
@@ -736,7 +736,7 @@ export function ExpensesAccount() {
       doc.text(
         `USD ${usdTotal.toLocaleString()}`,
         18 + cardWidth + 5,
-        yPos + 14
+        yPos + 14,
       );
 
       // Transaction Count
@@ -765,7 +765,7 @@ export function ExpensesAccount() {
           `${filteredTransactions.length} transactions`,
           pageWidth - 14,
           yPos,
-          { align: "right" }
+          { align: "right" },
         );
 
         const txnTableData = filteredTransactions.map((txn) => {
@@ -838,7 +838,7 @@ export function ExpensesAccount() {
               `Page ${data.pageNumber}`,
               pageWidth / 2,
               pageHeight - 12,
-              { align: "center" }
+              { align: "center" },
             );
             doc.text("Expense Report", pageWidth - 14, pageHeight - 12, {
               align: "right",
@@ -850,7 +850,7 @@ export function ExpensesAccount() {
       const safeCategoryName = categoryName.replace(/[^a-zA-Z0-9]/g, "-");
       const fileName = `${companyName.replace(
         /\s+/g,
-        "_"
+        "_",
       )}_Expenses_${safeCategoryName}_${
         new Date().toISOString().split("T")[0]
       }.pdf`;
@@ -984,7 +984,7 @@ export function ExpensesAccount() {
                 <td class="text-center">${txn.currency}</td>
                 <td class="text-right amount">${txn.amount.toLocaleString()}</td>
               </tr>
-            `
+            `,
               )
               .join("")}
           </tbody>
@@ -1014,16 +1014,16 @@ export function ExpensesAccount() {
   const filteredCategories = allCategories.filter(
     (cat) =>
       cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cat.id.toLowerCase().includes(searchTerm.toLowerCase())
+      cat.id.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const categoriesPerPage = 10;
   const currentCategories = filteredCategories.slice(
     (categoriesCurrentPage - 1) * categoriesPerPage,
-    categoriesCurrentPage * categoriesPerPage
+    categoriesCurrentPage * categoriesPerPage,
   );
   const totalCategoryPages = Math.ceil(
-    filteredCategories.length / categoriesPerPage
+    filteredCategories.length / categoriesPerPage,
   );
 
   const totalKes =
@@ -1037,26 +1037,26 @@ export function ExpensesAccount() {
   const filteredTransactions = categoryTransactions.filter(
     (txn) =>
       txn.description.toLowerCase().includes(transactionSearch.toLowerCase()) ||
-      txn.reference.toLowerCase().includes(transactionSearch.toLowerCase())
+      txn.reference.toLowerCase().includes(transactionSearch.toLowerCase()),
   );
 
   const transactionsPerPage = 10;
   const currentTransactions = filteredTransactions.slice(
     (transactionsCurrentPage - 1) * transactionsPerPage,
-    transactionsCurrentPage * transactionsPerPage
+    transactionsCurrentPage * transactionsPerPage,
   );
   const totalTransactionPages = Math.ceil(
-    filteredTransactions.length / transactionsPerPage
+    filteredTransactions.length / transactionsPerPage,
   );
 
   const availableAccounts = getAvailableAccounts();
 
   // FIXED: Use !== false to handle undefined isActive (default to true)
   const hasCashAccounts = cashAccounts.some(
-    (acc) => acc.currency === formData.currency && acc.isActive !== false
+    (acc) => acc.currency === formData.currency && acc.isActive !== false,
   );
   const hasBankAccounts = bankAccounts.some(
-    (acc) => acc.currency === formData.currency && acc.isActive !== false
+    (acc) => acc.currency === formData.currency && acc.isActive !== false,
   );
   const hasMpesaAccounts =
     formData.currency === 0 &&
@@ -1199,7 +1199,7 @@ export function ExpensesAccount() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-w-full">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
@@ -1304,7 +1304,7 @@ export function ExpensesAccount() {
                 <button
                   onClick={() =>
                     setCategoriesCurrentPage((p) =>
-                      Math.min(totalCategoryPages, p + 1)
+                      Math.min(totalCategoryPages, p + 1),
                     )
                   }
                   disabled={categoriesCurrentPage === totalCategoryPages}
@@ -1408,72 +1408,74 @@ export function ExpensesAccount() {
                     <p className="text-gray-500">Try adjusting your search</p>
                   </div>
                 ) : (
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                          Reference
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                          Date
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                          Description
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                          Vendor
-                        </th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                          Amount
-                        </th>
-                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {currentTransactions.map((txn) => (
-                        <tr
-                          key={txn.id}
-                          className="hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                            {txn.reference}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-500">
-                            {txn.date}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900 max-w-[200px] truncate">
-                            {txn.description}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-500">
-                            {txn.vendor !== "Unknown" ? txn.vendor : "-"}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-right font-bold text-gray-900">
-                            {txn.currency} {formatNumber(txn.amount)}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center justify-center gap-2">
-                              <button
-                                onClick={() => openEditModal(txn)}
-                                className="p-1.5 bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
-                                title="Edit"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => openDeleteModal(txn)}
-                                className="p-1.5 bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-                                title="Delete"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
+                  <div className="overflow-x-auto max-w-full">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                            Reference
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                            Date
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                            Description
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                            Vendor
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                            Amount
+                          </th>
+                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                            Actions
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {currentTransactions.map((txn) => (
+                          <tr
+                            key={txn.id}
+                            className="hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                              {txn.reference}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-500">
+                              {txn.date}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-900 max-w-[200px] truncate">
+                              {txn.description}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-500">
+                              {txn.vendor !== "Unknown" ? txn.vendor : "-"}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-right font-bold text-gray-900">
+                              {txn.currency} {formatNumber(txn.amount)}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  onClick={() => openEditModal(txn)}
+                                  className="p-1.5 bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
+                                  title="Edit"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => openDeleteModal(txn)}
+                                  className="p-1.5 bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
 
@@ -1498,7 +1500,7 @@ export function ExpensesAccount() {
                     <button
                       onClick={() =>
                         setTransactionsCurrentPage((p) =>
-                          Math.min(totalTransactionPages, p + 1)
+                          Math.min(totalTransactionPages, p + 1),
                         )
                       }
                       disabled={
@@ -1710,8 +1712,8 @@ export function ExpensesAccount() {
                           formData.paymentAccountType === type
                             ? "border-indigo-500 bg-indigo-50 text-indigo-700"
                             : disabled
-                            ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
-                            : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                              ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
+                              : "border-gray-200 text-gray-600 hover:bg-gray-50"
                         }`}
                       >
                         <Icon className="w-5 h-5" />
@@ -1814,7 +1816,7 @@ export function ExpensesAccount() {
                         </p>
                         <p className="text-sm font-medium text-gray-900">
                           {allCategories.find(
-                            (c) => c.id === formData.categoryId
+                            (c) => c.id === formData.categoryId,
                           )?.name || "Select Category"}
                         </p>
                       </div>
@@ -2029,7 +2031,7 @@ export function ExpensesAccount() {
                                 : ""}
                               {selectedExpense.currency}{" "}
                               {formatNumber(
-                                editFormData.amount - selectedExpense.amount
+                                editFormData.amount - selectedExpense.amount,
                               )}
                             </p>
                           </div>
@@ -2118,7 +2120,7 @@ export function ExpensesAccount() {
                       "Expense record will be permanently deleted",
                       "Associated transaction will be reversed",
                       `${expenseToDelete.currency} ${formatNumber(
-                        expenseToDelete.amount
+                        expenseToDelete.amount,
                       )} will be restored to the payment account`,
                     ].map((text, i) => (
                       <li

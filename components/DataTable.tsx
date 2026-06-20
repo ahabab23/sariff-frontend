@@ -71,7 +71,7 @@ export function DataTable({
   return (
     <div className="bg-white rounded-2xl border-2 border-slate-200 overflow-hidden">
       {/* Table */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto max-w-full">
         <table className="w-full">
           <thead className="bg-slate-50 border-b-2 border-slate-200">
             <tr>
@@ -174,7 +174,7 @@ export function DataTable({
                   >
                     {page}
                   </motion.button>
-                )
+                ),
               )}
             </div>
 

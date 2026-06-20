@@ -449,7 +449,7 @@ export function MPesaAccounts() {
 
   // Filtered agents based on tab - accounts with outstanding balances
   const agentsWithOutstanding = allAgents.filter(
-    (agent) => agent.balance !== 0
+    (agent) => agent.balance !== 0,
   );
 
   const displayedAgents =
@@ -462,7 +462,7 @@ export function MPesaAccounts() {
       agent.phoneNumber.includes(searchTerm) ||
       agent.agentNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       agent.storeNumber.includes(searchTerm) ||
-      agent.code.toLowerCase().includes(searchTerm.toLowerCase())
+      agent.code.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   // Pagination for agents
@@ -470,7 +470,7 @@ export function MPesaAccounts() {
   const indexOfFirstAgent = indexOfLastAgent - agentsPerPage;
   const currentAgents = filteredAgents.slice(
     indexOfFirstAgent,
-    indexOfLastAgent
+    indexOfLastAgent,
   );
   const totalAgentPages = Math.ceil(filteredAgents.length / agentsPerPage);
 
@@ -495,10 +495,10 @@ export function MPesaAccounts() {
   const indexOfFirstTransaction = indexOfLastTransaction - transactionsPerPage;
   const currentTransactions = filteredTransactions.slice(
     indexOfFirstTransaction,
-    indexOfLastTransaction
+    indexOfLastTransaction,
   );
   const totalTransactionPages = Math.ceil(
-    filteredTransactions.length / transactionsPerPage
+    filteredTransactions.length / transactionsPerPage,
   );
 
   const handleExportStatement = () => {
@@ -555,7 +555,7 @@ export function MPesaAccounts() {
         }),
         pageWidth - 14,
         21,
-        { align: "right" }
+        { align: "right" },
       );
 
       doc.setTextColor(107, 114, 128);
@@ -593,32 +593,32 @@ export function MPesaAccounts() {
       doc.text(
         `Phone: ${selectedAgent.phoneNumber} | Store: ${selectedAgent.storeNumber}`,
         18,
-        yPos + 15
+        yPos + 15,
       );
       doc.text(
         `Type: ${selectedAgent.agentType === 0 ? "Agent" : "Till"}`,
         18,
-        yPos + 21
+        yPos + 21,
       );
 
       // Status badge
       doc.setFillColor(
         selectedAgent.isActive ? 220 : 254,
         selectedAgent.isActive ? 252 : 226,
-        selectedAgent.isActive ? 231 : 226
+        selectedAgent.isActive ? 231 : 226,
       );
       doc.rect(pageWidth - 40, yPos + 6, 22, 6, "F");
       doc.setFontSize(7);
       doc.setTextColor(
         selectedAgent.isActive ? 22 : 153,
         selectedAgent.isActive ? 101 : 27,
-        selectedAgent.isActive ? 52 : 27
+        selectedAgent.isActive ? 52 : 27,
       );
       doc.text(
         selectedAgent.isActive ? "ACTIVE" : "INACTIVE",
         pageWidth - 29,
         yPos + 10,
-        { align: "center" }
+        { align: "center" },
       );
 
       // ========== BALANCE SUMMARY ==========
@@ -644,7 +644,7 @@ export function MPesaAccounts() {
       doc.text(
         `KES ${selectedAgent.openingBalance.toLocaleString()}`,
         16,
-        yPos + 14
+        yPos + 14,
       );
 
       // Net Movement
@@ -658,15 +658,15 @@ export function MPesaAccounts() {
       doc.setTextColor(
         netPositive ? 22 : 185,
         netPositive ? 163 : 28,
-        netPositive ? 74 : 28
+        netPositive ? 74 : 28,
       );
       doc.setFont("helvetica", "bold");
       doc.text(
         `${netPositive ? "+" : "-"}KES ${Math.abs(
-          selectedAgent.netMovement
+          selectedAgent.netMovement,
         ).toLocaleString()}`,
         18 + cardWidth + 5,
-        yPos + 14
+        yPos + 14,
       );
 
       // Current Balance
@@ -680,13 +680,13 @@ export function MPesaAccounts() {
       doc.setTextColor(
         balancePositive ? 22 : 185,
         balancePositive ? 163 : 28,
-        balancePositive ? 74 : 28
+        balancePositive ? 74 : 28,
       );
       doc.setFont("helvetica", "bold");
       doc.text(
         `KES ${Math.abs(selectedAgent.balance).toLocaleString()}`,
         18 + (cardWidth + 5) * 2,
-        yPos + 14
+        yPos + 14,
       );
 
       // ========== TRANSACTION HISTORY ==========
@@ -704,7 +704,7 @@ export function MPesaAccounts() {
           `${filteredTransactions.length} transactions`,
           pageWidth - 14,
           yPos,
-          { align: "right" }
+          { align: "right" },
         );
 
         const txnTableData = filteredTransactions.map((txn) => {
@@ -721,7 +721,7 @@ export function MPesaAccounts() {
             isCredit ? "CR" : "DR",
             txn.amount.toLocaleString(),
             `${txn.balanceAfter >= 0 ? "" : "-"}${Math.abs(
-              txn.balanceAfter
+              txn.balanceAfter,
             ).toLocaleString()}`,
           ];
         });
@@ -777,13 +777,13 @@ export function MPesaAccounts() {
               `Page ${data.pageNumber}`,
               pageWidth / 2,
               pageHeight - 12,
-              { align: "center" }
+              { align: "center" },
             );
             doc.text(
               "Computer-generated statement",
               pageWidth - 14,
               pageHeight - 12,
-              { align: "right" }
+              { align: "right" },
             );
           },
         });
@@ -870,8 +870,8 @@ export function MPesaAccounts() {
           <div class="agent-name">${selectedAgent.agentName}</div>
           <div class="agent-details">
             Phone: ${selectedAgent.phoneNumber} | Store: ${
-      selectedAgent.storeNumber
-    } | Type: ${selectedAgent.agentType === 0 ? "Agent" : "Till"}
+              selectedAgent.storeNumber
+            } | Type: ${selectedAgent.agentType === 0 ? "Agent" : "Till"}
           </div>
         </div>
 
@@ -885,8 +885,8 @@ export function MPesaAccounts() {
             <div class="value ${
               selectedAgent.netMovement >= 0 ? "positive" : "negative"
             }">${selectedAgent.netMovement >= 0 ? "+" : "-"}KES ${Math.abs(
-      selectedAgent.netMovement
-    ).toLocaleString()}</div>
+              selectedAgent.netMovement,
+            ).toLocaleString()}</div>
           </div>
           <div class="summary-card">
             <label>Closing Balance</label>
@@ -929,10 +929,10 @@ export function MPesaAccounts() {
                 <td class="text-right ${
                   txn.balanceAfter >= 0 ? "positive" : "negative"
                 }">${txn.balanceAfter >= 0 ? "" : "-"}${Math.abs(
-                  txn.balanceAfter
+                  txn.balanceAfter,
                 ).toLocaleString()}</td>
               </tr>
-            `
+            `,
               )
               .join("")}
           </tbody>
@@ -992,14 +992,14 @@ export function MPesaAccounts() {
         {
           method: "DELETE",
           body: JSON.stringify({ reason: "User requested deletion" }),
-        }
+        },
       );
 
       if (result.success) {
         toast.success(
           `Transaction ${
             selectedTransaction.reference || selectedTransaction.code
-          } deleted successfully!`
+          } deleted successfully!`,
         );
         setShowDeleteTransaction(false);
         setSelectedTransaction(null);
@@ -1284,7 +1284,7 @@ export function MPesaAccounts() {
 
       {/* M-Pesa Agents Table */}
       <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-xl overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-w-full">
           <table className="w-full">
             <thead className="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200">
               <tr>
@@ -1456,7 +1456,7 @@ export function MPesaAccounts() {
               <button
                 onClick={() =>
                   setAgentsCurrentPage((prev) =>
-                    Math.min(prev + 1, totalAgentPages)
+                    Math.min(prev + 1, totalAgentPages),
                   )
                 }
                 disabled={agentsCurrentPage === totalAgentPages}
@@ -1563,7 +1563,7 @@ export function MPesaAccounts() {
                             <p className="text-cyan-200 text-xs">Registered</p>
                             <p className="font-semibold">
                               {new Date(
-                                selectedAgent.createdAt
+                                selectedAgent.createdAt,
                               ).toLocaleDateString()}
                             </p>
                           </div>
@@ -1640,7 +1640,7 @@ export function MPesaAccounts() {
                           value={transactionFilter}
                           onChange={(e) =>
                             setTransactionFilter(
-                              e.target.value as "all" | "credit" | "debit"
+                              e.target.value as "all" | "credit" | "debit",
                             )
                           }
                           className="w-full pl-12 pr-4 py-3 text-slate-400 bg-white border border-slate-300 text-sm font-medium focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all appearance-none cursor-pointer"
@@ -1680,7 +1680,7 @@ export function MPesaAccounts() {
                       </span>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto max-w-full">
                       <table className="w-full">
                         <thead className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white border-b border-slate-300">
                           <tr>
@@ -1728,11 +1728,21 @@ export function MPesaAccounts() {
                               >
                                 <td className="px-4 py-4 text-sm text-slate-600">
                                   <div className="font-semibold text-slate-900">
-                                    {new Date(txn.date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                                    {new Date(txn.date).toLocaleDateString(
+                                      "en-GB",
+                                      {
+                                        day: "2-digit",
+                                        month: "short",
+                                        year: "numeric",
+                                      },
+                                    )}
                                   </div>
                                   <div className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
                                     <Clock className="w-3 h-3" />
-                                    {new Date(txn.date).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+                                    {new Date(txn.date).toLocaleTimeString(
+                                      "en-GB",
+                                      { hour: "2-digit", minute: "2-digit" },
+                                    )}
                                   </div>
                                 </td>
                                 <td className="px-4 py-4 text-sm text-slate-900 font-semibold">
@@ -1823,7 +1833,7 @@ export function MPesaAccounts() {
                       Showing {indexOfFirstTransaction + 1} to{" "}
                       {Math.min(
                         indexOfLastTransaction,
-                        filteredTransactions.length
+                        filteredTransactions.length,
                       )}{" "}
                       of {filteredTransactions.length} transactions
                     </p>
@@ -1831,7 +1841,7 @@ export function MPesaAccounts() {
                       <button
                         onClick={() =>
                           setTransactionsCurrentPage((prev) =>
-                            Math.max(prev - 1, 1)
+                            Math.max(prev - 1, 1),
                           )
                         }
                         disabled={transactionsCurrentPage === 1}
@@ -1842,7 +1852,7 @@ export function MPesaAccounts() {
                       <button
                         onClick={() =>
                           setTransactionsCurrentPage((prev) =>
-                            Math.min(prev + 1, totalTransactionPages)
+                            Math.min(prev + 1, totalTransactionPages),
                           )
                         }
                         disabled={
@@ -2367,7 +2377,7 @@ export function MPesaAccounts() {
                         <input
                           type="text"
                           value={new Date(
-                            selectedAgent.createdAt
+                            selectedAgent.createdAt,
                           ).toLocaleDateString()}
                           disabled
                           className="w-full px-4 py-3.5 bg-slate-50 border-2 border-slate-200 text-slate-500 font-medium cursor-not-allowed"
@@ -2901,7 +2911,7 @@ export function MPesaAccounts() {
                   onClick={(e) => {
                     e.preventDefault();
                     toast.success(
-                      `Transaction ${selectedTransaction.reference} updated successfully!`
+                      `Transaction ${selectedTransaction.reference} updated successfully!`,
                     );
                     setShowEditTransaction(false);
                     setSelectedTransaction(null);
@@ -3117,7 +3127,7 @@ export function MPesaAccounts() {
                                 <p className="text-lg font-bold text-slate-900">
                                   {getAccountTypeLabel(
                                     selectedTransaction.relatedAccount!
-                                      .accountType as import("@/lib/api").AccountType
+                                      .accountType as import("@/lib/api").AccountType,
                                   )}
                                 </p>
                                 <p className="text-xs text-slate-600">
@@ -3290,7 +3300,7 @@ export function MPesaAccounts() {
                                 <p className="text-xs font-bold text-slate-900">
                                   {getAccountTypeLabel(
                                     selectedTransaction.relatedAccount!
-                                      .accountType as import("@/lib/api").AccountType
+                                      .accountType as import("@/lib/api").AccountType,
                                   )}
                                 </p>
                                 <p

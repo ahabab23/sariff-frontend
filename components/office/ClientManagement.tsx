@@ -1555,7 +1555,7 @@ export function ClientManagement() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-w-full">
               <table className="w-full">
                 <thead className="bg-gradient-to-r from-slate-50 to-slate-100 border-b-2 border-slate-200">
                   <tr>
@@ -2117,7 +2117,7 @@ export function ClientManagement() {
                   </div>
                 ) : currentTransactions.length > 0 ? (
                   <div className="bg-white border border-slate-200 overflow-hidden shadow-sm">
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto max-w-full">
                       <table className="w-full">
                         <thead className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-b border-slate-300">
                           <tr>

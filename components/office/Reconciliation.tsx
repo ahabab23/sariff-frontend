@@ -132,7 +132,7 @@ const formatCurrency = (amount: number, currency: Currency): string => {
     {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }
+    },
   )}`;
 };
 
@@ -163,33 +163,33 @@ const parseCSVStatement = (csvContent: string): StatementEntry[] => {
     const values = lines[i].split(",").map((v) => v.trim().replace(/"/g, ""));
 
     const dateIdx = headers.findIndex(
-      (h) => h.includes("date") || h.includes("time")
+      (h) => h.includes("date") || h.includes("time"),
     );
     const descIdx = headers.findIndex(
       (h) =>
         h.includes("desc") ||
         h.includes("particular") ||
-        h.includes("narration")
+        h.includes("narration"),
     );
     const debitIdx = headers.findIndex(
       (h) =>
         h.includes("debit") ||
         h.includes("withdrawal") ||
-        h.includes("paid out")
+        h.includes("paid out"),
     );
     const creditIdx = headers.findIndex(
       (h) =>
-        h.includes("credit") || h.includes("deposit") || h.includes("paid in")
+        h.includes("credit") || h.includes("deposit") || h.includes("paid in"),
     );
     const amountIdx = headers.findIndex(
-      (h) => h.includes("amount") && !h.includes("balance")
+      (h) => h.includes("amount") && !h.includes("balance"),
     );
     const balanceIdx = headers.findIndex((h) => h.includes("balance"));
     const refIdx = headers.findIndex(
       (h) =>
         h.includes("ref") ||
         h.includes("transaction id") ||
-        h.includes("receipt")
+        h.includes("receipt"),
     );
 
     const debitAmt =
@@ -241,7 +241,7 @@ const parseCSVStatement = (csvContent: string): StatementEntry[] => {
 
 const calculateMatchConfidence = (
   txn: TransactionReconciliationDto,
-  entry: StatementEntry
+  entry: StatementEntry,
 ): number => {
   let confidence = 0;
 
@@ -258,7 +258,7 @@ const calculateMatchConfidence = (
     const daysDiff = Math.abs(
       (new Date(txn.transactionDate).getTime() -
         new Date(entry.date).getTime()) /
-        (1000 * 60 * 60 * 24)
+        (1000 * 60 * 60 * 24),
     );
     if (daysDiff <= 1) confidence += 20;
     else if (daysDiff <= 3) confidence += 10;
@@ -293,11 +293,11 @@ const calculateMatchConfidence = (
 export function Reconciliation() {
   // Account states
   const [selectedAccountType, setSelectedAccountType] = useState<AccountType>(
-    AccountType.Bank
+    AccountType.Bank,
   );
   const [selectedAccountId, setSelectedAccountId] = useState<string>(""); // BUG FIX: Start empty, no auto-select
   const [accounts, setAccounts] = useState<AccountReconciliationSummaryDto[]>(
-    []
+    [],
   );
 
   // Transaction states
@@ -306,15 +306,15 @@ export function Reconciliation() {
   >([]);
   const [totalTransactions, setTotalTransactions] = useState(0);
   const [selectedTransactions, setSelectedTransactions] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
 
   // Statement states
   const [statementEntries, setStatementEntries] = useState<StatementEntry[]>(
-    []
+    [],
   );
   const [matchSuggestions, setMatchSuggestions] = useState<MatchSuggestion[]>(
-    []
+    [],
   );
   const [showStatementUpload, setShowStatementUpload] = useState(false);
 
@@ -438,10 +438,10 @@ export function Reconciliation() {
       : 0;
   const unmatchedStatementEntries = statementEntries.filter((e) => !e.matched);
   const highConfidenceMatches = matchSuggestions.filter(
-    (s) => s.confidence >= 80
+    (s) => s.confidence >= 80,
   );
   const filteredAccounts = accounts.filter(
-    (a) => a.accountType === selectedAccountType
+    (a) => a.accountType === selectedAccountType,
   );
   const filteredTransactions = transactions.filter((txn) => {
     return (
@@ -531,7 +531,7 @@ export function Reconciliation() {
         selectedAccountId,
         filter,
         currentPage,
-        itemsPerPage
+        itemsPerPage,
       );
 
       if (response.success && response.data) {
@@ -565,7 +565,7 @@ export function Reconciliation() {
     try {
       const response = await getAccountReconciliationSummary(
         selectedAccountType,
-        selectedAccountId
+        selectedAccountId,
       );
       if (response.success && response.data) {
         setBalanceSummary(response.data);
@@ -650,11 +650,11 @@ export function Reconciliation() {
   const autoPopulateFromStatement = () => {
     if (statementEntries.length > 0) {
       const entriesWithBalance = statementEntries.filter(
-        (e) => e.balance !== undefined
+        (e) => e.balance !== undefined,
       );
       if (entriesWithBalance.length > 0) {
         const lastEntry = entriesWithBalance.sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
         )[0];
         if (lastEntry.balance !== undefined) {
           setActualBalanceInput(lastEntry.balance);
@@ -680,7 +680,7 @@ export function Reconciliation() {
 
       if (entries.length === 0) {
         toast.error(
-          "Could not parse any entries from the file. Please check the format."
+          "Could not parse any entries from the file. Please check the format.",
         );
         return;
       }
@@ -699,12 +699,12 @@ export function Reconciliation() {
 
   const generateMatchSuggestions = (
     txns: TransactionReconciliationDto[] = transactions,
-    entries: StatementEntry[] = statementEntries
+    entries: StatementEntry[] = statementEntries,
   ) => {
     const suggestions: MatchSuggestion[] = [];
     const unmatchedEntries = entries.filter((e) => !e.matched);
     const pendingTxns = txns.filter(
-      (t) => t.reconciliationStatus === ReconciliationStatus.Pending
+      (t) => t.reconciliationStatus === ReconciliationStatus.Pending,
     );
 
     for (const txn of pendingTxns) {
@@ -763,7 +763,7 @@ export function Reconciliation() {
 
       const response = await reconcileTransaction(
         suggestion.transactionId,
-        dto
+        dto,
       );
 
       if (response.success) {
@@ -775,11 +775,11 @@ export function Reconciliation() {
                   matched: true,
                   matchedTransactionId: suggestion.transactionId,
                 }
-              : e
-          )
+              : e,
+          ),
         );
         setMatchSuggestions((prev) =>
-          prev.filter((s) => s.transactionId !== suggestion.transactionId)
+          prev.filter((s) => s.transactionId !== suggestion.transactionId),
         );
         toast.success(`✓ Matched with ${suggestion.confidence}% confidence`);
         await Promise.all([
@@ -818,7 +818,7 @@ export function Reconciliation() {
 
         const response = await reconcileTransaction(
           suggestion.transactionId,
-          dto
+          dto,
         );
         if (response.success) {
           successCount++;
@@ -830,8 +830,8 @@ export function Reconciliation() {
                     matched: true,
                     matchedTransactionId: suggestion.transactionId,
                   }
-                : e
-            )
+                : e,
+            ),
           );
         }
       } catch (error) {
@@ -863,7 +863,7 @@ export function Reconciliation() {
 
   const handleSelectAll = () => {
     const pendingTransactions = filteredTransactions.filter(
-      (t) => t.reconciliationStatus === ReconciliationStatus.Pending
+      (t) => t.reconciliationStatus === ReconciliationStatus.Pending,
     );
     if (selectedTransactions.size === pendingTransactions.length) {
       setSelectedTransactions(new Set());
@@ -889,7 +889,7 @@ export function Reconciliation() {
         toast.success(
           reconcileForm.status === ReconciliationStatus.Matched
             ? "✓ Transaction matched successfully"
-            : "⚠ Transaction marked as unmatched"
+            : "⚠ Transaction marked as unmatched",
         );
         setShowReconcileModal(false);
         setSelectedTransaction(null);
@@ -915,7 +915,7 @@ export function Reconciliation() {
   };
 
   const handleQuickMatch = async (
-    transaction: TransactionReconciliationDto
+    transaction: TransactionReconciliationDto,
   ) => {
     setIsSubmitting(true);
     try {
@@ -969,7 +969,7 @@ export function Reconciliation() {
             status === ReconciliationStatus.Matched
               ? "matched"
               : "marked as unmatched"
-          }`
+          }`,
         );
         setSelectedTransactions(new Set());
         setShowBulkModal(false);
@@ -980,7 +980,7 @@ export function Reconciliation() {
         ]);
       } else {
         toast.error(
-          response.message || "Failed to bulk reconcile transactions"
+          response.message || "Failed to bulk reconcile transactions",
         );
       }
     } catch (error) {
@@ -993,7 +993,7 @@ export function Reconciliation() {
 
   const handleAutoReconcile = async () => {
     const pendingTransactions = transactions.filter(
-      (t) => t.reconciliationStatus === ReconciliationStatus.Pending
+      (t) => t.reconciliationStatus === ReconciliationStatus.Pending,
     );
 
     if (pendingTransactions.length === 0) {
@@ -1032,7 +1032,7 @@ export function Reconciliation() {
   const handleCompleteReconciliation = async () => {
     if (balanceSummary.pendingCount > 0) {
       toast.error(
-        `❌ Cannot complete reconciliation. ${balanceSummary.pendingCount} transactions are still pending.`
+        `❌ Cannot complete reconciliation. ${balanceSummary.pendingCount} transactions are still pending.`,
       );
       return;
     }
@@ -1054,11 +1054,11 @@ export function Reconciliation() {
       if (response.success) {
         if (balanceSummary.unmatchedCount > 0) {
           toast.warning(
-            `⚠ Reconciliation completed with ${balanceSummary.unmatchedCount} unmatched transactions.`
+            `⚠ Reconciliation completed with ${balanceSummary.unmatchedCount} unmatched transactions.`,
           );
         } else {
           toast.success(
-            "✓ Reconciliation completed successfully! All transactions matched."
+            "✓ Reconciliation completed successfully! All transactions matched.",
           );
         }
         setShowCompleteModal(false);
@@ -1134,7 +1134,7 @@ export function Reconciliation() {
         }),
         pageWidth - 14,
         21,
-        { align: "right" }
+        { align: "right" },
       );
 
       doc.setTextColor(107, 114, 128);
@@ -1171,10 +1171,10 @@ export function Reconciliation() {
       doc.setTextColor(107, 114, 128);
       doc.text(
         `Type: ${getAccountTypeLabel(
-          selectedAccount.accountType
+          selectedAccount.accountType,
         )} | Currency: ${getCurrencyLabel(selectedAccount.currency)}`,
         18,
-        yPos + 15
+        yPos + 15,
       );
 
       // Balance comparison
@@ -1185,30 +1185,30 @@ export function Reconciliation() {
         `System: ${getCurrencyLabel(selectedAccount.currency)} ${(
           selectedAccount.systemBalance || 0
         ).toLocaleString()} | Actual: ${getCurrencyLabel(
-          selectedAccount.currency
+          selectedAccount.currency,
         )} ${actualBalanceInput.toLocaleString()}`,
         18,
-        yPos + 21
+        yPos + 21,
       );
 
       // Variance badge
       doc.setFillColor(
         variancePositive ? 220 : 254,
         variancePositive ? 252 : 226,
-        variancePositive ? 231 : 226
+        variancePositive ? 231 : 226,
       );
       doc.rect(pageWidth - 55, yPos + 6, 37, 8, "F");
       doc.setFontSize(7);
       doc.setTextColor(
         variancePositive ? 22 : 185,
         variancePositive ? 101 : 28,
-        variancePositive ? 52 : 28
+        variancePositive ? 52 : 28,
       );
       doc.text(
         `VAR: ${variancePositive ? "+" : ""}${variance.toLocaleString()}`,
         pageWidth - 36.5,
         yPos + 11,
-        { align: "center" }
+        { align: "center" },
       );
 
       // ========== RECONCILIATION SUMMARY ==========
@@ -1222,13 +1222,13 @@ export function Reconciliation() {
       const cardWidth = (pageWidth - 42) / 4;
 
       const matchedCount = filteredTransactions.filter(
-        (t) => t.reconciliationStatus === ReconciliationStatus.Matched
+        (t) => t.reconciliationStatus === ReconciliationStatus.Matched,
       ).length;
       const unmatchedCount = filteredTransactions.filter(
-        (t) => t.reconciliationStatus === ReconciliationStatus.Unmatched
+        (t) => t.reconciliationStatus === ReconciliationStatus.Unmatched,
       ).length;
       const pendingCount = filteredTransactions.filter(
-        (t) => t.reconciliationStatus === ReconciliationStatus.Pending
+        (t) => t.reconciliationStatus === ReconciliationStatus.Pending,
       ).length;
       const totalCount = filteredTransactions.length;
 
@@ -1360,7 +1360,7 @@ export function Reconciliation() {
               `Page ${data.pageNumber}`,
               pageWidth / 2,
               pageHeight - 12,
-              { align: "center" }
+              { align: "center" },
             );
             doc.text("Reconciliation Report", pageWidth - 14, pageHeight - 12, {
               align: "right",
@@ -1371,7 +1371,7 @@ export function Reconciliation() {
 
       const fileName = `${companyName.replace(
         /\s+/g,
-        "_"
+        "_",
       )}_Reconciliation_${selectedAccount.name.replace(/\s+/g, "-")}_${
         new Date().toISOString().split("T")[0]
       }.pdf`;
@@ -1561,7 +1561,7 @@ export function Reconciliation() {
             const typeAccounts = accounts.filter((a) => a.accountType === type);
             const pendingCount = typeAccounts.reduce(
               (sum, a) => sum + a.pendingCount,
-              0
+              0,
             );
             const isSelected = selectedAccountType === type;
 
@@ -1636,7 +1636,7 @@ export function Reconciliation() {
                   <p className="text-lg font-black text-blue-700">
                     {formatCurrency(
                       selectedAccount.balance,
-                      selectedAccount.currency
+                      selectedAccount.currency,
                     )}
                   </p>
                 </div>
@@ -1765,15 +1765,15 @@ export function Reconciliation() {
                           matchRate >= 90
                             ? "bg-emerald-100 text-emerald-700"
                             : matchRate >= 70
-                            ? "bg-amber-100 text-amber-700"
-                            : "bg-red-100 text-red-700"
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-red-100 text-red-700"
                         }`}
                       >
                         {matchRate >= 90
                           ? "Excellent"
                           : matchRate >= 70
-                          ? "Good"
-                          : "Needs Work"}
+                            ? "Good"
+                            : "Needs Work"}
                       </span>
                     </div>
                     <p className="text-2xl font-black text-slate-900">
@@ -1879,14 +1879,14 @@ export function Reconciliation() {
                       <Calendar className="w-4 h-4 text-slate-400" />
                       <span className="text-sm text-white font-medium">
                         {new Date(
-                          reconciliationPeriod.startDate
+                          reconciliationPeriod.startDate,
                         ).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
                         })}
                         {" - "}
                         {new Date(
-                          reconciliationPeriod.endDate
+                          reconciliationPeriod.endDate,
                         ).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
@@ -1913,13 +1913,13 @@ export function Reconciliation() {
                     <p className="text-2xl font-black text-slate-700">
                       {formatCurrency(
                         reconciliationPeriod.openingBalance,
-                        selectedAccount.currency
+                        selectedAccount.currency,
                       )}
                     </p>
                     <p className="text-xs text-slate-400 mt-2">
                       As of{" "}
                       {new Date(
-                        reconciliationPeriod.startDate
+                        reconciliationPeriod.startDate,
                       ).toLocaleDateString()}
                     </p>
                   </div>
@@ -1939,7 +1939,7 @@ export function Reconciliation() {
                       <p className="text-3xl font-black tracking-tight">
                         {formatCurrency(
                           selectedAccount.balance,
-                          selectedAccount.currency
+                          selectedAccount.currency,
                         )}
                       </p>
                       <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/20 text-xs">
@@ -1949,7 +1949,7 @@ export function Reconciliation() {
                             DR:{" "}
                             {formatCurrency(
                               transactionBreakdown.expectedDebits,
-                              selectedAccount.currency
+                              selectedAccount.currency,
                             )}
                           </span>
                         </div>
@@ -1959,7 +1959,7 @@ export function Reconciliation() {
                             CR:{" "}
                             {formatCurrency(
                               transactionBreakdown.expectedCredits,
-                              selectedAccount.currency
+                              selectedAccount.currency,
                             )}
                           </span>
                         </div>
@@ -1973,8 +1973,8 @@ export function Reconciliation() {
                       isReconciliationComplete
                         ? "bg-emerald-50 border-emerald-300"
                         : isBalanceLocked
-                        ? "bg-purple-50 border-purple-300"
-                        : "bg-white border-purple-200 hover:border-purple-400"
+                          ? "bg-purple-50 border-purple-300"
+                          : "bg-white border-purple-200 hover:border-purple-400"
                     }`}
                   >
                     <div className="absolute top-2 right-2 flex items-center gap-1">
@@ -2033,14 +2033,14 @@ export function Reconciliation() {
                       <p className="text-3xl font-black text-emerald-700">
                         {formatCurrency(
                           selectedAccount.balance,
-                          selectedAccount.currency
+                          selectedAccount.currency,
                         )}
                       </p>
                     ) : isBalanceLocked ? (
                       <p className="text-3xl font-black text-purple-700">
                         {formatCurrency(
                           actualBalanceInput,
-                          selectedAccount.currency
+                          selectedAccount.currency,
                         )}
                       </p>
                     ) : (
@@ -2053,7 +2053,7 @@ export function Reconciliation() {
                           value={actualBalanceInput || ""}
                           onChange={(e) =>
                             setActualBalanceInput(
-                              parseFloat(e.target.value) || 0
+                              parseFloat(e.target.value) || 0,
                             )
                           }
                           placeholder="0.00"
@@ -2097,8 +2097,8 @@ export function Reconciliation() {
                       isReconciliationComplete || isBalanced
                         ? "bg-emerald-50 border-emerald-300"
                         : hasLargeVariance
-                        ? "bg-red-50 border-red-300"
-                        : "bg-amber-50 border-amber-300"
+                          ? "bg-red-50 border-red-300"
+                          : "bg-amber-50 border-amber-300"
                     }`}
                   >
                     <div className="absolute top-2 right-2">
@@ -2122,8 +2122,8 @@ export function Reconciliation() {
                         isReconciliationComplete || isBalanced
                           ? "text-emerald-700"
                           : hasLargeVariance
-                          ? "text-red-700"
-                          : "text-amber-700"
+                            ? "text-red-700"
+                            : "text-amber-700"
                       }`}
                     >
                       Variance
@@ -2134,8 +2134,8 @@ export function Reconciliation() {
                         isReconciliationComplete || isBalanced
                           ? "text-emerald-600"
                           : hasLargeVariance
-                          ? "text-red-600"
-                          : "text-amber-600"
+                            ? "text-red-600"
+                            : "text-amber-600"
                       }`}
                     >
                       {isReconciliationComplete || isBalanced ? (
@@ -2145,7 +2145,7 @@ export function Reconciliation() {
                           {currentVariance > 0 ? "+" : ""}
                           {formatCurrency(
                             currentVariance,
-                            selectedAccount.currency
+                            selectedAccount.currency,
                           )}
                         </>
                       )}
@@ -2156,8 +2156,8 @@ export function Reconciliation() {
                         isReconciliationComplete || isBalanced
                           ? "border-emerald-200 text-emerald-600"
                           : hasLargeVariance
-                          ? "border-red-200 text-red-600"
-                          : "border-amber-200 text-amber-600"
+                            ? "border-red-200 text-red-600"
+                            : "border-amber-200 text-amber-600"
                       }`}
                     >
                       <span>
@@ -2206,7 +2206,7 @@ export function Reconciliation() {
                           <span className="font-bold text-blue-600">
                             {formatCurrency(
                               selectedAccount.balance,
-                              selectedAccount.currency
+                              selectedAccount.currency,
                             )}
                           </span>
                         </div>
@@ -2225,7 +2225,7 @@ export function Reconciliation() {
                           <span className="font-bold text-purple-600">
                             {formatCurrency(
                               actualBalanceInput,
-                              selectedAccount.currency
+                              selectedAccount.currency,
                             )}
                           </span>
                         </div>
@@ -2236,7 +2236,7 @@ export function Reconciliation() {
                               width: `${Math.min(
                                 100,
                                 (actualBalanceInput / selectedAccount.balance) *
-                                  100
+                                  100,
                               )}%`,
                             }}
                             transition={{ duration: 0.5, delay: 0.2 }}
@@ -2244,8 +2244,8 @@ export function Reconciliation() {
                               isBalanced
                                 ? "bg-gradient-to-r from-emerald-500 to-teal-500"
                                 : actualBalanceInput > selectedAccount.balance
-                                ? "bg-gradient-to-r from-purple-500 to-pink-500"
-                                : "bg-gradient-to-r from-purple-500 to-purple-600"
+                                  ? "bg-gradient-to-r from-purple-500 to-pink-500"
+                                  : "bg-gradient-to-r from-purple-500 to-purple-600"
                             }`}
                           />
                         </div>
@@ -2279,7 +2279,7 @@ export function Reconciliation() {
                                 <strong>
                                   {formatCurrency(
                                     currentVariance,
-                                    selectedAccount.currency
+                                    selectedAccount.currency,
                                   )}
                                 </strong>{" "}
                                 MORE than expected
@@ -2305,7 +2305,7 @@ export function Reconciliation() {
                                 <strong>
                                   {formatCurrency(
                                     Math.abs(currentVariance),
-                                    selectedAccount.currency
+                                    selectedAccount.currency,
                                   )}
                                 </strong>{" "}
                                 LESS than expected
@@ -2392,7 +2392,7 @@ export function Reconciliation() {
                               <span className="font-bold text-blue-700">
                                 {formatCurrency(
                                   transactionBreakdown.expectedDebits,
-                                  selectedAccount.currency
+                                  selectedAccount.currency,
                                 )}
                               </span>
                             </div>
@@ -2403,7 +2403,7 @@ export function Reconciliation() {
                               <span className="font-bold text-purple-700">
                                 {formatCurrency(
                                   transactionBreakdown.actualDebits,
-                                  selectedAccount.currency
+                                  selectedAccount.currency,
                                 )}
                               </span>
                             </div>
@@ -2411,7 +2411,7 @@ export function Reconciliation() {
                               className={`flex items-center justify-between p-3 rounded ${
                                 Math.abs(
                                   transactionBreakdown.expectedDebits -
-                                    transactionBreakdown.actualDebits
+                                    transactionBreakdown.actualDebits,
                                 ) < 0.01 || isReconciliationComplete
                                   ? "bg-emerald-50 border border-emerald-200"
                                   : "bg-amber-50 border border-amber-200"
@@ -2424,7 +2424,7 @@ export function Reconciliation() {
                                 className={`font-bold ${
                                   Math.abs(
                                     transactionBreakdown.expectedDebits -
-                                      transactionBreakdown.actualDebits
+                                      transactionBreakdown.actualDebits,
                                   ) < 0.01 || isReconciliationComplete
                                     ? "text-emerald-700"
                                     : "text-amber-700"
@@ -2432,13 +2432,13 @@ export function Reconciliation() {
                               >
                                 {Math.abs(
                                   transactionBreakdown.expectedDebits -
-                                    transactionBreakdown.actualDebits
+                                    transactionBreakdown.actualDebits,
                                 ) < 0.01 || isReconciliationComplete
                                   ? "✓ Match"
                                   : formatCurrency(
                                       transactionBreakdown.actualDebits -
                                         transactionBreakdown.expectedDebits,
-                                      selectedAccount.currency
+                                      selectedAccount.currency,
                                     )}
                               </span>
                             </div>
@@ -2459,7 +2459,7 @@ export function Reconciliation() {
                               <span className="font-bold text-blue-700">
                                 {formatCurrency(
                                   transactionBreakdown.expectedCredits,
-                                  selectedAccount.currency
+                                  selectedAccount.currency,
                                 )}
                               </span>
                             </div>
@@ -2470,7 +2470,7 @@ export function Reconciliation() {
                               <span className="font-bold text-purple-700">
                                 {formatCurrency(
                                   transactionBreakdown.actualCredits,
-                                  selectedAccount.currency
+                                  selectedAccount.currency,
                                 )}
                               </span>
                             </div>
@@ -2478,7 +2478,7 @@ export function Reconciliation() {
                               className={`flex items-center justify-between p-3 rounded ${
                                 Math.abs(
                                   transactionBreakdown.expectedCredits -
-                                    transactionBreakdown.actualCredits
+                                    transactionBreakdown.actualCredits,
                                 ) < 0.01 || isReconciliationComplete
                                   ? "bg-emerald-50 border border-emerald-200"
                                   : "bg-amber-50 border border-amber-200"
@@ -2491,7 +2491,7 @@ export function Reconciliation() {
                                 className={`font-bold ${
                                   Math.abs(
                                     transactionBreakdown.expectedCredits -
-                                      transactionBreakdown.actualCredits
+                                      transactionBreakdown.actualCredits,
                                   ) < 0.01 || isReconciliationComplete
                                     ? "text-emerald-700"
                                     : "text-amber-700"
@@ -2499,13 +2499,13 @@ export function Reconciliation() {
                               >
                                 {Math.abs(
                                   transactionBreakdown.expectedCredits -
-                                    transactionBreakdown.actualCredits
+                                    transactionBreakdown.actualCredits,
                                 ) < 0.01 || isReconciliationComplete
                                   ? "✓ Match"
                                   : formatCurrency(
                                       transactionBreakdown.actualCredits -
                                         transactionBreakdown.expectedCredits,
-                                      selectedAccount.currency
+                                      selectedAccount.currency,
                                     )}
                               </span>
                             </div>
@@ -2627,7 +2627,7 @@ export function Reconciliation() {
                         </span>
                         <span className="text-slate-500">
                           {new Date(
-                            suggestion.transaction.transactionDate
+                            suggestion.transaction.transactionDate,
                           ).toLocaleDateString()}
                         </span>
                       </div>
@@ -2638,8 +2638,8 @@ export function Reconciliation() {
                           suggestion.confidence >= 90
                             ? "bg-emerald-100"
                             : suggestion.confidence >= 70
-                            ? "bg-amber-100"
-                            : "bg-orange-100"
+                              ? "bg-amber-100"
+                              : "bg-orange-100"
                         }`}
                       >
                         <Link2
@@ -2647,8 +2647,8 @@ export function Reconciliation() {
                             suggestion.confidence >= 90
                               ? "text-emerald-600"
                               : suggestion.confidence >= 70
-                              ? "text-amber-600"
-                              : "text-orange-600"
+                                ? "text-amber-600"
+                                : "text-orange-600"
                           }`}
                         />
                       </div>
@@ -2667,7 +2667,7 @@ export function Reconciliation() {
                         </span>
                         <span className="text-slate-500">
                           {new Date(
-                            suggestion.statementEntry.date
+                            suggestion.statementEntry.date,
                           ).toLocaleDateString()}
                         </span>
                       </div>
@@ -2678,8 +2678,8 @@ export function Reconciliation() {
                           suggestion.confidence >= 90
                             ? "bg-emerald-100"
                             : suggestion.confidence >= 70
-                            ? "bg-amber-100"
-                            : "bg-orange-100"
+                              ? "bg-amber-100"
+                              : "bg-orange-100"
                         }`}
                       >
                         <p
@@ -2687,8 +2687,8 @@ export function Reconciliation() {
                             suggestion.confidence >= 90
                               ? "text-emerald-700"
                               : suggestion.confidence >= 70
-                              ? "text-amber-700"
-                              : "text-orange-700"
+                                ? "text-amber-700"
+                                : "text-orange-700"
                           }`}
                         >
                           {suggestion.confidence}%
@@ -2711,8 +2711,8 @@ export function Reconciliation() {
                               (s) =>
                                 s.transactionId !== suggestion.transactionId ||
                                 s.statementEntryId !==
-                                  suggestion.statementEntryId
-                            )
+                                  suggestion.statementEntryId,
+                            ),
                           )
                         }
                         className="p-3 bg-slate-200 text-slate-600 hover:bg-slate-300 transition-colors"
@@ -2932,7 +2932,7 @@ export function Reconciliation() {
                 <p className="text-sm">Try adjusting your filters</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto max-w-full">
                 <table className="w-full">
                   <thead className="bg-gradient-to-r from-slate-700 via-slate-800 to-slate-700 text-white">
                     <tr>
@@ -2945,12 +2945,12 @@ export function Reconciliation() {
                             filteredTransactions.filter(
                               (t) =>
                                 t.reconciliationStatus ===
-                                ReconciliationStatus.Pending
+                                ReconciliationStatus.Pending,
                             ).length &&
                           filteredTransactions.filter(
                             (t) =>
                               t.reconciliationStatus ===
-                              ReconciliationStatus.Pending
+                              ReconciliationStatus.Pending,
                           ).length > 0 ? (
                             <CheckSquare className="w-5 h-5" />
                           ) : (
@@ -3019,7 +3019,7 @@ export function Reconciliation() {
                             <span className="text-sm font-medium text-slate-900">
                               {new Date(txn.transactionDate).toLocaleDateString(
                                 "en-US",
-                                { month: "short", day: "numeric" }
+                                { month: "short", day: "numeric" },
                               )}
                             </span>
                           </div>
@@ -3035,10 +3035,12 @@ export function Reconciliation() {
                           </span>
                         </td>
                         <td className="px-4 py-4 text-center">
-                          {(txn.sourceAccountType === selectedAccountType &&
-                          txn.sourceAccountId === selectedAccountId
-                            ? txn.transactionType === TransactionType.Debit
-                            : txn.transactionType === TransactionType.Credit) ? (
+                          {(
+                            txn.sourceAccountType === selectedAccountType &&
+                            txn.sourceAccountId === selectedAccountId
+                              ? txn.transactionType === TransactionType.Debit
+                              : txn.transactionType === TransactionType.Credit
+                          ) ? (
                             <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold">
                               <ArrowUpCircle className="w-3 h-3" />
                               DR
@@ -3246,7 +3248,7 @@ export function Reconciliation() {
                       {currentVariance >= 0 ? "+" : ""}
                       {formatCurrency(
                         currentVariance,
-                        selectedAccount.currency
+                        selectedAccount.currency,
                       )}
                     </span>
                   </div>
@@ -3272,7 +3274,7 @@ export function Reconciliation() {
                       <strong>
                         {formatCurrency(
                           Math.abs(currentVariance),
-                          selectedAccount.currency
+                          selectedAccount.currency,
                         )}
                       </strong>{" "}
                       to balance your account.
@@ -3508,7 +3510,7 @@ export function Reconciliation() {
                     </p>
                     <p className="text-lg font-semibold text-slate-900">
                       {new Date(
-                        selectedTransaction.transactionDate
+                        selectedTransaction.transactionDate,
                       ).toLocaleDateString()}
                     </p>
                   </div>
@@ -3594,7 +3596,7 @@ export function Reconciliation() {
                   <div
                     className={`p-4 border-2 ${
                       Math.abs(
-                        reconcileForm.actualAmount - selectedTransaction.amount
+                        reconcileForm.actualAmount - selectedTransaction.amount,
                       ) < 0.01
                         ? "bg-emerald-50 border-emerald-200"
                         : "bg-red-50 border-red-200"
@@ -3608,7 +3610,7 @@ export function Reconciliation() {
                         className={`text-lg font-bold ${
                           Math.abs(
                             reconcileForm.actualAmount -
-                              selectedTransaction.amount
+                              selectedTransaction.amount,
                           ) < 0.01
                             ? "text-emerald-600"
                             : "text-red-600"
@@ -3616,11 +3618,11 @@ export function Reconciliation() {
                       >
                         {Math.abs(
                           reconcileForm.actualAmount -
-                            selectedTransaction.amount
+                            selectedTransaction.amount,
                         ) < 0.01
                           ? "✓ Matched"
                           : `${getCurrencySymbol(
-                              selectedTransaction.currency
+                              selectedTransaction.currency,
                             )}${(
                               reconcileForm.actualAmount -
                               selectedTransaction.amount
@@ -3819,7 +3821,7 @@ export function Reconciliation() {
                       {isBalanced || isReconciliationComplete
                         ? "✓ Balanced"
                         : `${getCurrencySymbol(
-                            selectedAccount.currency
+                            selectedAccount.currency,
                           )}${currentVariance.toLocaleString()}`}
                     </span>
                   </div>
@@ -3893,9 +3895,9 @@ export function Reconciliation() {
                   ReconciliationStatus.Matched
                     ? "bg-gradient-to-r from-emerald-600 to-teal-600"
                     : selectedTransaction.reconciliationStatus ===
-                      ReconciliationStatus.Unmatched
-                    ? "bg-gradient-to-r from-red-600 to-rose-600"
-                    : "bg-gradient-to-r from-amber-500 to-orange-500"
+                        ReconciliationStatus.Unmatched
+                      ? "bg-gradient-to-r from-red-600 to-rose-600"
+                      : "bg-gradient-to-r from-amber-500 to-orange-500"
                 }`}
               >
                 <div className="flex items-start justify-between">
@@ -3928,7 +3930,7 @@ export function Reconciliation() {
                     </p>
                     <p className="text-lg font-bold text-slate-900">
                       {new Date(
-                        selectedTransaction.transactionDate
+                        selectedTransaction.transactionDate,
                       ).toLocaleDateString()}
                     </p>
                   </div>
@@ -3973,7 +3975,7 @@ export function Reconciliation() {
                     >
                       {selectedTransaction.actualAmount !== null
                         ? `${getCurrencySymbol(
-                            selectedTransaction.currency
+                            selectedTransaction.currency,
                           )}${selectedTransaction.actualAmount.toLocaleString()}`
                         : "Not Set"}
                     </p>
@@ -3983,9 +3985,9 @@ export function Reconciliation() {
                       selectedTransaction.actualAmount === null
                         ? "bg-slate-50 border-slate-200"
                         : selectedTransaction.variance !== null &&
-                          Math.abs(selectedTransaction.variance) < 0.01
-                        ? "bg-emerald-50 border-emerald-200"
-                        : "bg-red-50 border-red-200"
+                            Math.abs(selectedTransaction.variance) < 0.01
+                          ? "bg-emerald-50 border-emerald-200"
+                          : "bg-red-50 border-red-200"
                     }`}
                   >
                     <p className="text-xs font-bold text-slate-700 uppercase mb-1">
@@ -3996,9 +3998,9 @@ export function Reconciliation() {
                         selectedTransaction.actualAmount === null
                           ? "text-slate-400"
                           : selectedTransaction.variance !== null &&
-                            Math.abs(selectedTransaction.variance) < 0.01
-                          ? "text-emerald-600"
-                          : "text-red-600"
+                              Math.abs(selectedTransaction.variance) < 0.01
+                            ? "text-emerald-600"
+                            : "text-red-600"
                       }`}
                     >
                       {selectedTransaction.actualAmount !== null
@@ -4006,7 +4008,7 @@ export function Reconciliation() {
                           Math.abs(selectedTransaction.variance) < 0.01
                           ? "✓ Match"
                           : `${getCurrencySymbol(
-                              selectedTransaction.currency
+                              selectedTransaction.currency,
                             )}${(
                               selectedTransaction.variance || 0
                             ).toLocaleString()}`
@@ -4019,10 +4021,15 @@ export function Reconciliation() {
                     <p className="text-xs font-bold text-slate-500 uppercase mb-2">
                       Type
                     </p>
-                    {(selectedTransaction.sourceAccountType === selectedAccountType &&
-                    selectedTransaction.sourceAccountId === selectedAccountId
-                      ? selectedTransaction.transactionType === TransactionType.Debit
-                      : selectedTransaction.transactionType === TransactionType.Credit) ? (
+                    {(
+                      selectedTransaction.sourceAccountType ===
+                        selectedAccountType &&
+                      selectedTransaction.sourceAccountId === selectedAccountId
+                        ? selectedTransaction.transactionType ===
+                          TransactionType.Debit
+                        : selectedTransaction.transactionType ===
+                          TransactionType.Credit
+                    ) ? (
                       <span className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 font-bold">
                         <ArrowUpCircle className="w-5 h-5" />
                         DEBIT
@@ -4127,8 +4134,8 @@ export function Reconciliation() {
                           rec.status === ReconciliationStatus.Matched
                             ? "bg-emerald-50 border-emerald-200"
                             : rec.status === ReconciliationStatus.Unmatched
-                            ? "bg-red-50 border-red-200"
-                            : "bg-amber-50 border-amber-200"
+                              ? "bg-red-50 border-red-200"
+                              : "bg-amber-50 border-amber-200"
                         }`}
                       >
                         <div className="flex items-start justify-between">
@@ -4169,7 +4176,7 @@ export function Reconciliation() {
                               {Math.abs(rec.variance) < 0.01
                                 ? "✓ Balanced"
                                 : `${getCurrencySymbol(
-                                    rec.currency
+                                    rec.currency,
                                   )}${rec.variance.toLocaleString()}`}
                             </p>
                           </div>
