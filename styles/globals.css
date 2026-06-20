@@ -366,15 +366,14 @@
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   Responsive scaling for high-DPI / display-scaled screens (e.g. Windows at
-   125%). Those screens render the UI ~20% larger, leaving less effective room
-   and causing tight/overflowing layouts. We gently scale the rem-based UI down
-   in this width band so it matches the roomy look of unscaled / larger screens
-   — the automatic equivalent of a manual ~85% browser zoom.
-   Tune the font-size to taste: 15px = milder, 13px ≈ an 80% zoom.
+   Display-scaled screens (e.g. Windows at 125%) render the UI ~25% larger,
+   which feels "zoomed in" and leaves less room. We counter it by shrinking the
+   whole app to 80% in that width band — the exact equivalent of the manual 80%
+   browser zoom that matches an unscaled/Linux view. zoom is honored by
+   Chrome/Edge. Tune 0.8: lower = smaller, 0.85 = milder.
    ────────────────────────────────────────────────────────────────────────── */
 @media (min-width: 768px) and (max-width: 1439px) {
-  html {
-    font-size: 14px;
+  body {
+    zoom: 0.8;
   }
 }
