@@ -385,7 +385,7 @@ export function ExchangeSection() {
                 { label: "Reference", value: exchCode },
                 {
                   label: "Client",
-                  value: client.fullName || client.name || "",
+                  value: client.fullName || "",
                 },
                 { label: "Direction", value: dirLabel },
                 {
@@ -404,7 +404,7 @@ export function ExchangeSection() {
               ],
               phone: client.whatsAppNumber,
               message: buildExchangeMessage({
-                clientName: client.fullName || client.name || "Client",
+                clientName: client.fullName || "Client",
                 direction: dirLabel,
                 amountGiven: formatNumber(res.data.amountGiven || data.amount),
                 currencyGiven: data.direction === 0 ? "USD" : "KES",
@@ -894,14 +894,14 @@ export function ExchangeSection() {
                   type="text"
                   placeholder="Search..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e: any) => setSearchTerm(e.target.value)}
                   className="pl-9 pr-4 py-2 border border-gray-200 text-sm w-48 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
               </div>
               {/* Date Filter */}
               <select
                 value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value as any)}
+                onChange={(e: any) => setDateFilter(e.target.value as any)}
                 className="px-3 py-2 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 <option value="today">Today</option>
@@ -1467,7 +1467,7 @@ function SetRateModal({
               type="number"
               step="0.01"
               value={buyRate}
-              onChange={(e) => setBuyRate(e.target.value)}
+              onChange={(e: any) => setBuyRate(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="130.00"
             />
@@ -1483,7 +1483,7 @@ function SetRateModal({
               type="number"
               step="0.01"
               value={sellRate}
-              onChange={(e) => setSellRate(e.target.value)}
+              onChange={(e: any) => setSellRate(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="140.00"
             />
@@ -1639,7 +1639,7 @@ function NewExchangeModal({
             </label>
             <select
               value={clientId}
-              onChange={(e) => {
+              onChange={(e: any) => {
                 setClientId(e.target.value);
                 const c = clients.find((cl) => cl.id === e.target.value);
                 if (c?.idPassport) setClientIdNumber(c.idPassport);
@@ -1669,7 +1669,7 @@ function NewExchangeModal({
               <input
                 type="text"
                 value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
+                onChange={(e: any) => setClientName(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="Enter walk-in client name"
               />
@@ -1719,7 +1719,7 @@ function NewExchangeModal({
             <input
               type="number"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e: any) => setAmount(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="0.00"
             />
@@ -1733,7 +1733,7 @@ function NewExchangeModal({
             <input
               type="text"
               value={clientIdNumber}
-              onChange={(e) => setClientIdNumber(e.target.value)}
+              onChange={(e: any) => setClientIdNumber(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="ID/Passport number"
             />
@@ -1770,7 +1770,7 @@ function NewExchangeModal({
             </label>
             <textarea
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e: any) => setNotes(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               rows={2}
               placeholder="Additional notes..."
@@ -1892,7 +1892,7 @@ function FundFloatModal({
             <input
               type="number"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e: any) => setAmount(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="0.00"
             />
@@ -1907,7 +1907,7 @@ function FundFloatModal({
                 type="number"
                 step="0.01"
                 value={purchaseRate}
-                onChange={(e) => setPurchaseRate(e.target.value)}
+                onChange={(e: any) => setPurchaseRate(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="Rate paid per USD"
               />
@@ -1920,7 +1920,7 @@ function FundFloatModal({
             </label>
             <select
               value={sourceAccountId}
-              onChange={(e) => setSourceAccountId(e.target.value)}
+              onChange={(e: any) => setSourceAccountId(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="">Select source...</option>
@@ -1950,7 +1950,7 @@ function FundFloatModal({
             <input
               type="text"
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e: any) => setNotes(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="Optional notes"
             />
@@ -2084,7 +2084,7 @@ function WithdrawFloatModal({
             <input
               type="number"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e: any) => setAmount(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="0.00"
             />
@@ -2102,7 +2102,7 @@ function WithdrawFloatModal({
             </label>
             <select
               value={destinationAccountId}
-              onChange={(e) => setDestinationAccountId(e.target.value)}
+              onChange={(e: any) => setDestinationAccountId(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="">Select destination...</option>
@@ -2128,7 +2128,7 @@ function WithdrawFloatModal({
             <input
               type="text"
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e: any) => setNotes(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="Optional notes"
             />
@@ -2284,7 +2284,7 @@ function SettleProfitModal({
             <input
               type="number"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e: any) => setAmount(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="0.00"
             />
@@ -2303,7 +2303,7 @@ function SettleProfitModal({
             </label>
             <select
               value={destinationAccountId}
-              onChange={(e) => setDestinationAccountId(e.target.value)}
+              onChange={(e: any) => setDestinationAccountId(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="">Select destination...</option>
@@ -2322,7 +2322,7 @@ function SettleProfitModal({
             <input
               type="text"
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e: any) => setNotes(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="Optional notes"
             />
@@ -2532,7 +2532,7 @@ function CalculatorModal({
             <input
               type="number"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e: any) => setAmount(e.target.value)}
               className="w-full px-3 py-3 border border-gray-200 text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
               placeholder="0.00"
             />
@@ -2684,7 +2684,7 @@ function DayCloseModal({
               <input
                 type="number"
                 value={kesCount}
-                onChange={(e) => setKesCount(e.target.value)}
+                onChange={(e: any) => setKesCount(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="Count physical KES"
               />
@@ -2699,7 +2699,7 @@ function DayCloseModal({
               <input
                 type="number"
                 value={usdCount}
-                onChange={(e) => setUsdCount(e.target.value)}
+                onChange={(e: any) => setUsdCount(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="Count physical USD"
               />
@@ -2750,7 +2750,7 @@ function DayCloseModal({
             </label>
             <textarea
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e: any) => setNotes(e.target.value)}
               className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               rows={2}
               placeholder={
@@ -2932,7 +2932,7 @@ function TransactionDetailModal({
               <input
                 type="text"
                 value={voidReason}
-                onChange={(e) => setVoidReason(e.target.value)}
+                onChange={(e: any) => setVoidReason(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500"
                 placeholder="Reason for voiding..."
               />
@@ -3001,7 +3001,7 @@ function ModalWrapper({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-      onClick={(e) => {
+      onClick={(e: any) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >

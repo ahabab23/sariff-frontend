@@ -957,7 +957,7 @@ export default function InvoiceManagement() {
                 type="text"
                 placeholder="Search by invoice #, client name, or email..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e: any) => setSearchTerm(e.target.value)}
                 className="w-full pl-12 pr-4 py-4 border-2 border-slate-200 focus:border-blue-500 focus:outline-none transition-all text-slate-900 placeholder-slate-400 font-medium"
               />
             </div>
@@ -966,7 +966,7 @@ export default function InvoiceManagement() {
             <div className="flex gap-3">
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e: any) => setStatusFilter(e.target.value)}
                 className="px-5 py-4 border-2 border-slate-200 focus:border-blue-500 focus:outline-none transition-all font-semibold text-slate-700 min-w-[140px]"
               >
                 <option value="all">All Status</option>
@@ -978,7 +978,7 @@ export default function InvoiceManagement() {
               </select>
               <select
                 value={currencyFilter}
-                onChange={(e) => setCurrencyFilter(e.target.value)}
+                onChange={(e: any) => setCurrencyFilter(e.target.value)}
                 className="px-5 py-4 border-2 border-slate-200 focus:border-blue-500 focus:outline-none transition-all font-semibold text-slate-700 min-w-[120px]"
               >
                 <option value="all">All Currency</option>
@@ -1342,7 +1342,7 @@ export default function InvoiceManagement() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: any) => e.stopPropagation()}
               className="bg-white w-full max-w-6xl max-h-[95vh] overflow-hidden shadow-2xl border-4 border-blue-200"
             >
               {/* Premium Header */}
@@ -1391,7 +1391,7 @@ export default function InvoiceManagement() {
                       <input
                         type="text"
                         value={formData.clientName}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           setFormData({
                             ...formData,
                             clientName: e.target.value,
@@ -1408,7 +1408,7 @@ export default function InvoiceManagement() {
                       <input
                         type="email"
                         value={formData.clientEmail}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           setFormData({
                             ...formData,
                             clientEmail: e.target.value,
@@ -1425,7 +1425,7 @@ export default function InvoiceManagement() {
                       <input
                         type="tel"
                         value={formData.clientPhone}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           setFormData({
                             ...formData,
                             clientPhone: e.target.value,
@@ -1442,7 +1442,7 @@ export default function InvoiceManagement() {
                       <input
                         type="text"
                         value={formData.clientAddress}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           setFormData({
                             ...formData,
                             clientAddress: e.target.value,
@@ -1473,7 +1473,7 @@ export default function InvoiceManagement() {
                       <input
                         type="date"
                         value={formData.date}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           setFormData({ ...formData, date: e.target.value })
                         }
                         className="w-full px-5 py-4 border-2 border-slate-200 focus:border-blue-500 focus:outline-none transition-all text-slate-900 font-medium text-lg"
@@ -1486,7 +1486,7 @@ export default function InvoiceManagement() {
                       <input
                         type="date"
                         value={formData.dueDate}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           setFormData({ ...formData, dueDate: e.target.value })
                         }
                         className="w-full px-5 py-4 border-2 border-slate-200 focus:border-blue-500 focus:outline-none transition-all text-slate-900 font-medium text-lg"
@@ -1498,7 +1498,7 @@ export default function InvoiceManagement() {
                       </label>
                       <select
                         value={formData.currency}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           setFormData({
                             ...formData,
                             currency: e.target.value as "KES" | "USD",
@@ -1548,7 +1548,7 @@ export default function InvoiceManagement() {
                           <input
                             type="text"
                             value={item.description}
-                            onChange={(e) =>
+                            onChange={(e: any) =>
                               updateInvoiceItem(
                                 item.id,
                                 "description",
@@ -1563,7 +1563,7 @@ export default function InvoiceManagement() {
                           <input
                             type="number"
                             value={item.quantity}
-                            onChange={(e) =>
+                            onChange={(e: any) =>
                               updateInvoiceItem(
                                 item.id,
                                 "quantity",
@@ -1579,7 +1579,7 @@ export default function InvoiceManagement() {
                           <input
                             type="number"
                             value={item.unitPrice}
-                            onChange={(e) =>
+                            onChange={(e: any) =>
                               updateInvoiceItem(
                                 item.id,
                                 "unitPrice",
@@ -1633,7 +1633,7 @@ export default function InvoiceManagement() {
                         <input
                           type="number"
                           value={formData.tax}
-                          onChange={(e) =>
+                          onChange={(e: any) =>
                             setFormData({
                               ...formData,
                               tax: parseFloat(e.target.value) || 0,
@@ -1653,7 +1653,7 @@ export default function InvoiceManagement() {
                         <input
                           type="number"
                           value={formData.discount}
-                          onChange={(e) =>
+                          onChange={(e: any) =>
                             setFormData({
                               ...formData,
                               discount: parseFloat(e.target.value) || 0,
@@ -1734,7 +1734,7 @@ export default function InvoiceManagement() {
                   </div>
                   <textarea
                     value={formData.notes}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setFormData({ ...formData, notes: e.target.value })
                     }
                     className="w-full px-5 py-4 border-2 border-slate-200 focus:border-blue-500 focus:outline-none transition-all text-slate-900 font-medium"
@@ -1784,7 +1784,7 @@ export default function InvoiceManagement() {
               initial={{ scale: 0.9, opacity: 0, y: 30 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 30 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: any) => e.stopPropagation()}
               className="bg-white w-full max-w-7xl max-h-[95vh] overflow-hidden shadow-2xl border-4 border-purple-200"
             >
               <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 p-8 border-b-4 border-purple-700">
@@ -1903,7 +1903,7 @@ export default function InvoiceManagement() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: any) => e.stopPropagation()}
               className="bg-white w-full max-w-3xl shadow-2xl border-4 border-blue-200"
             >
               <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-8 border-b-4 border-blue-700">
@@ -2026,7 +2026,7 @@ export default function InvoiceManagement() {
                       <input
                         type={field.type}
                         value={companyInfo[field.field as keyof CompanyInfo]}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           setCompanyInfo({
                             ...companyInfo,
                             [field.field]: e.target.value,

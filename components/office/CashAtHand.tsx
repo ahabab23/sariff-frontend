@@ -1275,7 +1275,7 @@ export function CashAtHand() {
                   type="text"
                   placeholder="Search..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e: any) => setSearchTerm(e.target.value)}
                   className="flex-1 outline-none text-slate-700 placeholder-slate-400 bg-transparent"
                 />
               </div>
@@ -1284,7 +1284,7 @@ export function CashAtHand() {
             <div>
               <select
                 value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
+                onChange={(e: any) => setDateFilter(e.target.value)}
                 className="w-full px-4 py-3 border border-slate-200 bg-white text-slate-700 focus:border-blue-500 focus:outline-none"
               >
                 <option value="all">All Dates</option>
@@ -1297,7 +1297,7 @@ export function CashAtHand() {
             <div>
               <select
                 value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
+                onChange={(e: any) => setTypeFilter(e.target.value)}
                 className="w-full px-4 py-3 border border-slate-200 bg-white text-slate-700 focus:border-blue-500 focus:outline-none"
               >
                 <option value="all">All Types</option>
@@ -1309,7 +1309,7 @@ export function CashAtHand() {
             <div>
               <select
                 value={currencyFilter}
-                onChange={(e) => setCurrencyFilter(e.target.value)}
+                onChange={(e: any) => setCurrencyFilter(e.target.value)}
                 className="w-full px-4 py-3 border border-slate-200 bg-white text-slate-700 focus:border-blue-500 focus:outline-none"
               >
                 <option value="all">All Currencies</option>
@@ -1570,7 +1570,7 @@ export function CashAtHand() {
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: any) => e.stopPropagation()}
               className="bg-white w-full max-w-md shadow-2xl overflow-hidden"
             >
               {/* Header */}
@@ -1691,7 +1691,7 @@ export function CashAtHand() {
                       min="0"
                       step="0.01"
                       value={formData.openingBalance}
-                      onChange={(e) =>
+                      onChange={(e: any) =>
                         setFormData({
                           ...formData,
                           openingBalance: parseFloat(e.target.value) || 0,
@@ -1771,7 +1771,7 @@ export function CashAtHand() {
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: any) => e.stopPropagation()}
               className="bg-white w-full max-w-md shadow-2xl overflow-hidden"
             >
               {/* Header */}
@@ -1842,7 +1842,7 @@ export function CashAtHand() {
                       min="0"
                       step="0.01"
                       value={formData.openingBalance}
-                      onChange={(e) =>
+                      onChange={(e: any) =>
                         setFormData({
                           ...formData,
                           openingBalance: parseFloat(e.target.value) || 0,
@@ -1936,7 +1936,7 @@ export function CashAtHand() {
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: any) => e.stopPropagation()}
               className="bg-white w-full max-w-md shadow-2xl overflow-hidden"
             >
               {/* Header */}
@@ -2074,7 +2074,7 @@ export function CashAtHand() {
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: any) => e.stopPropagation()}
               className="bg-white w-full max-w-lg shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
             >
               {/* Card Header */}

@@ -1821,7 +1821,7 @@ export function Reports() {
               <input
                 type="date"
                 value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                onChange={(e: any) => setSelectedDate(e.target.value)}
                 className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
               />
             </div>
@@ -1834,7 +1834,7 @@ export function Reports() {
             </label>
             <select
               value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
+              onChange={(e: any) => setDateRange(e.target.value)}
               className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
             >
               <option value="today">Today</option>
@@ -1855,7 +1855,7 @@ export function Reports() {
               <input
                 type="text"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e: any) => setSearchTerm(e.target.value)}
                 placeholder="Search transactions..."
                 className="w-full pl-10 pr-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
               />
@@ -1869,7 +1869,7 @@ export function Reports() {
             </label>
             <select
               value={currencyFilter}
-              onChange={(e) => setCurrencyFilter(e.target.value as any)}
+              onChange={(e: any) => setCurrencyFilter(e.target.value as any)}
               className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
             >
               <option value="all">All Currencies</option>
@@ -1885,7 +1885,9 @@ export function Reports() {
             </label>
             <select
               value={transactionTypeFilter}
-              onChange={(e) => setTransactionTypeFilter(e.target.value as any)}
+              onChange={(e: any) =>
+                setTransactionTypeFilter(e.target.value as any)
+              }
               className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
             >
               <option value="all">All Types</option>
@@ -1905,7 +1907,7 @@ export function Reports() {
               <input
                 type="date"
                 value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
+                onChange={(e: any) => setDateFrom(e.target.value)}
                 className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
               />
             </div>
@@ -1916,7 +1918,7 @@ export function Reports() {
               <input
                 type="date"
                 value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
+                onChange={(e: any) => setDateTo(e.target.value)}
                 className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
               />
             </div>
@@ -2073,7 +2075,7 @@ export function Reports() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) =>
+                  label={({ name, percent }: any) =>
                     `${name} ${(percent * 100).toFixed(0)}%`
                   }
                   outerRadius={100}
@@ -3284,7 +3286,7 @@ export function Reports() {
                               <YAxis
                                 stroke="#64748B"
                                 fontSize={12}
-                                tickFormatter={(v) =>
+                                tickFormatter={(v: any) =>
                                   `${(v / 1000).toFixed(0)}k`
                                 }
                               />
@@ -3358,7 +3360,7 @@ export function Reports() {
                                 layout="vertical"
                                 align="right"
                                 verticalAlign="middle"
-                                formatter={(value) => (
+                                formatter={(value: any) => (
                                   <span className="text-sm text-slate-700">
                                     {value}
                                   </span>

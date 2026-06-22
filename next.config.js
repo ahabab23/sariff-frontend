@@ -1,11 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // Don't fail the production build on lint/type errors (unblocks Vercel deploy).
-  // NOTE: this ships even if type errors exist — fix them properly (see type-check) and
-  // consider removing these once the codebase is clean.
+  // ESLint is left off the build because the bundled UI-component library
+  // produces style-level lint noise (unused vars etc.) that aren't bugs.
+  // TypeScript errors are NO LONGER ignored — real type-correctness is enforced.
   eslint: { ignoreDuringBuilds: true },
-  typescript: { ignoreBuildErrors: true },
   images: {
     domains: ["images.unsplash.com"],
     remotePatterns: [

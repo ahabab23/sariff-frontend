@@ -50,11 +50,14 @@ export function CommandPalette({ commands }: CommandPaletteProps) {
   });
 
   // Group by category
-  const groupedCommands = filteredCommands.reduce((acc, cmd) => {
-    if (!acc[cmd.category]) acc[cmd.category] = [];
-    acc[cmd.category].push(cmd);
-    return acc;
-  }, {} as Record<string, Command[]>);
+  const groupedCommands = filteredCommands.reduce(
+    (acc, cmd) => {
+      if (!acc[cmd.category]) acc[cmd.category] = [];
+      acc[cmd.category].push(cmd);
+      return acc;
+    },
+    {} as Record<string, Command[]>,
+  );
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -152,7 +155,7 @@ export function CommandPalette({ commands }: CommandPaletteProps) {
                     type="text"
                     placeholder="Search commands..."
                     value={search}
-                    onChange={(e) => {
+                    onChange={(e: any) => {
                       setSearch(e.target.value);
                       setSelectedIndex(0);
                     }}

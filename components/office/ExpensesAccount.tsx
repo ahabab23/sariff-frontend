@@ -150,7 +150,7 @@ function ModalWrapper({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-      onClick={(e) => {
+      onClick={(e: any) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
@@ -158,7 +158,7 @@ function ModalWrapper({
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e: any) => e.stopPropagation()}
       >
         {children}
       </motion.div>
@@ -1192,7 +1192,7 @@ export function ExpensesAccount() {
                   type="text"
                   placeholder="Search categories..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e: any) => setSearchTerm(e.target.value)}
                   className="pl-9 pr-4 py-2 border border-gray-200 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
               </div>
@@ -1391,7 +1391,7 @@ export function ExpensesAccount() {
                     type="text"
                     placeholder="Search expenses..."
                     value={transactionSearch}
-                    onChange={(e) => setTransactionSearch(e.target.value)}
+                    onChange={(e: any) => setTransactionSearch(e.target.value)}
                     className="w-full pl-9 pr-4 py-2 border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -1577,7 +1577,7 @@ export function ExpensesAccount() {
                   </label>
                   <select
                     value={formData.categoryId}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setFormData({ ...formData, categoryId: e.target.value })
                     }
                     className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -1599,7 +1599,7 @@ export function ExpensesAccount() {
                   <input
                     type="text"
                     value={formData.description}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setFormData({ ...formData, description: e.target.value })
                     }
                     className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -1618,7 +1618,7 @@ export function ExpensesAccount() {
                       step="0.01"
                       min="0"
                       value={formData.amount || ""}
-                      onChange={(e) =>
+                      onChange={(e: any) =>
                         setFormData({
                           ...formData,
                           amount: parseFloat(e.target.value) || 0,
@@ -1634,7 +1634,7 @@ export function ExpensesAccount() {
                     </label>
                     <select
                       value={formData.currency}
-                      onChange={(e) =>
+                      onChange={(e: any) =>
                         setFormData({
                           ...formData,
                           currency: parseInt(e.target.value),
@@ -1662,7 +1662,7 @@ export function ExpensesAccount() {
                   <input
                     type="text"
                     value={formData.vendor}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setFormData({ ...formData, vendor: e.target.value })
                     }
                     className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -1731,7 +1731,7 @@ export function ExpensesAccount() {
                     </label>
                     <select
                       value={formData.paymentAccountId}
-                      onChange={(e) =>
+                      onChange={(e: any) =>
                         setFormData({
                           ...formData,
                           paymentAccountId: e.target.value,
@@ -1772,7 +1772,7 @@ export function ExpensesAccount() {
                     <input
                       type="date"
                       value={formData.expenseDate}
-                      onChange={(e) =>
+                      onChange={(e: any) =>
                         setFormData({
                           ...formData,
                           expenseDate: e.target.value,
@@ -1788,7 +1788,7 @@ export function ExpensesAccount() {
                     <input
                       type="text"
                       value={formData.reference}
-                      onChange={(e) =>
+                      onChange={(e: any) =>
                         setFormData({ ...formData, reference: e.target.value })
                       }
                       className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -1914,7 +1914,7 @@ export function ExpensesAccount() {
                   <input
                     type="text"
                     value={editFormData.description}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setEditFormData({
                         ...editFormData,
                         description: e.target.value,
@@ -1934,7 +1934,7 @@ export function ExpensesAccount() {
                       step="0.01"
                       min="0"
                       value={editFormData.amount || ""}
-                      onChange={(e) =>
+                      onChange={(e: any) =>
                         setEditFormData({
                           ...editFormData,
                           amount: parseFloat(e.target.value) || 0,
@@ -1963,7 +1963,7 @@ export function ExpensesAccount() {
                   <input
                     type="text"
                     value={editFormData.vendor}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setEditFormData({
                         ...editFormData,
                         vendor: e.target.value,
@@ -1980,7 +1980,7 @@ export function ExpensesAccount() {
                   <input
                     type="text"
                     value={editFormData.reference}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setEditFormData({
                         ...editFormData,
                         reference: e.target.value,

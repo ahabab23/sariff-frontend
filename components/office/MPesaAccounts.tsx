@@ -1259,7 +1259,7 @@ export function MPesaAccounts() {
               type="text"
               placeholder="Search by agent name, phone, store number, or agent number..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e: any) => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-4 py-3.5 bg-slate-50 text-slate-400 border-2 border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:border-cyan-500 focus:bg-white focus:shadow-lg focus:shadow-cyan-500/10 transition-all duration-300 placeholder:text-slate-400"
             />
           </div>
@@ -1628,7 +1628,9 @@ export function MPesaAccounts() {
                           type="text"
                           placeholder="Search transactions..."
                           value={transactionSearch}
-                          onChange={(e) => setTransactionSearch(e.target.value)}
+                          onChange={(e: any) =>
+                            setTransactionSearch(e.target.value)
+                          }
                           className="w-full pl-12 pr-4 py-3 text-slate-400 bg-white border border-slate-300 text-sm font-medium focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
                         />
                       </div>
@@ -1638,7 +1640,7 @@ export function MPesaAccounts() {
                         <SlidersHorizontal className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                         <select
                           value={transactionFilter}
-                          onChange={(e) =>
+                          onChange={(e: any) =>
                             setTransactionFilter(
                               e.target.value as "all" | "credit" | "debit",
                             )
@@ -1927,7 +1929,7 @@ export function MPesaAccounts() {
                           <input
                             type="text"
                             value={formData.agentName}
-                            onChange={(e) =>
+                            onChange={(e: any) =>
                               setFormData({
                                 ...formData,
                                 agentName: e.target.value,
@@ -1946,7 +1948,7 @@ export function MPesaAccounts() {
                           <input
                             type="tel"
                             value={formData.phoneNumber}
-                            onChange={(e) =>
+                            onChange={(e: any) =>
                               setFormData({
                                 ...formData,
                                 phoneNumber: e.target.value,
@@ -1965,7 +1967,7 @@ export function MPesaAccounts() {
                           <input
                             type="text"
                             value={formData.agentNumber}
-                            onChange={(e) =>
+                            onChange={(e: any) =>
                               setFormData({
                                 ...formData,
                                 agentNumber: e.target.value,
@@ -1984,7 +1986,7 @@ export function MPesaAccounts() {
                           <input
                             type="text"
                             value={formData.storeNumber}
-                            onChange={(e) =>
+                            onChange={(e: any) =>
                               setFormData({
                                 ...formData,
                                 storeNumber: e.target.value,
@@ -2013,7 +2015,7 @@ export function MPesaAccounts() {
                             name="agentType"
                             value="0"
                             checked={formData.agentType === 0}
-                            onChange={(e) =>
+                            onChange={(e: any) =>
                               setFormData({
                                 ...formData,
                                 agentType: parseInt(e.target.value),
@@ -2048,7 +2050,7 @@ export function MPesaAccounts() {
                             name="agentType"
                             value="1"
                             checked={formData.agentType === 1}
-                            onChange={(e) =>
+                            onChange={(e: any) =>
                               setFormData({
                                 ...formData,
                                 agentType: parseInt(e.target.value),
@@ -2101,7 +2103,7 @@ export function MPesaAccounts() {
                             <input
                               type="number"
                               value={formData.openingBalance}
-                              onChange={(e) =>
+                              onChange={(e: any) =>
                                 setFormData({
                                   ...formData,
                                   openingBalance:
@@ -2263,7 +2265,7 @@ export function MPesaAccounts() {
                           <input
                             type="text"
                             value={editFormData.agentName}
-                            onChange={(e) =>
+                            onChange={(e: any) =>
                               setEditFormData({
                                 ...editFormData,
                                 agentName: e.target.value,
@@ -2313,7 +2315,7 @@ export function MPesaAccounts() {
                           <input
                             type="text"
                             value={editFormData.storeNumber}
-                            onChange={(e) =>
+                            onChange={(e: any) =>
                               setEditFormData({
                                 ...editFormData,
                                 storeNumber: e.target.value,
@@ -2333,7 +2335,7 @@ export function MPesaAccounts() {
                             value={
                               editFormData.isActive ? "active" : "inactive"
                             }
-                            onChange={(e) =>
+                            onChange={(e: any) =>
                               setEditFormData({
                                 ...editFormData,
                                 isActive: e.target.value === "active",
@@ -2355,7 +2357,7 @@ export function MPesaAccounts() {
                         </label>
                         <select
                           value={editFormData.agentType}
-                          onChange={(e) =>
+                          onChange={(e: any) =>
                             setEditFormData({
                               ...editFormData,
                               agentType: parseInt(e.target.value),
@@ -2908,7 +2910,7 @@ export function MPesaAccounts() {
                 </button>
                 <button
                   type="submit"
-                  onClick={(e) => {
+                  onClick={(e: any) => {
                     e.preventDefault();
                     toast.success(
                       `Transaction ${selectedTransaction.reference} updated successfully!`,

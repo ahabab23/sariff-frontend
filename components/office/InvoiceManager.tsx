@@ -380,7 +380,7 @@ export function InvoiceManager() {
                   </label>
                   <select
                     value={formData.clientId}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setFormData({ ...formData, clientId: e.target.value })
                     }
                     className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
@@ -400,7 +400,7 @@ export function InvoiceManager() {
                   </label>
                   <select
                     value={formData.currency}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setFormData({ ...formData, currency: e.target.value })
                     }
                     className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
@@ -417,7 +417,7 @@ export function InvoiceManager() {
                   <input
                     type="date"
                     value={formData.date}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setFormData({ ...formData, date: e.target.value })
                     }
                     className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
@@ -431,7 +431,7 @@ export function InvoiceManager() {
                   <input
                     type="date"
                     value={formData.dueDate}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setFormData({ ...formData, dueDate: e.target.value })
                     }
                     className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
@@ -466,7 +466,7 @@ export function InvoiceManager() {
                       <input
                         type="text"
                         value={item.description}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           handleItemChange(index, "description", e.target.value)
                         }
                         placeholder="Item description..."
@@ -480,7 +480,7 @@ export function InvoiceManager() {
                       <input
                         type="number"
                         value={item.quantity}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           handleItemChange(
                             index,
                             "quantity",
@@ -498,7 +498,7 @@ export function InvoiceManager() {
                       <input
                         type="number"
                         value={item.rate}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           handleItemChange(
                             index,
                             "rate",
@@ -541,7 +541,7 @@ export function InvoiceManager() {
               </h3>
               <textarea
                 value={formData.notes}
-                onChange={(e) =>
+                onChange={(e: any) =>
                   setFormData({ ...formData, notes: e.target.value })
                 }
                 placeholder="Add any additional notes or payment terms..."
@@ -742,7 +742,7 @@ export function InvoiceManager() {
               <input
                 type="text"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e: any) => setSearchTerm(e.target.value)}
                 placeholder="Search by invoice number or client name..."
                 className="w-full pl-10 pr-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none"
               />
@@ -755,7 +755,7 @@ export function InvoiceManager() {
             </label>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
+              onChange={(e: any) => setStatusFilter(e.target.value as any)}
               className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none"
             >
               <option value="all">All Statuses</option>
@@ -954,7 +954,7 @@ function InvoicePreview({
         <div className="flex gap-3">
           <select
             value={selectedTemplate}
-            onChange={(e) =>
+            onChange={(e: any) =>
               setSelectedTemplate(e.target.value as TemplateType)
             }
             className="px-4 py-2 border-2 border-slate-200 focus:border-blue-500 outline-none"

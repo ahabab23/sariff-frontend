@@ -1329,7 +1329,7 @@ export function BankAccounts() {
               type="text"
               placeholder="Search by bank name, account number, or ID..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e: any) => setSearchTerm(e.target.value)}
               className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 text-slate-400 border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-500 focus:bg-white focus:shadow-lg focus:shadow-blue-500/10 transition-all duration-300 placeholder:text-slate-400"
             />
           </div>
@@ -1705,7 +1705,9 @@ export function BankAccounts() {
                           type="text"
                           placeholder="Search transactions..."
                           value={transactionSearch}
-                          onChange={(e) => setTransactionSearch(e.target.value)}
+                          onChange={(e: any) =>
+                            setTransactionSearch(e.target.value)
+                          }
                           className="w-full pl-12 pr-4 py-3 bg-white border border-slate-300 text-slate-400 text-sm font-medium focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                         />
                       </div>
@@ -1716,7 +1718,7 @@ export function BankAccounts() {
                         <SlidersHorizontal className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                         <select
                           value={transactionFilter}
-                          onChange={(e) =>
+                          onChange={(e: any) =>
                             setTransactionFilter(
                               e.target.value as "all" | "credit" | "debit",
                             )
@@ -1735,7 +1737,7 @@ export function BankAccounts() {
                         <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                         <select
                           value={currencyFilter}
-                          onChange={(e) =>
+                          onChange={(e: any) =>
                             setCurrencyFilter(
                               e.target.value as "all" | "KES" | "USD",
                             )
@@ -1981,7 +1983,7 @@ export function BankAccounts() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-white w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: any) => e.stopPropagation()}
             >
               {/* Modal Header */}
               <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 px-6 py-4 border-b-4 border-blue-700">
@@ -2022,7 +2024,7 @@ export function BankAccounts() {
                       <input
                         type="text"
                         value={formData.bankName}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           setFormData({ ...formData, bankName: e.target.value })
                         }
                         placeholder="e.g., Equity Bank"
@@ -2041,7 +2043,7 @@ export function BankAccounts() {
                       <input
                         type="text"
                         value={formData.accountNumber}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           setFormData({
                             ...formData,
                             accountNumber: e.target.value,
@@ -2062,7 +2064,7 @@ export function BankAccounts() {
                       <input
                         type="text"
                         value={formData.branchCode}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           setFormData({
                             ...formData,
                             branchCode: e.target.value,
@@ -2082,7 +2084,7 @@ export function BankAccounts() {
                       </label>
                       <select
                         value={formData.currency}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           setFormData({
                             ...formData,
                             currency: e.target.value as "KES" | "USD",
@@ -2106,7 +2108,7 @@ export function BankAccounts() {
                     <input
                       type="text"
                       value={formData.accountName}
-                      onChange={(e) =>
+                      onChange={(e: any) =>
                         setFormData({
                           ...formData,
                           accountName: e.target.value,
@@ -2132,7 +2134,7 @@ export function BankAccounts() {
                       <input
                         type="number"
                         value={formData.openingBalance}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           setFormData({
                             ...formData,
                             openingBalance: parseFloat(e.target.value) || 0,
@@ -2249,7 +2251,7 @@ export function BankAccounts() {
                     <input
                       type="text"
                       value={editFormData.bankName}
-                      onChange={(e) =>
+                      onChange={(e: any) =>
                         setEditFormData({
                           ...editFormData,
                           bankName: e.target.value,
@@ -2271,7 +2273,7 @@ export function BankAccounts() {
                     <input
                       type="text"
                       value={editFormData.accountName}
-                      onChange={(e) =>
+                      onChange={(e: any) =>
                         setEditFormData({
                           ...editFormData,
                           accountName: e.target.value,
@@ -2292,7 +2294,7 @@ export function BankAccounts() {
                     <input
                       type="text"
                       value={editFormData.branchCode}
-                      onChange={(e) =>
+                      onChange={(e: any) =>
                         setEditFormData({
                           ...editFormData,
                           branchCode: e.target.value,
@@ -2311,7 +2313,7 @@ export function BankAccounts() {
                     </label>
                     <select
                       value={editFormData.isActive ? "active" : "inactive"}
-                      onChange={(e) =>
+                      onChange={(e: any) =>
                         setEditFormData({
                           ...editFormData,
                           isActive: e.target.value === "active",
@@ -3178,7 +3180,7 @@ export function BankAccounts() {
                 </button>
                 <button
                   type="submit"
-                  onClick={(e) => {
+                  onClick={(e: any) => {
                     e.preventDefault();
                     toast.success(
                       `Transaction ${selectedTransaction.reference} updated successfully!`,

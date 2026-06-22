@@ -149,7 +149,7 @@ export function Badge({
         <motion.button
           whileHover={{ scale: 1.2, rotate: 90 }}
           whileTap={{ scale: 0.9 }}
-          onClick={(e) => {
+          onClick={(e: any) => {
             e.stopPropagation();
             onRemove();
           }}

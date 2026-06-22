@@ -605,7 +605,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
             : result.data?.destBalanceAfter;
           const txnCur = isClientPri
             ? result.data?.currency
-            : (result.data?.counterCurrency ?? result.data?.currency);
+            : result.data?.currency;
           const isKES = txnCur === 0 || txnCur === undefined;
           const kesBal = isKES ? (balAfter ?? 0) : (clientInfo.balanceKES ?? 0);
           const usdBal = !isKES
@@ -745,7 +745,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
             <div className="grid grid-cols-2 gap-2">
               <select
                 value={primaryAccountType}
-                onChange={(e) => {
+                onChange={(e: any) => {
                   setPrimaryAccountType(Number(e.target.value) as AccountType);
                   setPrimaryAccountId("");
                   setPrimarySearchTerm("");
@@ -762,7 +762,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
                 <input
                   type="text"
                   value={primarySearchTerm}
-                  onChange={(e) => setPrimarySearchTerm(e.target.value)}
+                  onChange={(e: any) => setPrimarySearchTerm(e.target.value)}
                   placeholder="Search..."
                   className="w-full pl-9 pr-3 py-2.5 border border-slate-200 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm"
                 />
@@ -770,7 +770,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
             </div>
             <select
               value={primaryAccountId}
-              onChange={(e) => setPrimaryAccountId(e.target.value)}
+              onChange={(e: any) => setPrimaryAccountId(e.target.value)}
               className="w-full px-3 py-2.5 border border-slate-200 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-semibold text-sm"
               required
             >
@@ -1062,7 +1062,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
                 <input
                   type="text"
                   value={counterSearchTerm}
-                  onChange={(e) => setCounterSearchTerm(e.target.value)}
+                  onChange={(e: any) => setCounterSearchTerm(e.target.value)}
                   placeholder="Search clients..."
                   className="w-full pl-9 pr-3 py-2.5 border border-slate-200 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm"
                 />
@@ -1071,7 +1071,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
 
             <select
               value={counterAccountId}
-              onChange={(e) => setCounterAccountId(e.target.value)}
+              onChange={(e: any) => setCounterAccountId(e.target.value)}
               className="w-full px-3 py-2.5 border border-slate-200 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-semibold text-sm"
               required
             >
@@ -1116,7 +1116,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
               <input
                 type="number"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e: any) => setAmount(e.target.value)}
                 className="w-full px-3 py-2.5 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-bold text-sm"
                 placeholder="0.00"
                 step="0.01"
@@ -1167,7 +1167,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
                 <input
                   type="number"
                   value={exchangeRate}
-                  onChange={(e) => setExchangeRate(e.target.value)}
+                  onChange={(e: any) => setExchangeRate(e.target.value)}
                   className="w-full px-3 py-2.5 border-2 border-amber-300 bg-amber-50/50 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-bold text-sm"
                   placeholder="e.g., 130.50"
                   step="0.01"
@@ -1235,7 +1235,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
             <input
               type="text"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e: any) => setDescription(e.target.value)}
               className="w-full px-3 py-2.5 border-2 border-blue-300 text-slate-900 bg-blue-50/20 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm font-medium"
               placeholder="e.g., Client deposit, Cash receipt, Bank transfer..."
               required
@@ -1251,7 +1251,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
             <input
               type="date"
               value={dateValue}
-              onChange={(e) => setDateValue(e.target.value)}
+              onChange={(e: any) => setDateValue(e.target.value)}
               className="w-full px-3 py-2.5 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm"
               required
             />
@@ -1264,7 +1264,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
             </label>
             <textarea
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              onChange={(e: any) => setNotes(e.target.value)}
               className="w-full px-3 py-2.5 border border-slate-200 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm resize-none"
               rows={2}
               placeholder="Additional notes..."

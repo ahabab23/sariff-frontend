@@ -1142,7 +1142,7 @@ export function SuperAdminDashboard({
                             type="text"
                             placeholder="Search companies..."
                             value={searchTerm}
-                            onChange={(e) => {
+                            onChange={(e: any) => {
                               setSearchTerm(e.target.value);
                               setCompaniesPage(1);
                             }}
@@ -1151,7 +1151,7 @@ export function SuperAdminDashboard({
                         </div>
                         <select
                           value={companyStatus}
-                          onChange={(e) => {
+                          onChange={(e: any) => {
                             setCompanyStatus(e.target.value);
                             setCompaniesPage(1);
                           }}
@@ -1419,7 +1419,7 @@ export function SuperAdminDashboard({
                           </h3>
                           <select
                             value={alertStatus}
-                            onChange={(e) => {
+                            onChange={(e: any) => {
                               setAlertStatus(e.target.value);
                               setAlertsPage(1);
                             }}
@@ -1877,7 +1877,7 @@ export function SuperAdminDashboard({
                     <div className="flex items-center gap-3">
                       <select
                         value={auditAction}
-                        onChange={(e) => {
+                        onChange={(e: any) => {
                           setAuditAction(e.target.value);
                           setAuditPage(1);
                         }}
@@ -2205,7 +2205,7 @@ export function SuperAdminDashboard({
                         </h3>
                         <select
                           value={logLevel}
-                          onChange={(e) => {
+                          onChange={(e: any) => {
                             setLogLevel(e.target.value);
                             setSystemLogsPage(1);
                           }}
@@ -2464,7 +2464,7 @@ export function SuperAdminDashboard({
                   <input
                     type="text"
                     value={formData.name || ""}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
                     className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-violet-500"
@@ -2477,7 +2477,7 @@ export function SuperAdminDashboard({
                   <input
                     type="text"
                     value={formData.ownerName || ""}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setFormData({ ...formData, ownerName: e.target.value })
                     }
                     className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-violet-500"
@@ -2491,7 +2491,7 @@ export function SuperAdminDashboard({
                 <input
                   type="email"
                   value={formData.email || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-violet-500"
@@ -2505,7 +2505,7 @@ export function SuperAdminDashboard({
                   <input
                     type="text"
                     value={formData.taxId || ""}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setFormData({ ...formData, taxId: e.target.value })
                     }
                     className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-violet-500"
@@ -2518,7 +2518,7 @@ export function SuperAdminDashboard({
                   <input
                     type="url"
                     value={formData.website || ""}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setFormData({ ...formData, website: e.target.value })
                     }
                     className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-violet-500"
@@ -2531,7 +2531,7 @@ export function SuperAdminDashboard({
                 </label>
                 <textarea
                   value={formData.address || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, address: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-violet-500"
@@ -2577,7 +2577,7 @@ export function SuperAdminDashboard({
                 </label>
                 <select
                   value={formData.plan || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, plan: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-violet-500"
@@ -2594,7 +2594,7 @@ export function SuperAdminDashboard({
                 </label>
                 <select
                   value={formData.status || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, status: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-violet-500"
@@ -2613,7 +2613,7 @@ export function SuperAdminDashboard({
                 <input
                   type="number"
                   value={formData.monthlyFee || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, monthlyFee: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-violet-500"
@@ -2627,7 +2627,7 @@ export function SuperAdminDashboard({
                 <input
                   type="date"
                   value={formData.expiresAt || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, expiresAt: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-violet-500"
@@ -2681,7 +2681,7 @@ export function SuperAdminDashboard({
                 <input
                   type="password"
                   value={formData.password || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-blue-500"
@@ -2695,7 +2695,7 @@ export function SuperAdminDashboard({
                 <input
                   type="password"
                   value={formData.confirmPassword || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({
                       ...formData,
                       confirmPassword: e.target.value,
@@ -2748,7 +2748,7 @@ export function SuperAdminDashboard({
                 </label>
                 <textarea
                   value={formData.reason || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, reason: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-red-500"
@@ -2796,7 +2796,7 @@ export function SuperAdminDashboard({
                 <input
                   type="text"
                   value={formData.name || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-emerald-500"
@@ -2810,7 +2810,7 @@ export function SuperAdminDashboard({
                 <input
                   type="text"
                   value={formData.ownerName || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, ownerName: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-emerald-500"
@@ -2824,7 +2824,7 @@ export function SuperAdminDashboard({
                 <input
                   type="text"
                   value={formData.whatsAppNumber || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, whatsAppNumber: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-emerald-500"
@@ -2838,7 +2838,7 @@ export function SuperAdminDashboard({
                 <input
                   type="email"
                   value={formData.email || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-emerald-500"
@@ -2852,7 +2852,7 @@ export function SuperAdminDashboard({
                 <input
                   type="password"
                   value={formData.password || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-emerald-500"
@@ -2896,7 +2896,7 @@ export function SuperAdminDashboard({
                 <input
                   type="text"
                   value={formData.ipAddress || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, ipAddress: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-red-500"
@@ -2909,7 +2909,7 @@ export function SuperAdminDashboard({
                 </label>
                 <textarea
                   value={formData.reason || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, reason: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-red-500"
@@ -2923,7 +2923,7 @@ export function SuperAdminDashboard({
                 <input
                   type="datetime-local"
                   value={formData.blockUntil || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, blockUntil: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-red-500"
@@ -2969,7 +2969,7 @@ export function SuperAdminDashboard({
                 <input
                   type="text"
                   value={formData.ipAddress || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, ipAddress: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-emerald-500"
@@ -2983,7 +2983,7 @@ export function SuperAdminDashboard({
                 <input
                   type="text"
                   value={formData.description || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-emerald-500"
@@ -3029,7 +3029,7 @@ export function SuperAdminDashboard({
                 </label>
                 <select
                   value={formData.companyId || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, companyId: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-emerald-500"
@@ -3050,7 +3050,7 @@ export function SuperAdminDashboard({
                   <input
                     type="number"
                     value={formData.amount || ""}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setFormData({ ...formData, amount: e.target.value })
                     }
                     className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-emerald-500"
@@ -3063,7 +3063,7 @@ export function SuperAdminDashboard({
                   </label>
                   <select
                     value={formData.currency || "KES"}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setFormData({ ...formData, currency: e.target.value })
                     }
                     className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-emerald-500"
@@ -3079,7 +3079,7 @@ export function SuperAdminDashboard({
                 </label>
                 <select
                   value={formData.paymentMethod || "M-Pesa"}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, paymentMethod: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-emerald-500"
@@ -3097,7 +3097,7 @@ export function SuperAdminDashboard({
                 <input
                   type="text"
                   value={formData.reference || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, reference: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-emerald-500"
@@ -3143,7 +3143,7 @@ export function SuperAdminDashboard({
                 </label>
                 <textarea
                   value={formData.notes || ""}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setFormData({ ...formData, notes: e.target.value })
                   }
                   className="w-full px-4 py-3 bg-slate-800 border border-white/10 text-white focus:outline-none focus:border-emerald-500"
@@ -3260,7 +3260,7 @@ function Modal({
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e: any) => e.stopPropagation()}
         className={`bg-slate-900 border border-white/10 shadow-2xl w-full ${sizeClasses[size]} overflow-hidden`}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-slate-900/50">

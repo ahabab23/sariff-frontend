@@ -1518,7 +1518,7 @@ export function ClientManagement() {
               type="text"
               placeholder="Search by name, phone, code..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value.toLowerCase())}
+              onChange={(e: any) => setSearchTerm(e.target.value.toLowerCase())}
               className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 border-slate-200 text-sm font-medium focus:outline-none text-slate-600
                focus:border-blue-500 focus:bg-white focus:shadow-lg focus:shadow-blue-500/10 transition-all duration-300 placeholder:text-slate-400"
             />
@@ -2040,7 +2040,9 @@ export function ClientManagement() {
                           type="text"
                           placeholder="Search transactions..."
                           value={transactionSearch}
-                          onChange={(e) => setTransactionSearch(e.target.value)}
+                          onChange={(e: any) =>
+                            setTransactionSearch(e.target.value)
+                          }
                           className="w-full pl-12 pr-4 py-3 bg-white border text-slate-600 border-slate-300 text-sm font-medium focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                         />
                       </div>
@@ -2052,7 +2054,7 @@ export function ClientManagement() {
                         <SlidersHorizontal className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                         <select
                           value={transactionFilter}
-                          onChange={(e) =>
+                          onChange={(e: any) =>
                             setTransactionFilter(
                               e.target.value as "all" | "credit" | "debit",
                             )
@@ -2072,7 +2074,7 @@ export function ClientManagement() {
                         <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                         <select
                           value={currencyFilter}
-                          onChange={(e) =>
+                          onChange={(e: any) =>
                             setCurrencyFilter(
                               e.target.value as "all" | "KES" | "USD",
                             )
@@ -2727,7 +2729,7 @@ export function ClientManagement() {
                       <input
                         type="text"
                         value={editTransactionForm.reference}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           setEditTransactionForm({
                             ...editTransactionForm,
                             reference: e.target.value,
@@ -2745,7 +2747,7 @@ export function ClientManagement() {
                     <input
                       type="text"
                       value={editTransactionForm.description}
-                      onChange={(e) =>
+                      onChange={(e: any) =>
                         setEditTransactionForm({
                           ...editTransactionForm,
                           description: e.target.value,
@@ -2809,7 +2811,7 @@ export function ClientManagement() {
                     </label>
                     <textarea
                       value={editTransactionForm.notes}
-                      onChange={(e) =>
+                      onChange={(e: any) =>
                         setEditTransactionForm({
                           ...editTransactionForm,
                           notes: e.target.value,
@@ -3322,7 +3324,7 @@ export function ClientManagement() {
                           type="text"
                           required
                           value={formData.fullName}
-                          onChange={(e) =>
+                          onChange={(e: any) =>
                             setFormData({
                               ...formData,
                               fullName: e.target.value,
@@ -3341,7 +3343,7 @@ export function ClientManagement() {
                           type="tel"
                           required
                           value={formData.whatsAppNumber}
-                          onChange={(e) =>
+                          onChange={(e: any) =>
                             setFormData({
                               ...formData,
                               whatsAppNumber: e.target.value,
@@ -3359,7 +3361,7 @@ export function ClientManagement() {
                         <input
                           type="email"
                           value={formData.email}
-                          onChange={(e) =>
+                          onChange={(e: any) =>
                             setFormData({ ...formData, email: e.target.value })
                           }
                           className="w-full px-3 py-2 bg-slate-50 border border-slate-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 focus:bg-white transition-all font-medium text-slate-900 text-sm placeholder:text-slate-400"
@@ -3374,7 +3376,7 @@ export function ClientManagement() {
                         <input
                           type="text"
                           value={formData.idPassport}
-                          onChange={(e) =>
+                          onChange={(e: any) =>
                             setFormData({
                               ...formData,
                               idPassport: e.target.value,
@@ -3485,7 +3487,7 @@ export function ClientManagement() {
                         <input
                           type="password"
                           value={formData.password}
-                          onChange={(e) =>
+                          onChange={(e: any) =>
                             setFormData({
                               ...formData,
                               password: e.target.value,
@@ -3525,7 +3527,7 @@ export function ClientManagement() {
                             type="number"
                             step="0.01"
                             value={formData.openingBalanceKES}
-                            onChange={(e) =>
+                            onChange={(e: any) =>
                               setFormData({
                                 ...formData,
                                 openingBalanceKES:
@@ -3550,7 +3552,7 @@ export function ClientManagement() {
                             type="number"
                             step="0.01"
                             value={formData.openingBalanceUSD}
-                            onChange={(e) =>
+                            onChange={(e: any) =>
                               setFormData({
                                 ...formData,
                                 openingBalanceUSD:
@@ -3709,7 +3711,7 @@ export function ClientManagement() {
                       <input
                         type="text"
                         value={editFormData.fullName}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           setEditFormData({
                             ...editFormData,
                             fullName: e.target.value,
@@ -3727,7 +3729,7 @@ export function ClientManagement() {
                       <input
                         type="tel"
                         value={editFormData.whatsAppNumber}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           setEditFormData({
                             ...editFormData,
                             whatsAppNumber: e.target.value,
@@ -3748,7 +3750,7 @@ export function ClientManagement() {
                       <input
                         type="email"
                         value={editFormData.email}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           setEditFormData({
                             ...editFormData,
                             email: e.target.value,
@@ -3766,7 +3768,7 @@ export function ClientManagement() {
                       <input
                         type="text"
                         value={editFormData.idPassport}
-                        onChange={(e) =>
+                        onChange={(e: any) =>
                           setEditFormData({
                             ...editFormData,
                             idPassport: e.target.value,
@@ -4094,7 +4096,7 @@ export function ClientManagement() {
                 <input
                   type="password"
                   value={convertPassword}
-                  onChange={(e) => setConvertPassword(e.target.value)}
+                  onChange={(e: any) => setConvertPassword(e.target.value)}
                   className="w-full px-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-slate-900 font-medium focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
                   placeholder="Enter password for client"
                 />

@@ -456,7 +456,7 @@ export function OfficeSettings({
                   <input
                     type="text"
                     value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
+                    onChange={(e: any) => setCompanyName(e.target.value)}
                     placeholder="Enter your company name"
                     className="w-full px-4 py-3 border-2 border-purple-200 focus:border-purple-500 outline-none bg-white"
                     readOnly
@@ -648,7 +648,7 @@ export function OfficeSettings({
             <input
               type="text"
               value={categorySearchTerm}
-              onChange={(e) => setCategorySearchTerm(e.target.value)}
+              onChange={(e: any) => setCategorySearchTerm(e.target.value)}
               placeholder="Search categories..."
               className="w-full pl-10 pr-4 py-3 border-2 border-amber-200 focus:border-amber-500 outline-none bg-white"
             />
@@ -796,7 +796,7 @@ export function OfficeSettings({
             <input
               type="text"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e: any) => setSearchTerm(e.target.value)}
               placeholder="Search clients by name, code, or phone..."
               className="w-full pl-10 pr-4 py-3 border-2 border-emerald-200 focus:border-emerald-500 outline-none bg-white"
             />
@@ -921,7 +921,7 @@ export function OfficeSettings({
               <input
                 type="text"
                 value={officeName}
-                onChange={(e) => setOfficeName(e.target.value)}
+                onChange={(e: any) => setOfficeName(e.target.value)}
                 placeholder="Enter office name"
                 className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
               />
@@ -935,7 +935,7 @@ export function OfficeSettings({
                 <input
                   type="email"
                   value={officeEmail}
-                  onChange={(e) => setOfficeEmail(e.target.value)}
+                  onChange={(e: any) => setOfficeEmail(e.target.value)}
                   placeholder="Enter email address"
                   className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
                 />
@@ -948,7 +948,7 @@ export function OfficeSettings({
                 <input
                   type="tel"
                   value={officePhone}
-                  onChange={(e) => setOfficePhone(e.target.value)}
+                  onChange={(e: any) => setOfficePhone(e.target.value)}
                   placeholder="Enter phone number"
                   className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
                 />
@@ -962,7 +962,7 @@ export function OfficeSettings({
               <input
                 type="text"
                 value={officeAddress}
-                onChange={(e) => setOfficeAddress(e.target.value)}
+                onChange={(e: any) => setOfficeAddress(e.target.value)}
                 placeholder="Enter office address"
                 className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
               />
@@ -993,7 +993,7 @@ export function OfficeSettings({
             </label>
             <select
               value={defaultCurrency}
-              onChange={(e) => setDefaultCurrency(e.target.value)}
+              onChange={(e: any) => setDefaultCurrency(e.target.value)}
               className="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 outline-none bg-white"
             >
               <option value="KES">KES - Kenyan Shilling</option>
@@ -1031,7 +1031,7 @@ export function OfficeSettings({
                 type="checkbox"
                 className="sr-only peer"
                 checked={autoReconcile}
-                onChange={(e) => setAutoReconcile(e.target.checked)}
+                onChange={(e: any) => setAutoReconcile(e.target.checked)}
               />
               <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
             </label>
@@ -1048,7 +1048,7 @@ export function OfficeSettings({
                 type="checkbox"
                 className="sr-only peer"
                 checked={emailNotifications}
-                onChange={(e) => setEmailNotifications(e.target.checked)}
+                onChange={(e: any) => setEmailNotifications(e.target.checked)}
               />
               <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
             </label>
@@ -1082,7 +1082,7 @@ export function OfficeSettings({
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: any) => e.stopPropagation()}
               className="bg-white shadow-2xl max-w-md w-full overflow-hidden"
             >
               <div className="bg-gradient-to-r from-amber-600 to-orange-600 p-6 text-white">
@@ -1120,7 +1120,7 @@ export function OfficeSettings({
                   <input
                     type="text"
                     value={categoryName}
-                    onChange={(e) => setCategoryName(e.target.value)}
+                    onChange={(e: any) => setCategoryName(e.target.value)}
                     placeholder="e.g., Office Supplies, Utilities, Transport"
                     className="w-full px-4 py-3 border-2 border-slate-200 focus:border-amber-500 outline-none bg-white"
                   />
@@ -1131,7 +1131,9 @@ export function OfficeSettings({
                   </label>
                   <textarea
                     value={categoryDescription}
-                    onChange={(e) => setCategoryDescription(e.target.value)}
+                    onChange={(e: any) =>
+                      setCategoryDescription(e.target.value)
+                    }
                     placeholder="Brief description of this expense category..."
                     rows={3}
                     className="w-full px-4 py-3 border-2 border-slate-200 focus:border-amber-500 outline-none bg-white resize-none"
@@ -1190,7 +1192,7 @@ export function OfficeSettings({
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: any) => e.stopPropagation()}
               className="bg-white shadow-2xl max-w-md w-full overflow-hidden"
             >
               {/* Header */}
@@ -1303,7 +1305,7 @@ export function OfficeSettings({
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: any) => e.stopPropagation()}
               className="bg-white shadow-2xl max-w-md w-full overflow-hidden"
             >
               <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 text-white">
@@ -1357,7 +1359,7 @@ export function OfficeSettings({
                     <input
                       type={showPassword ? "text" : "password"}
                       value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
+                      onChange={(e: any) => setNewPassword(e.target.value)}
                       placeholder="Enter new password"
                       className="w-full px-4 py-3 pr-10 border-2 border-slate-200 focus:border-emerald-500 outline-none bg-white"
                     />
@@ -1381,7 +1383,7 @@ export function OfficeSettings({
                   <input
                     type={showPassword ? "text" : "password"}
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={(e: any) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm new password"
                     className="w-full px-4 py-3 border-2 border-slate-200 focus:border-emerald-500 outline-none bg-white"
                   />

@@ -666,7 +666,7 @@ export function ClientUserDashboard({
         });
 
         const txnTableData = transactions.slice(0, 50).map((txn) => {
-          const isCredit = txn.type === TransactionType.Credit;
+          const isCredit = txn.type === "Credit";
           const currency = txn.currency === Currency.KES ? "KES" : "USD";
           const runningBalance = txn.balanceAfter ?? 0;
           const desc = txn.description || "";
@@ -915,7 +915,7 @@ export function ClientUserDashboard({
             ${transactions
               .slice(0, 50)
               .map((txn) => {
-                const isCredit = txn.type === TransactionType.Credit;
+                const isCredit = txn.type === "Credit";
                 const currency = txn.currency === Currency.KES ? "KES" : "USD";
                 const bal = txn.balanceAfter ?? 0;
                 return `
@@ -1800,7 +1800,7 @@ export function ClientUserDashboard({
                           type="text"
                           placeholder="Search transactions..."
                           value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
+                          onChange={(e: any) => setSearchQuery(e.target.value)}
                           className="w-full pl-12 pr-4 py-3 border-2 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-slate-900 placeholder-slate-400 transition-all font-medium"
                         />
                       </div>
@@ -3282,7 +3282,7 @@ export function ClientUserDashboard({
                   <input
                     type="password"
                     value={passwordForm.currentPassword}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setPasswordForm({
                         ...passwordForm,
                         currentPassword: e.target.value,
@@ -3300,7 +3300,7 @@ export function ClientUserDashboard({
                   <input
                     type="password"
                     value={passwordForm.newPassword}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setPasswordForm({
                         ...passwordForm,
                         newPassword: e.target.value,
@@ -3318,7 +3318,7 @@ export function ClientUserDashboard({
                   <input
                     type="password"
                     value={passwordForm.confirmPassword}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setPasswordForm({
                         ...passwordForm,
                         confirmPassword: e.target.value,

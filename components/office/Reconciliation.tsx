@@ -1178,12 +1178,11 @@ export function Reconciliation() {
       );
 
       // Balance comparison
-      const variance =
-        actualBalanceInput - (selectedAccount.systemBalance || 0);
+      const variance = actualBalanceInput - (selectedAccount.balance || 0);
       const variancePositive = variance >= 0;
       doc.text(
         `System: ${getCurrencyLabel(selectedAccount.currency)} ${(
-          selectedAccount.systemBalance || 0
+          selectedAccount.balance || 0
         ).toLocaleString()} | Actual: ${getCurrencyLabel(
           selectedAccount.currency,
         )} ${actualBalanceInput.toLocaleString()}`,
@@ -1609,7 +1608,7 @@ export function Reconciliation() {
               <div className="relative">
                 <select
                   value={selectedAccountId}
-                  onChange={(e) => handleAccountSelect(e.target.value)}
+                  onChange={(e: any) => handleAccountSelect(e.target.value)}
                   className="w-full px-4 py-3 border-2 border-slate-300 focus:border-blue-500 focus:outline-none text-lg font-semibold appearance-none bg-white cursor-pointer transition-all hover:border-slate-400"
                 >
                   <option value="">-- Choose an account to reconcile --</option>
@@ -2051,7 +2050,7 @@ export function Reconciliation() {
                         <input
                           type="number"
                           value={actualBalanceInput || ""}
-                          onChange={(e) =>
+                          onChange={(e: any) =>
                             setActualBalanceInput(
                               parseFloat(e.target.value) || 0,
                             )
@@ -2747,7 +2746,7 @@ export function Reconciliation() {
                   <input
                     type="text"
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e: any) => setSearchTerm(e.target.value)}
                     placeholder="Search transactions..."
                     className="w-full pl-10 pr-4 py-2.5 border-2 border-slate-200 focus:border-blue-500 focus:outline-none transition-all"
                   />
@@ -2840,7 +2839,7 @@ export function Reconciliation() {
                     </label>
                     <select
                       value={statusFilter}
-                      onChange={(e) => {
+                      onChange={(e: any) => {
                         setStatusFilter(e.target.value as typeof statusFilter);
                         setCurrentPage(1);
                       }}
@@ -2859,7 +2858,7 @@ export function Reconciliation() {
                     <input
                       type="date"
                       value={dateFrom}
-                      onChange={(e) => {
+                      onChange={(e: any) => {
                         setDateFrom(e.target.value);
                         setCurrentPage(1);
                       }}
@@ -2873,7 +2872,7 @@ export function Reconciliation() {
                     <input
                       type="date"
                       value={dateTo}
-                      onChange={(e) => {
+                      onChange={(e: any) => {
                         setDateTo(e.target.value);
                         setCurrentPage(1);
                       }}
@@ -3212,7 +3211,7 @@ export function Reconciliation() {
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: any) => e.stopPropagation()}
               className="bg-white shadow-2xl max-w-md w-full overflow-hidden rounded-lg"
             >
               <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-6 text-white">
@@ -3259,7 +3258,7 @@ export function Reconciliation() {
                   </label>
                   <textarea
                     value={adjustmentNote}
-                    onChange={(e) => setAdjustmentNote(e.target.value)}
+                    onChange={(e: any) => setAdjustmentNote(e.target.value)}
                     placeholder="e.g., Bank charges not recorded, Interest income, etc."
                     rows={3}
                     className="w-full px-4 py-3 border-2 border-slate-200 focus:border-amber-500 focus:outline-none rounded-lg transition-all resize-none"
@@ -3320,7 +3319,7 @@ export function Reconciliation() {
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: any) => e.stopPropagation()}
               className="bg-white shadow-2xl max-w-lg w-full overflow-hidden"
             >
               <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-white">
@@ -3404,7 +3403,7 @@ export function Reconciliation() {
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: any) => e.stopPropagation()}
               className="bg-white shadow-2xl max-w-md w-full overflow-hidden"
             >
               <div className="bg-slate-800 p-6 text-white">
@@ -3459,7 +3458,7 @@ export function Reconciliation() {
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: any) => e.stopPropagation()}
               className="bg-white shadow-2xl max-w-lg w-full overflow-hidden"
             >
               <div className="bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 p-6 text-white">
@@ -3522,7 +3521,7 @@ export function Reconciliation() {
                   <input
                     type="number"
                     value={reconcileForm.actualAmount || ""}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setReconcileForm({
                         ...reconcileForm,
                         actualAmount: parseFloat(e.target.value) || 0,
@@ -3581,7 +3580,7 @@ export function Reconciliation() {
                   </label>
                   <textarea
                     value={reconcileForm.notes}
-                    onChange={(e) =>
+                    onChange={(e: any) =>
                       setReconcileForm({
                         ...reconcileForm,
                         notes: e.target.value,
@@ -3671,7 +3670,7 @@ export function Reconciliation() {
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: any) => e.stopPropagation()}
               className="bg-white shadow-2xl max-w-md w-full overflow-hidden"
             >
               <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 text-white">
@@ -3753,7 +3752,7 @@ export function Reconciliation() {
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: any) => e.stopPropagation()}
               className="bg-white shadow-2xl max-w-lg w-full overflow-hidden"
             >
               <div className="bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 p-6 text-white">
@@ -3886,7 +3885,7 @@ export function Reconciliation() {
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: any) => e.stopPropagation()}
               className="bg-white shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
             >
               <div
@@ -4088,7 +4087,7 @@ export function Reconciliation() {
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e: any) => e.stopPropagation()}
               className="bg-white shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col"
             >
               <div className="bg-gradient-to-r from-slate-700 via-slate-800 to-slate-700 p-6 text-white">

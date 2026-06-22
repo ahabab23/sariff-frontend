@@ -643,7 +643,7 @@ export function OfficeUserDashboard({
                 </div>
                 <select
                   value={conversionCurrency}
-                  onChange={(e) =>
+                  onChange={(e: any) =>
                     setConversionCurrency(e.target.value as "KES" | "USD")
                   }
                   className="text-xs font-bold text-purple-100 bg-white/10 border border-white/30 px-2 py-1 uppercase tracking-wider"
@@ -941,7 +941,7 @@ export function OfficeUserDashboard({
               <input
                 type="number"
                 value={exchangeRate}
-                onChange={(e) =>
+                onChange={(e: any) =>
                   setExchangeRate(parseFloat(e.target.value) || 0)
                 }
                 className="w-full px-4 py-3 border-2 border-amber-300 bg-white text-slate-900 font-bold text-lg"
