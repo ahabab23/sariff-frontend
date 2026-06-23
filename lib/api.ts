@@ -1142,6 +1142,10 @@ export function getCompanyId(): string | undefined {
 // API Request Helper
 // ==============================================
 
+// Small delay helper used for retry backoff
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {},
@@ -1160,53 +1164,90 @@ export async function apiRequest<T>(
   // CompanyId and UserId are now extracted from JWT by the backend middleware.
   // Sending X-Company-Id / X-User-Id headers was removed as a security fix.
 
-  try {
-    // Timeout after 30s — prevents hanging on Render free-tier cold starts
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+  const MAX_ATTEMPTS = 3; // total tries on a network failure / timeout / 5xx
+  const TIMEOUT_MS = 30000; // per-attempt timeout (covers Render cold starts)
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers,
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-    if (response.status === 401 && auth?.refreshToken) {
-      const refreshed = await refreshToken(auth.refreshToken);
-      if (refreshed) {
-        headers["Authorization"] = `Bearer ${refreshed.accessToken}`;
-        const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, {
-          ...options,
-          headers,
-        });
-        return await retryResponse.json();
-      } else {
-        clearStoredAuth();
-        if (typeof window !== "undefined") {
-          window.location.href = "/login";
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      // Token expired -> refresh once, then replay the request
+      if (response.status === 401 && auth?.refreshToken) {
+        const refreshed = await refreshToken(auth.refreshToken);
+        if (refreshed) {
+          headers["Authorization"] = `Bearer ${refreshed.accessToken}`;
+          const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, {
+            ...options,
+            headers,
+          });
+          return await retryResponse.json();
+        } else {
+          clearStoredAuth();
+          if (typeof window !== "undefined") {
+            window.location.href = "/login";
+          }
+          return { success: false, message: "Session expired", data: null };
         }
-        return { success: false, message: "Session expired", data: null };
       }
-    }
 
-    const data = await response.json();
-    return data;
-  } catch (error: any) {
-    if (error.name === "AbortError") {
+      // Server error (e.g. Render still waking) -> wait and retry
+      if (response.status >= 500 && attempt < MAX_ATTEMPTS) {
+        await sleep(attempt * 800);
+        continue;
+      }
+
+      // Got a real response -> parse and return (don't retry 2xx/4xx)
+      try {
+        return await response.json();
+      } catch {
+        return {
+          success: false,
+          message:
+            "The server returned an unexpected response. Please try again.",
+          data: null,
+        };
+      }
+    } catch (error: any) {
+      // AbortError = timeout; TypeError = "failed to fetch" / connection closed.
+      // Both are worth retrying on a slow or unstable connection.
+      const isRetryable =
+        error?.name === "AbortError" || error?.name === "TypeError";
+
+      if (isRetryable && attempt < MAX_ATTEMPTS) {
+        await sleep(attempt * 800); // backoff: 0.8s, then 1.6s
+        continue;
+      }
+
+      if (error?.name === "AbortError") {
+        return {
+          success: false,
+          message:
+            "The server is taking too long to respond (it may be waking up). Please try again.",
+          data: null,
+        };
+      }
       return {
         success: false,
         message:
-          "Request timed out. The server may be starting up — please try again in a moment.",
+          "Couldn't reach the server — your connection may be slow or offline. Please try again.",
         data: null,
       };
     }
-    return {
-      success: false,
-      message: error.message || "Network error occurred",
-      data: null,
-    };
   }
+
+  return {
+    success: false,
+    message: "Network error — please check your connection and try again.",
+    data: null,
+  };
 }
 
 async function refreshToken(
