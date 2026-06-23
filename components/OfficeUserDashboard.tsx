@@ -254,7 +254,6 @@ export function OfficeUserDashboard({
 
       // Fetch dashboard stats from .NET backend
       const statsResult = await getDashboardStats();
-      console.log(statsResult);
 
       if (statsResult.success && statsResult.data) {
         setStats(statsResult.data);
@@ -282,26 +281,40 @@ export function OfficeUserDashboard({
         });
       }
 
-      // Fetch recent transactions
-      const transactionsResult = await getRecentTransactions();
+      // Fetch today's transactions: pull a wide recent window (200), then keep
+      // only those whose date is today (local YYYY-MM-DD, avoids UTC mismatch).
+      // Uses transactionDate (the business date), falling back to createdAt.
+      const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD local
+      const transactionsResult = await getRecentTransactions(200);
       if (transactionsResult.success && transactionsResult.data) {
-        // Map backend transaction format to component format
-        const mappedTransactions = transactionsResult.data.map(
-          (t: TransactionDto) => ({
-            id: t.code,
-            type: getTransactionTypeLabel(t.transactionType),
-            transactionType: t.transactionType,
-            amount: t.amount,
-            currency: getCurrencyLabel(t.currency),
-            description: t.description,
-            date: t.createdAt,
-            createdAt: t.createdAt,
-            primaryAccountName: t.sourceAccountName || "N/A",
-            primaryAccountType: t.sourceAccountType ?? 0,
-            secondaryName: t.destAccountName || "N/A",
-          }),
+        const todayItems = transactionsResult.data.filter(
+          (t: TransactionDto) => {
+            const txnDate = new Date(
+              t.transactionDate || t.createdAt,
+            ).toLocaleDateString("en-CA");
+            return txnDate === today;
+          },
         );
-        setRecentTransactions(mappedTransactions);
+        // Map backend transaction format to component format
+        const mappedTransactions = todayItems.map((t: TransactionDto) => ({
+          id: t.code,
+          type: getTransactionTypeLabel(t.transactionType),
+          transactionType: t.transactionType,
+          amount: t.amount,
+          currency: getCurrencyLabel(t.currency),
+          description: t.description,
+          date: t.createdAt,
+          createdAt: t.createdAt,
+          primaryAccountName: t.sourceAccountName || "N/A",
+          primaryAccountType: t.sourceAccountType ?? 0,
+          secondaryName: t.destAccountName || "N/A",
+        }));
+        // Sort newest-first
+        const sortedTransactions = [...mappedTransactions].sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
+        setRecentTransactions(sortedTransactions);
       }
 
       // Fetch current exchange rate
@@ -439,8 +452,7 @@ export function OfficeUserDashboard({
       href: "/office/settings",
     },
   ];
-  console.log(recentTransactions);
-  console.log(user);
+
   const renderContent = () => {
     switch (activeTab) {
       case "clients":
@@ -995,7 +1007,7 @@ export function OfficeUserDashboard({
           <div className="p-6 border-b-2 border-slate-200 flex items-center justify-between">
             <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <Clock className="w-5 h-5 text-blue-600" />
-              Recent Transactions
+              Today's Transactions
             </h3>
             <button
               onClick={() => setActiveTab("transactions")}
@@ -1037,7 +1049,7 @@ export function OfficeUserDashboard({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-100">
-                {recentTransactions?.slice(0, 10).map((txn) => {
+                {recentTransactions?.map((txn) => {
                   // For Client accounts (accountType === 3): Credit = positive (green), Debit = negative (red)
                   // For Asset accounts: Debit = positive (green), Credit = negative (red)
                   const isClientAccount = txn.primaryAccountType === 3;
@@ -1100,6 +1112,16 @@ export function OfficeUserDashboard({
                     </tr>
                   );
                 })}
+                {(!recentTransactions || recentTransactions.length === 0) && (
+                  <tr>
+                    <td
+                      colSpan={8}
+                      className="px-6 py-10 text-center text-sm text-slate-500"
+                    >
+                      No transactions today yet.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
