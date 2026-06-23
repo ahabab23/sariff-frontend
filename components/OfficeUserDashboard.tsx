@@ -27,6 +27,16 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import {
+  getDashboardStats,
+  getRecentTransactions,
+  getCurrentExchangeRate,
+  DashboardStatsDto,
+  TransactionDto,
+  getTransactionTypeLabel,
+  getCurrencyLabel,
+} from "@/lib/api";
+import { useAuth } from "@/providers/AuthProvider";
 
 // Lazy-loaded office sub-components (only loaded when the tab is first visited)
 const ClientManagement = dynamic(
@@ -162,16 +172,6 @@ const ExpensesAccount = dynamic(
     ),
   },
 );
-import {
-  getDashboardStats,
-  getRecentTransactions,
-  getCurrentExchangeRate,
-  DashboardStatsDto,
-  TransactionDto,
-  getTransactionTypeLabel,
-  getCurrencyLabel,
-} from "@/lib/api";
-import { useAuth } from "@/providers/AuthProvider";
 
 interface OfficeUserDashboardProps {
   userName: string;
